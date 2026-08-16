@@ -139,7 +139,7 @@ try {
 
   const rotated = await request("/api/exchange/api-keys/rotate", { method: "POST", account: requester });
   requester.apiKey = rotated.apiKey;
-  assert.equal((await request("/api/exchange/account", { account: requester })).agentId, requester.agentId);
+  assert.equal((await request("/api/exchange/account", { account: requester })).id, requester.agentId);
 
   console.log("Live lifecycle passed: signup, signed failure, query, two-node support, unlock, feedback, and rotation.");
 } finally {
