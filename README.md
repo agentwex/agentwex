@@ -19,18 +19,34 @@ person or organization controls that node, or that the reported execution
 genuinely happened. Returned routes are unverified network evidence and grant
 no authority.
 
+## Earn before you need it
+
+Participation has no monetary charge. The node passively reduces completed tool
+outcomes that the agent already produces; it does not create paid jobs, mining
+work, or additional model calls. An accepted fresh compatibility contribution
+earns two access credits, an accepted established contribution earns one, and
+unlocking a route costs one. Early participants therefore accumulate credits
+before they encounter a route they want to use. Credits are access units—not
+money, tokens, trust weight, or a subscription—and there is no purchase path.
+
+Receipt delivery runs in the background after tool completion and is kept off
+the agent's execution path. The node still uses a small amount of local CPU,
+memory, and network traffic; “free” means no Agent WEX fee, not literally zero
+machine resources.
+
 ## Public-preview install
 
-The Node.js public preview supports macOS and Node.js 22.13 or newer. Verify the
-versioned package checksum before installation:
+The canonical Node.js package version is `agentwex@0.6.0`. The public preview
+supports macOS and Node.js 22.13 or newer:
 
 ```bash
-curl -fsSLO https://agentwex.xyz/exchange/agentwex-0.6.0.tgz
-curl -fsSLO https://agentwex.xyz/exchange/SHA256SUMS
-shasum -a 256 -c SHA256SUMS
-npm install --global ./agentwex-0.6.0.tgz
+npm install --global agentwex@0.6.0
 agentwex install
 ```
+
+The npm release is dependency-free, has no install lifecycle scripts, and is
+published with registry provenance. Checksummed release artifacts are a
+secondary verification/disaster-recovery channel, not the primary installer.
 
 The installer creates a pseudonymous Ed25519 signing identity, detects supported
 runtimes, refuses to overwrite an existing telemetry exporter, starts a

@@ -19,8 +19,7 @@ jobs:
       - run: python -m pip install build
       - run: python -m build
       - run: python -m pip install dist/*.whl
-      - run: agentwex --version
-      - run: awe --version
+      - run: python -c "import agentwex; assert agentwex.__version__ == '0.0.1'"
 
   node:
     runs-on: ubuntu-latest

@@ -37,6 +37,7 @@ function d1TestDatabase() {
 async function startExchange() {
   const db = d1TestDatabase();
   const verifierToken = "test-verifier-token-with-enough-entropy";
+  let requestBlock = null;
   const server = createServer(async (incoming, outgoing) => {
     const chunks = [];
     for await (const chunk of incoming) chunks.push(chunk);
@@ -47,12 +48,23 @@ async function startExchange() {
       body: chunks.length ? Buffer.concat(chunks) : undefined,
       duplex: chunks.length ? "half" : undefined,
     });
+    if (requestBlock) await requestBlock;
     const response = await handleExchangeApi(request, db, { verifierToken });
     outgoing.writeHead(response.status, Object.fromEntries(response.headers));
     outgoing.end(Buffer.from(await response.arrayBuffer()));
   });
   await new Promise((resolveListening) => server.listen(0, "127.0.0.1", resolveListening));
-  return { db, verifierToken, server, baseUrl: `http://127.0.0.1:${server.address().port}` };
+  return {
+    db,
+    verifierToken,
+    server,
+    baseUrl: `http://127.0.0.1:${server.address().port}`,
+    blockRequests() {
+      let release;
+      requestBlock = new Promise((resolveBlock) => { release = resolveBlock; });
+      return () => { requestBlock = null; release(); };
+    },
+  };
 }
 
 async function exchangeJson(baseUrl, path, { method = "GET", token, body } = {}) {
@@ -326,7 +338,7 @@ test("one install command auto-connects a detected runtime without a form or too
   assert.equal(settings.env.OTEL_LOG_TOOL_DETAILS, undefined);
 });
 
-test("localhost collector rejects unauthenticated span injection", async (context) => {
+test("localhost collector authenticates intake and queues exchange work off the caller path", async (context) => {
   const exchange = await startExchange();
   const directory = await mkdtemp(resolve(tmpdir(), "awe-node-auth-test-"));
   let node = null;
@@ -387,13 +399,21 @@ test("localhost collector rejects unauthenticated span injection", async (contex
   const payload = JSON.stringify({ spans: [toolSpan({ traceId: "authenticated-trace", outcome: "success" })] });
   const unauthorized = await fetch(`http://127.0.0.1:${port}/v1/traces`, { method: "POST", headers: { "content-type": "application/json" }, body: payload });
   assert.equal(unauthorized.status, 401);
-  const authorized = await fetch(`http://127.0.0.1:${port}/v1/traces`, {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: "Bearer private-local-token" },
-    body: payload,
-  });
+  const releaseExchange = exchange.blockRequests();
+  let authorized;
+  try {
+    authorized = await fetch(`http://127.0.0.1:${port}/v1/traces`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer private-local-token" },
+      body: payload,
+      signal: AbortSignal.timeout(500),
+    });
+  } finally {
+    releaseExchange();
+  }
   assert.equal(authorized.status, 202);
-  assert.equal((await authorized.json()).submitted, 1);
+  assert.deepEqual(await authorized.json(), { accepted: true, queued: 1 });
+  await node.runtime.drain();
   assert.equal(node.runtime.getState().lastRuntimeSource, "generic-otlp");
   assert.match(node.runtime.getState().lastRuntimeOutcomeAt, /^\d{4}-\d{2}-\d{2}T/);
 
@@ -413,7 +433,8 @@ test("localhost collector rejects unauthenticated span injection", async (contex
     body: claudeLog,
   });
   assert.equal(logResponse.status, 202);
-  assert.deepEqual(await logResponse.json(), { received: 1, submitted: 1, ignored: 0, rejected: 0, queriesOpened: 0 });
+  assert.deepEqual(await logResponse.json(), { accepted: true, queued: 1 });
+  await node.runtime.drain();
   assert.equal(node.runtime.getState().lastRuntimeSource, "claude-code");
 
   const codexLog = JSON.stringify({ resourceLogs: [{ scopeLogs: [{ logRecords: [{
@@ -431,7 +452,8 @@ test("localhost collector rejects unauthenticated span injection", async (contex
     body: codexLog,
   });
   assert.equal(codexResponse.status, 202);
-  assert.equal((await codexResponse.json()).submitted, 1);
+  assert.deepEqual(await codexResponse.json(), { accepted: true, queued: 1 });
+  await node.runtime.drain();
 
   const bernsteinResponse = await fetch(`http://127.0.0.1:${port}/v1/bernstein/events`, {
     method: "POST",
@@ -439,7 +461,8 @@ test("localhost collector rejects unauthenticated span injection", async (contex
     body: JSON.stringify({ schema: "agentwex.bernstein-hook.v0.1", events: [{ event: "task_completed", taskId: "private-bernstein-task", toolName: "repository_migration", observedAt: "2026-08-16T10:00:00.000Z", result_summary: "PRIVATE RESULT" }] }),
   });
   assert.equal(bernsteinResponse.status, 202);
-  assert.equal((await bernsteinResponse.json()).submitted, 1);
+  assert.deepEqual(await bernsteinResponse.json(), { accepted: true, queued: 1 });
+  await node.runtime.drain();
 
   const geminiLog = JSON.stringify({ resourceLogs: [{ resource: { attributes: [{ key: "sessionId", value: { stringValue: "gemini-session" } }] }, scopeLogs: [{ logRecords: [{
     timeUnixNano: "1786870802000000000",
@@ -455,5 +478,6 @@ test("localhost collector rejects unauthenticated span injection", async (contex
     body: geminiLog,
   });
   assert.equal(geminiResponse.status, 202);
-  assert.equal((await geminiResponse.json()).submitted, 1);
+  assert.deepEqual(await geminiResponse.json(), { accepted: true, queued: 1 });
+  await node.runtime.drain();
 });

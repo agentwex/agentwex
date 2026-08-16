@@ -172,6 +172,18 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
     return operation;
   }
 
+  function enqueue(task) {
+    state.localQueueDepth = Number(state.localQueueDepth ?? 0) + 1;
+    const queued = serialized(task);
+    void queued
+      .catch((error) => { state.lastBackgroundError = error.message; })
+      .finally(async () => {
+        state.localQueueDepth = Math.max(0, Number(state.localQueueDepth ?? 1) - 1);
+        await persist().catch(() => {});
+      });
+    return { accepted: true, queued: 1 };
+  }
+
   return {
     config,
     getState: () => state,
@@ -181,6 +193,12 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
     ingestGeminiCli: (payload) => serialized(() => ingestGeminiCli(payload)),
     ingestBernstein: (payload) => serialized(() => ingestBernstein(payload)),
     reconcile: () => serialized(reconcile),
+    enqueueIngest: (payload) => enqueue(() => ingest(payload)),
+    enqueueClaudeCode: (payload) => enqueue(() => ingestClaudeCode(payload)),
+    enqueueCodex: (payload) => enqueue(() => ingestCodex(payload)),
+    enqueueGeminiCli: (payload) => enqueue(() => ingestGeminiCli(payload)),
+    enqueueBernstein: (payload) => enqueue(() => ingestBernstein(payload)),
+    drain: () => operation.catch(() => undefined),
   };
 }
 
@@ -200,23 +218,23 @@ export async function runDaemon(configPath = defaultConfigPath()) {
       if (request.method === "GET" && url.pathname === "/awe/routes") return json(response, 200, { routes: runtime.getState().routes, authorityGranted: false });
       if (request.method === "POST" && url.pathname === "/v1/traces") {
         if (!(request.headers["content-type"] ?? "").includes("application/json")) return json(response, 415, { error: "otlp_json_required" });
-        return json(response, 202, await runtime.ingest(await readJsonBody(request)));
+        return json(response, 202, runtime.enqueueIngest(await readJsonBody(request)));
       }
       if (request.method === "POST" && url.pathname === "/v1/logs") {
         if (!(request.headers["content-type"] ?? "").includes("application/json")) return json(response, 415, { error: "otlp_json_required" });
-        return json(response, 202, await runtime.ingestClaudeCode(await readJsonBody(request)));
+        return json(response, 202, runtime.enqueueClaudeCode(await readJsonBody(request)));
       }
       if (request.method === "POST" && url.pathname === "/v1/codex/logs") {
         if (!(request.headers["content-type"] ?? "").includes("application/json")) return json(response, 415, { error: "otlp_json_required" });
-        return json(response, 202, await runtime.ingestCodex(await readJsonBody(request)));
+        return json(response, 202, runtime.enqueueCodex(await readJsonBody(request)));
       }
       if (request.method === "POST" && url.pathname === `${geminiBase}/v1/logs`) {
         if (!(request.headers["content-type"] ?? "").includes("application/json")) return json(response, 415, { error: "otlp_json_required" });
-        return json(response, 202, await runtime.ingestGeminiCli(await readJsonBody(request)));
+        return json(response, 202, runtime.enqueueGeminiCli(await readJsonBody(request)));
       }
       if (request.method === "POST" && url.pathname === "/v1/bernstein/events") {
         if (!(request.headers["content-type"] ?? "").includes("application/json")) return json(response, 415, { error: "json_required" });
-        return json(response, 202, await runtime.ingestBernstein(await readJsonBody(request)));
+        return json(response, 202, runtime.enqueueBernstein(await readJsonBody(request)));
       }
       if (request.method === "POST" && [`${geminiBase}/v1/metrics`, `${geminiBase}/v1/traces`].includes(url.pathname)) {
         return json(response, 202, { received: 0, ignored: true });
@@ -238,7 +256,7 @@ export async function runDaemon(configPath = defaultConfigPath()) {
     process.off("SIGINT", shutdown);
     process.off("SIGTERM", shutdown);
     server.close(resolve);
-  });
+  }).then(() => runtime.drain());
   const shutdown = () => void close().then(() => process.exit(0));
   process.once("SIGINT", shutdown);
   process.once("SIGTERM", shutdown);

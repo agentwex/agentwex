@@ -33,7 +33,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  process.stdout.write(`Agent WEX node\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  daemon [--config PATH]\n  status [--config PATH]\n  ledger [--config PATH]\n  routes [--config PATH]\n  doctor [--config PATH]\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
+  process.stdout.write(`Agent WEX node v0.6.0\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  daemon [--config PATH]\n  status [--config PATH]\n  ledger [--config PATH]\n  routes [--config PATH]\n  doctor [--config PATH]\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
 }
 
 function environmentClass() {
@@ -254,7 +254,7 @@ async function install(options) {
         : backgroundReady
           ? "INSTALLED_RESTART_REQUIRED"
           : "BACKGROUND_SERVICE_UNAVAILABLE";
-  process.stdout.write(`Agent WEX node ${existingIdentity ? "rechecked" : "installed"}.\nIdentity: ${account.agentId}\nCollector: http://127.0.0.1:${port}/v1/traces\nCredits: ${account.creditBalance}\nRaw prompts, arguments, results, credentials, URLs, and trace IDs are not submitted.\n`);
+  process.stdout.write(`Agent WEX node ${existingIdentity ? "rechecked" : "installed"}.\nIdentity: ${account.agentId}\nCollector: http://127.0.0.1:${port}/v1/traces\nCredits: ${account.creditBalance}\nAccepted contributions earn credits automatically; route access costs credits, never money.\nRaw prompts, arguments, results, credentials, URLs, and trace IDs are not submitted.\n`);
   if (service) process.stdout.write(`Background service: ${service.label}\n`);
   else process.stdout.write(`Start locally: agentwex daemon --config ${configPath}\n`);
   process.stdout.write(`Connect an OTLP/HTTP JSON runtime without exposing the local token:\n  source ${environmentPath}\n`);
