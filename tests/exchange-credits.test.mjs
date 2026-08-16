@@ -273,6 +273,26 @@ test("two enrolled lab participants unlock only a visibly provisional first-part
   assert.equal(access.access.routeReceipt.workingRoute.distinctControllerGroupCount, 1);
   assert.equal(access.access.routeReceipt.workingRoute.distinctParticipantCount, 2);
   assert.equal(access.access.routeReceipt.workingRoute.controllerIndependenceVerified, false);
+
+  const preflight = await runPreflight(db, requester.account.agentId, {
+    schema: "agentwex.preflight-query.v0.1",
+    toolRegistry: routeQuery.toolRegistry,
+    toolId: routeQuery.toolId,
+    toolVersion: routeQuery.attemptedToolVersion,
+    clientId: routeQuery.clientId,
+    clientVersion: routeQuery.attemptedClientVersion,
+    environment: routeQuery.environment,
+    authMode: routeQuery.authMode,
+    operation: routeQuery.operation,
+    maxAgeDays: 7,
+    minimumSignedNodes: 2,
+    unlock: true,
+  });
+  assert.equal(preflight.assessment.recommendation.action, "UNLOCK_LAB_ROUTE");
+  assert.equal(preflight.assessment.routeQuery.status, "LAB_RESULT_AVAILABLE");
+  assert.equal(preflight.assessment.routeAccess.routeReceipt.workingRoute.supportStatus, "lab-observed");
+  assert.equal(preflight.assessment.routeAccess.routeReceipt.gateRequired, true);
+  assert.equal(preflight.assessment.routeAccess.routeReceipt.authorityGranted, false);
 });
 
 test("preflight seals a supported alternative, spends one earned credit on unlock, and records bounded impact feedback", async () => {

@@ -15,9 +15,11 @@ test("route lab has three physical participants under one first-party controller
 
 test("route lab runner is allowlisted and cannot execute caller-supplied commands", () => {
   assert.deepEqual(manifest.canaries, [
-    "npm-agentwex-install", "npm-registry-metadata", "github-repository-read",
+    "npm-agentwex-install", "npm-agentwex-missing-version",
+    "npm-registry-metadata", "github-repository-read",
   ]);
   assert.match(runner, /const canaries =/);
-  assert.match(runner, /execFileAsync\("npm", \[/);
+  assert.match(runner, /execFileAsync\("npx", \[/);
+  assert.match(runner, /Gate rejected the returned route outside the canary allowlist/);
   assert.doesNotMatch(runner, /exec\(|spawn\(.*shell:\s*true|child_process.*exec[^F]/);
 });
