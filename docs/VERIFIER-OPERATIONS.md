@@ -42,3 +42,8 @@ break-glass operator path, not the normal passive-node flow.
 The invite-only pilot should use signed working-route receipts. Broader
 automatic verification is out of scope until it has its own explicit evidence
 contract, tests, and operating controls.
+
+Use `npm run smoke:production` for the read-only domain/configuration check.
+Use `npm run smoke:lifecycle` only against an authorized deployment; it creates
+uniquely labelled disposable nodes, exercises the full exchange loop, and
+deactivates those nodes on exit. Coverage excludes these labelled test nodes.
