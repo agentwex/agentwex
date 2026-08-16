@@ -18,7 +18,9 @@ test("the standalone site makes prevention, failure value, and scope explicit", 
   assert.match(page, /<AweCommand id="install"/);
   assert.match(page, /Aggregate preflight is free/);
   assert.match(page, /Failure earns credits/i);
-  assert.doesNotMatch([page, protocol, llms, skill].join("\n"), /\b(?:pay|pays|paid|payment|charge|costs?|spend|spends|spent|purchase|purchased)\b/i);
+  assert.match(page, /Enterprises can pay for a private implementation/);
+  assert.equal((page.match(/\bpay(?:ment)?\b/gi) ?? []).length, 2);
+  assert.doesNotMatch([protocol, llms, skill].join("\n"), /\b(?:pay|pays|paid|payment|charge|costs?|spend|spends|spent|purchase|purchased)\b/i);
   assert.match(page, /Duplicate retries neither manufacture consensus nor mint more credits/);
   assert.match(page, /unrestricted cross-provider optimization/);
   assert.doesNotMatch(page, /awe contribute|awe ask|awe route apply/);

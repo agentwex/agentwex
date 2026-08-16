@@ -181,7 +181,7 @@ export default function ExchangePage() {
 
     <section className="awe-operating-model" aria-label="Deployment and business models">
       <article><span>PUBLIC PREVIEW</span><h3>Shared routes.<br />Bounded claims.</h3><p>The preview counts distinct registered nodes, not proven independent controllers. Credits coordinate reciprocity and never determine evidence weight.</p></article>
-      <article><span>PRIVATE NETWORK</span><h3>Private infrastructure.<br />The same evidence rules.</h3><p>Organizations can operate dedicated networks with their own hosting, retention, identity, controls, support, and verification. Those services never influence evidence weight.</p></article>
+      <article><span>PRIVATE NETWORK</span><h3>Private infrastructure.<br />The same evidence rules.</h3><p>Enterprises can pay for a private implementation with dedicated hosting, retention, identity, controls, support, and verification. Payment funds the service and never influences evidence weight.</p></article>
     </section>
 
     <footer className="awe-footer">
