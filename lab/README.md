@@ -39,3 +39,16 @@ Run at least two physical participants for a provisional lab reproduction.
 Rerun canaries after relevant version changes and before their evidence window
 expires. Open network bounties should determine which allowlisted canaries are
 added next.
+
+After two participants have submitted the successful install canary, one
+participant may run the controlled round trip:
+
+```sh
+npm run lab:route -- roundtrip --participant lab-macos-a
+```
+
+It requests a deliberately nonexistent public package version, contributes the
+real failure, unlocks only a Gate-bound allowlisted route, installs the returned
+current version, contributes the fresh confirmation, and records bounded
+feedback. Repeated confirmations refresh recency but earn no additional credit
+and never increase controller-group support.

@@ -23,6 +23,7 @@
   ],
   "canaries": [
     "npm-agentwex-install",
+    "npm-agentwex-missing-version",
     "npm-registry-metadata",
     "github-repository-read"
   ]

@@ -171,25 +171,33 @@ test("signed receipts reject tampering and one node cannot manufacture independe
   const { account, signing } = await signupSigned(exchange.baseUrl,
     { name: "Signed node", identityProvider: "custom", externalSubject: "signed-node" });
   const receiptRuntimePath = await import("../js/lib/receipt.mjs");
-  const makeReceipt = (traceId) => signRouteReceipt(receiptRuntimePath.adaptOtelSpanToRouteOutcome(
-    toolSpan({ traceId, outcome: "success", toolVersion: "3.2.0", clientVersion: "1.8.0", resolutionKind: "upgrade-client-and-tool" }),
-    { enabled: true, shareToolOutcomes: true, agentId: account.agentId },
-  ).receipt, signing);
+  const makeReceipt = (traceId, observedAt) => {
+    const unsigned = receiptRuntimePath.adaptOtelSpanToRouteOutcome(
+      toolSpan({ traceId, outcome: "success", toolVersion: "3.2.0", clientVersion: "1.8.0", resolutionKind: "upgrade-client-and-tool" }),
+      { enabled: true, shareToolOutcomes: true, agentId: account.agentId },
+    ).receipt;
+    return signRouteReceipt({ ...unsigned, observedAt }, signing);
+  };
 
   const first = await exchangeJson(exchange.baseUrl, "/api/exchange/working-route-comps", {
-    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-a"),
+    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-a", "2026-08-16T10:00:00.000Z"),
   });
   assert.equal(first.status, "accepted");
   assert.equal(first.creditsAwarded, 2);
 
   const second = await exchangeJson(exchange.baseUrl, "/api/exchange/working-route-comps", {
-    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-b"),
+    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-b", "2026-08-16T10:01:00.000Z"),
   });
-  assert.equal(second.status, "collapsed");
+  assert.equal(second.status, "accepted");
   assert.equal(second.creditsAwarded, 0);
+  assert.equal(second.freshnessRefresh, true);
   assert.equal((await getAccount({ baseUrl: exchange.baseUrl, apiKey: account.apiKey })).creditBalance, 2);
 
-  const tampered = { ...makeReceipt("signed-root-c"), toolVersion: "9.9.9" };
+  const acceptedSupport = await exchange.db.prepare(`SELECT COUNT(*) AS count FROM exchange_contributions
+    WHERE agent_id = ? AND status = 'accepted'`).bind(account.agentId).first();
+  assert.equal(Number(acceptedSupport.count), 1);
+
+  const tampered = { ...makeReceipt("signed-root-c", "2026-08-16T10:02:00.000Z"), toolVersion: "9.9.9" };
   const response = await fetch(`${exchange.baseUrl}/api/exchange/working-route-comps`, {
     method: "POST",
     headers: { authorization: `Bearer ${account.apiKey}`, "content-type": "application/json" },

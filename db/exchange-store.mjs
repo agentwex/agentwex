@@ -810,10 +810,55 @@ async function recordCollapsedVerification(db, contributionId, verifierReceiptId
   return { ok: true, status: 200, creditsAwarded: 0, verificationDecision: "collapsed", independentlyAdditive: false };
 }
 
-async function acceptSignedRouteContribution(db, { contributionId, agentId, candidateKey, verifierReceiptId }) {
+async function refreshSignedRouteContribution(db, {
+  contributionId, agentId, candidateKey, verifierReceiptId, observedAt, prior,
+}) {
+  if (Date.parse(observedAt) <= Date.parse(prior.observedAt)) {
+    return recordCollapsedVerification(db, contributionId, verifierReceiptId, "same_signed_node_older_or_equal_support_for_candidate");
+  }
+  const acceptedAt = now();
+  await db.batch([
+    db.prepare(`UPDATE exchange_contributions SET status = 'collapsed'
+      WHERE id = ? AND status = 'accepted'`).bind(prior.contributionId),
+    db.prepare(`UPDATE exchange_route_support_claims SET contribution_id = ?, created_at = ?
+      WHERE agent_id = ? AND candidate_key = ? AND contribution_id = ?`)
+      .bind(contributionId, acceptedAt, agentId, candidateKey, prior.contributionId),
+    db.prepare(`UPDATE exchange_contributions SET status = 'accepted', verifier_receipt_id = ?, accepted_at = ?
+      WHERE id = ? AND status = 'pending'`).bind(verifierReceiptId, acceptedAt, contributionId),
+    db.prepare(`INSERT INTO exchange_verification_records
+      (id, contribution_id, verifier_receipt_id, decision, independently_additive, reason, created_at)
+      VALUES (?, ?, ?, 'accepted', 0, 'same_signed_node_newer_freshness_refresh', ?)`)
+      .bind(newId("verification"), contributionId, verifierReceiptId, acceptedAt),
+  ]);
+  const linkedRoute = await db.prepare(`SELECT query_id AS queryId FROM exchange_working_route_comps WHERE contribution_id = ?`)
+    .bind(contributionId).first();
+  const queryStatus = linkedRoute?.queryId ? await reassessStoredRouteQuery(db, linkedRoute.queryId) : null;
+  return {
+    ok: true,
+    status: 200,
+    creditsAwarded: 0,
+    verificationDecision: "accepted",
+    independentlyAdditive: false,
+    freshnessRefresh: true,
+    queryStatus,
+  };
+}
+
+async function acceptSignedRouteContribution(db, {
+  contributionId, agentId, candidateKey, verifierReceiptId, observedAt,
+}) {
   const contribution = await db.prepare(`SELECT freshness_days AS freshnessDays FROM exchange_contributions
     WHERE id = ? AND agent_id = ? AND status = 'pending'`).bind(contributionId, agentId).first();
   if (!contribution) return { ok: false, status: 409, error: "contribution_not_pending" };
+  const prior = await db.prepare(`SELECT s.contribution_id AS contributionId, r.observed_at AS observedAt
+    FROM exchange_route_support_claims s
+    JOIN exchange_working_route_comps r ON r.contribution_id = s.contribution_id
+    WHERE s.agent_id = ? AND s.candidate_key = ?`).bind(agentId, candidateKey).first();
+  if (prior) {
+    return refreshSignedRouteContribution(db, {
+      contributionId, agentId, candidateKey, verifierReceiptId, observedAt, prior,
+    });
+  }
   const credits = creditsForAcceptedContribution({ accepted: true, independentlyAdditive: true, freshnessDays: Number(contribution.freshnessDays) });
   const acceptedAt = now();
   try {
@@ -997,7 +1042,7 @@ export async function runPreflight(db, agentId, body) {
   });
   if (!routeQuery.ok) return routeQuery;
   assessment.routeQuery = routeQuery.query;
-  if (!input.unlock || routeQuery.query.status !== "RESULT_AVAILABLE") {
+  if (!input.unlock || !["RESULT_AVAILABLE", "LAB_RESULT_AVAILABLE"].includes(routeQuery.query.status)) {
     return { ok: true, status: 200, assessment };
   }
 
@@ -1198,12 +1243,15 @@ export async function submitWorkingRouteComp(db, agentId, body) {
   if (verified?.ok) {
     const candidateKey = await routeSupportCandidateKey(input);
     const verifierReceiptId = `wex:auto:v1:${verified.receiptHash.slice("sha256:".length, 37)}`;
-    const accepted = await acceptSignedRouteContribution(db, { contributionId, agentId, candidateKey, verifierReceiptId });
+    const accepted = await acceptSignedRouteContribution(db, {
+      contributionId, agentId, candidateKey, verifierReceiptId, observedAt: input.observedAt,
+    });
     if (!accepted.ok) return accepted;
     const acceptedStatus = accepted.verificationDecision === "collapsed" ? "collapsed" : "accepted";
     return { ok: true, status: accepted.status, contribution: {
       contributionId, kind: "working-route", status: acceptedStatus, creditsAwarded: accepted.creditsAwarded,
       verificationDecision: accepted.verificationDecision, verificationLevel: verified.verificationLevel,
+      freshnessRefresh: accepted.freshnessRefresh === true,
       queryStatus: accepted.queryStatus, sensitivePayloadStored: false, authorityGranted: false,
     } };
   }

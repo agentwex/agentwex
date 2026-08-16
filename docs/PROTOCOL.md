@@ -60,6 +60,10 @@ route uses one earned credit. This lets early nodes accumulate credits through
 normal participation before they need a route. Credits only track contribution
 and access; they are non-transferable and never affect evidence weight.
 
+A newer signed repeat from the same node replaces that node's prior active
+support observation and refreshes recency. It earns zero credits and never adds
+another node, participant, controller group, or evidence root to support.
+
 ## Preflight reliability
 
 A preflight query asks whether the caller's exact public tool/client route is

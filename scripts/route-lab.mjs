@@ -6,13 +6,15 @@ import { basename, resolve } from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { signRouteReceipt } from "../js/lib/attestation.mjs";
-import { submitRouteOutcome } from "../js/lib/client.mjs";
+import { preflight, submitFeedback, submitRouteOutcome } from "../js/lib/client.mjs";
 import { defaultConfigPath, readConfig } from "../js/lib/config.mjs";
 
 const execFileAsync = promisify(execFile);
 const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const manifest = JSON.parse(await readFile(resolve(repositoryRoot, "lab/participants.json"), "utf8"));
 const packageMetadata = JSON.parse(await readFile(resolve(repositoryRoot, "js/package.json"), "utf8"));
+const LAB_NPM_VERSION = "11.17.0";
+const MISSING_AGENTWEX_VERSION = "0.0.0-agentwex-route-lab-missing";
 
 function sha(value) {
   return `sha256:${createHash("sha256").update(value).digest("hex")}`;
@@ -32,18 +34,12 @@ function participant(id) {
   return found;
 }
 
-async function version(binary) {
-  const result = await execFileAsync(binary, ["--version"], { timeout: 10_000 });
-  const match = result.stdout.match(/\d+(?:\.\d+){1,3}/);
-  return match?.[0] ?? "unknown";
-}
-
 async function npmInstallCanary(route) {
   const directory = await mkdtemp(resolve(tmpdir(), "agentwex-route-lab-"));
   try {
-    await execFileAsync("npm", [
-      "install", "--ignore-scripts", "--no-audit", "--no-fund", "--prefix", directory,
-      `agentwex@${packageMetadata.version}`,
+    await execFileAsync("npx", [
+      "--yes", `npm@${LAB_NPM_VERSION}`, "install", "--ignore-scripts", "--no-audit", "--no-fund", "--prefix", directory,
+      `agentwex@${route.toolVersion}`,
     ], { timeout: 120_000, maxBuffer: 1_048_576 });
     const binary = resolve(directory, "node_modules/agentwex/bin/agentwex.js");
     await execFileAsync(process.execPath, [binary, "--help"], { timeout: 20_000, maxBuffer: 1_048_576 });
@@ -76,7 +72,15 @@ const canaries = {
   "npm-agentwex-install": {
     descriptor: async () => ({
       toolRegistry: "npm", toolId: "agentwex", toolVersion: packageMetadata.version,
-      clientId: "npm", clientVersion: await version("npm"), authMode: "none", operation: "install-package",
+      clientId: "npm", clientVersion: LAB_NPM_VERSION, authMode: "none", operation: "install-package",
+      capabilityId: "agent-tool.install", effectClass: "execute",
+    }),
+    execute: npmInstallCanary,
+  },
+  "npm-agentwex-missing-version": {
+    descriptor: async () => ({
+      toolRegistry: "npm", toolId: "agentwex", toolVersion: MISSING_AGENTWEX_VERSION,
+      clientId: "npm", clientVersion: LAB_NPM_VERSION, authMode: "none", operation: "install-package",
       capabilityId: "agent-tool.install", effectClass: "execute",
     }),
     execute: npmInstallCanary,
@@ -102,7 +106,7 @@ const canaries = {
 async function enroll(config, participantId) {
   const token = process.env.AGENTWEX_LAB_ADMIN_TOKEN;
   if (!token) throw new Error("AGENTWEX_LAB_ADMIN_TOKEN is required for one-time lab enrollment");
-  const response = await fetch(`${config.exchange.baseUrl}/api/exchange/internal/lab-enroll`, {
+  const response = await fetch(`${config.baseUrl}/api/exchange/internal/lab-enroll`, {
     method: "POST",
     headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
     body: JSON.stringify({ agentId: config.agentId, controllerGroupId: manifest.controllerGroupId, participantId }),
@@ -117,6 +121,7 @@ async function probeCanary(participantId, canaryId) {
   const canary = canaries[canaryId];
   if (!canary) throw new Error(`Unknown Route Lab canary: ${canaryId ?? "missing"}`);
   const startedAt = new Date().toISOString();
+  const started = performance.now();
   const route = await canary.descriptor();
   let outcome = "success";
   let errorClass = null;
@@ -126,11 +131,19 @@ async function probeCanary(participantId, canaryId) {
     outcome = "failure";
     errorClass = String(error?.message ?? error).includes("timeout") ? "timeout" : "compatibility";
   }
-  return { participantId, canaryId, startedAt, route, outcome, errorClass };
+  return {
+    participantId,
+    canaryId,
+    startedAt,
+    completedAt: new Date().toISOString(),
+    executionMs: Math.round(performance.now() - started),
+    route,
+    outcome,
+    errorClass,
+  };
 }
 
-async function runCanary(config, participantId, canaryId) {
-  const probe = await probeCanary(participantId, canaryId);
+async function submitProbe(config, participantId, canaryId, probe) {
   const { route, outcome, errorClass, startedAt } = probe;
   const routeIdentity = [route.toolRegistry, route.toolId, route.toolVersion, route.clientId, route.clientVersion,
     environmentName(), route.authMode, route.operation, route.capabilityId, route.effectClass].join("|");
@@ -148,7 +161,103 @@ async function runCanary(config, participantId, canaryId) {
   return {
     participantId, controllerGroupId: manifest.controllerGroupId, canaryId, outcome,
     contributionId: contribution.contributionId, status: contribution.status,
-    creditsAwarded: contribution.creditsAwarded, sensitivePayloadStored: contribution.sensitivePayloadStored,
+    creditsAwarded: contribution.creditsAwarded, freshnessRefresh: contribution.freshnessRefresh === true,
+    executionMs: probe.executionMs, observedAt: receipt.observedAt,
+    sensitivePayloadStored: contribution.sensitivePayloadStored,
+  };
+}
+
+async function runCanary(config, participantId, canaryId) {
+  return submitProbe(config, participantId, canaryId, await probeCanary(participantId, canaryId));
+}
+
+async function runBatch(config, participantId) {
+  const startedAt = new Date().toISOString();
+  const results = [];
+  for (const canaryId of manifest.canaries) results.push(await runCanary(config, participantId, canaryId));
+  return {
+    schema: "agentwex.route-lab.batch.v1",
+    participantId,
+    controllerGroupId: manifest.controllerGroupId,
+    startedAt,
+    completedAt: new Date().toISOString(),
+    results,
+  };
+}
+
+function gateAllowsInstallRoute(route, allowed) {
+  return route?.toolRegistry === allowed.toolRegistry
+    && route?.toolId === allowed.toolId
+    && route?.toolVersion === allowed.toolVersion
+    && route?.clientId === allowed.clientId
+    && route?.clientVersion === allowed.clientVersion
+    && route?.authMode === allowed.authMode
+    && route?.operation === allowed.operation
+    && route?.capabilityId === allowed.capabilityId
+    && route?.effectClass === allowed.effectClass;
+}
+
+async function runRoundTrip(config, participantId) {
+  const startedAt = new Date().toISOString();
+  const failed = await runCanary(config, participantId, "npm-agentwex-missing-version");
+  if (failed.outcome !== "failure") throw new Error("Controlled missing-version canary unexpectedly succeeded");
+  const failedDescriptor = await canaries["npm-agentwex-missing-version"].descriptor();
+  const assessment = await preflight(config, {
+    schema: "agentwex.preflight-query.v0.1",
+    ...failedDescriptor,
+    environment: environmentName(),
+    alternativePolicy: "same-capability",
+    maxAgeDays: 7,
+    minimumSignedNodes: 2,
+    unlock: true,
+  });
+  const access = assessment.routeAccess;
+  if (!access?.routeReceipt?.gateRequired || access.routeReceipt.authorityGranted !== false) {
+    throw new Error("No Gate-bound route was released for the controlled blocker");
+  }
+  const returnedRoute = access.routeReceipt.workingRoute;
+  const allowed = await canaries["npm-agentwex-install"].descriptor();
+  if (!gateAllowsInstallRoute(returnedRoute, allowed)) throw new Error("Gate rejected the returned route outside the canary allowlist");
+  const recoveryStarted = performance.now();
+  await canaries["npm-agentwex-install"].execute(allowed);
+  const recoveryProbe = {
+    participantId,
+    canaryId: "npm-agentwex-install",
+    startedAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
+    executionMs: Math.round(performance.now() - recoveryStarted),
+    route: allowed,
+    outcome: "success",
+    errorClass: null,
+  };
+  const confirmed = await submitProbe(config, participantId, "npm-agentwex-install", recoveryProbe);
+  const feedback = await submitFeedback(config, {
+    schema: "agentwex.route-feedback.v0.1",
+    resultId: access.resultId,
+    outcome: "succeeded",
+    failureClass: null,
+    attemptsAvoided: 1,
+    estimatedTokensAvoided: 0,
+    estimatedLatencyMsAvoided: 0,
+  });
+  return {
+    schema: "agentwex.route-lab.round-trip.v1",
+    participantId,
+    controllerGroupId: manifest.controllerGroupId,
+    startedAt,
+    completedAt: new Date().toISOString(),
+    blocker: failed,
+    navigator: {
+      action: assessment.recommendation.action,
+      evidenceConfidence: assessment.evidenceConfidence,
+      resultId: access.resultId,
+      creditsSpent: access.creditsSpent,
+      supportStatus: returnedRoute.supportStatus,
+      controllerIndependenceVerified: returnedRoute.controllerIndependenceVerified,
+    },
+    recovery: confirmed,
+    feedbackId: feedback.feedbackId,
+    authorityGranted: false,
   };
 }
 
@@ -170,9 +279,13 @@ export async function main(args = process.argv.slice(2)) {
     ? await enroll(await readConfig(parsed.config ?? defaultConfigPath()), selected.participantId)
     : command === "run"
       ? await runCanary(await readConfig(parsed.config ?? defaultConfigPath()), selected.participantId, parsed.canary)
+      : command === "batch"
+        ? await runBatch(await readConfig(parsed.config ?? defaultConfigPath()), selected.participantId)
+        : command === "roundtrip"
+          ? await runRoundTrip(await readConfig(parsed.config ?? defaultConfigPath()), selected.participantId)
       : command === "probe"
         ? await probeCanary(selected.participantId, parsed.canary)
-        : (() => { throw new Error("Usage: route-lab.mjs enroll|probe|run --participant ID [--canary ID] [--config PATH]"); })();
+        : (() => { throw new Error("Usage: route-lab.mjs enroll|probe|run|batch|roundtrip --participant ID [--canary ID] [--config PATH]"); })();
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
 
