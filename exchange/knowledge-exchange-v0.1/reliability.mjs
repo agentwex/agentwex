@@ -4,6 +4,8 @@ const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 
 const nodeKey = (record) => record.agentId ?? `legacy:${record.provenanceRootId}`;
+const controllerKey = (record) => record.controllerGroupId ?? nodeKey(record);
+const participantKey = (record) => record.participantId ?? nodeKey(record);
 const routeKey = (record) => [
   record.toolRegistry,
   record.toolId,
@@ -17,12 +19,12 @@ const routeKey = (record) => [
   record.routeFingerprint,
 ].join("|");
 
-function latestNodeOutcomes(records, from, until) {
+function latestControllerOutcomes(records, from, until) {
   const latest = new Map();
   for (const record of records) {
     const observed = Date.parse(record.observedAt);
     if (!Number.isFinite(observed) || observed < from || observed >= until) continue;
-    const key = nodeKey(record);
+    const key = controllerKey(record);
     const prior = latest.get(key);
     if (!prior || record.observedAt > prior.observedAt) latest.set(key, record);
   }
@@ -30,7 +32,11 @@ function latestNodeOutcomes(records, from, until) {
 }
 
 function summarize(records, from, until, evaluatedAt) {
-  const outcomes = latestNodeOutcomes(records, from, until);
+  const inWindow = records.filter((record) => {
+    const observed = Date.parse(record.observedAt);
+    return Number.isFinite(observed) && observed >= from && observed < until;
+  });
+  const outcomes = latestControllerOutcomes(records, from, until);
   const successes = outcomes.filter((record) => record.outcome === "success");
   const failures = outcomes.filter((record) => record.outcome === "failure");
   const newest = outcomes.toSorted((left, right) => right.observedAt.localeCompare(left.observedAt))[0];
@@ -40,9 +46,13 @@ function summarize(records, from, until, evaluatedAt) {
     errorCounts.set(key, (errorCounts.get(key) ?? 0) + 1);
   }
   return {
-    distinctSignedNodeCount: outcomes.length,
+    distinctSignedNodeCount: new Set(inWindow.map(nodeKey)).size,
+    distinctParticipantCount: new Set(inWindow.map(participantKey)).size,
+    distinctControllerGroupCount: outcomes.length,
     successfulNodeCount: successes.length,
     failedNodeCount: failures.length,
+    successfulControllerGroupCount: successes.length,
+    failedControllerGroupCount: failures.length,
     successRate: outcomes.length ? Number((successes.length / outcomes.length).toFixed(4)) : null,
     lastObservedAt: newest?.observedAt ?? null,
     freshnessHours: newest ? Number(((Date.parse(evaluatedAt) - Date.parse(newest.observedAt)) / HOUR_MS).toFixed(2)) : null,
@@ -54,7 +64,7 @@ function summarize(records, from, until, evaluatedAt) {
 }
 
 function confidenceFor(summary) {
-  const count = summary.distinctSignedNodeCount;
+  const count = summary.distinctControllerGroupCount;
   const densityLevel = count < 2 ? "insufficient" : count < 5 ? "low" : count < 10 ? "medium" : "high";
   const freshnessCeiling = summary.freshnessHours == null || summary.freshnessHours > 72
     ? "low"
@@ -65,8 +75,9 @@ function confidenceFor(summary) {
   const level = levels[Math.min(levels.indexOf(densityLevel), levels.indexOf(freshnessCeiling))];
   return {
     level,
-    distinctSignedNodeCount: count,
-    basis: "Heuristic evidence density and freshness; not a statistical guarantee or controller-independence proof.",
+    distinctSignedNodeCount: summary.distinctSignedNodeCount,
+    distinctControllerGroupCount: count,
+    basis: "Heuristic controller-group density and freshness; unmapped community nodes are provisional groups, not controller-independence proof.",
   };
 }
 
@@ -100,11 +111,20 @@ function candidateRoutes(records, feedback, cutoff, evaluatedAt, minimumSignedNo
     feedbackByFingerprint.set(item.routeFingerprint, summary);
   }
   return [...routes.values()].map((route) => {
-    const observations = [...route.latestByNode.values()]
+    const signedNodeObservations = [...route.latestByNode.values()]
       .filter((record) => record.outcome === "success")
       .toSorted((left, right) => right.observedAt.localeCompare(left.observedAt));
+    const latestByController = new Map();
+    for (const record of signedNodeObservations) {
+      const key = controllerKey(record);
+      if (!latestByController.has(key)) latestByController.set(key, record);
+    }
+    const observations = [...latestByController.values()];
     if (observations.length === 0) return null;
     const first = observations[0];
+    const participants = new Set(signedNodeObservations.map(participantKey));
+    const labReplicated = observations.length === 1 && participants.size >= 2
+      && signedNodeObservations.every((record) => record.evidenceScope === "lab");
     const outcomes = feedbackByFingerprint.get(first.routeFingerprint) ?? {
       succeeded: 0, failed: 0, notAttempted: 0, attemptsAvoided: 0,
       estimatedTokensAvoided: 0, estimatedLatencyMsAvoided: 0,
@@ -129,7 +149,11 @@ function candidateRoutes(records, feedback, cutoff, evaluatedAt, minimumSignedNo
       effectClass: first.effectClass ?? null,
       resolutionKind: first.resolutionKind,
       routeFingerprint: first.routeFingerprint,
-      distinctSignedNodeCount: observations.length,
+      distinctSignedNodeCount: signedNodeObservations.length,
+      distinctParticipantCount: participants.size,
+      distinctControllerGroupCount: observations.length,
+      firstPartyLabReplicated: labReplicated,
+      supportStatus: observations.length >= minimumSignedNodes ? "supported" : labReplicated ? "lab-observed" : "observed",
       supported: observations.length >= minimumSignedNodes,
       lastObservedAt: first.observedAt,
       freshnessHours: Number(((Date.parse(evaluatedAt) - Date.parse(first.observedAt)) / HOUR_MS).toFixed(2)),
@@ -144,7 +168,9 @@ function candidateRoutes(records, feedback, cutoff, evaluatedAt, minimumSignedNo
     Number(right.supported) - Number(left.supported)
     || ({ EXACT_MATCH: 0, COMPATIBLE_ROUTE: 1, ALTERNATIVE_ROUTE: 2 })[left.matchType]
       - ({ EXACT_MATCH: 0, COMPATIBLE_ROUTE: 1, ALTERNATIVE_ROUTE: 2 })[right.matchType]
-    || right.distinctSignedNodeCount - left.distinctSignedNodeCount
+    || Number(right.firstPartyLabReplicated) - Number(left.firstPartyLabReplicated)
+    || right.distinctControllerGroupCount - left.distinctControllerGroupCount
+    || right.distinctParticipantCount - left.distinctParticipantCount
     || (right.feedback.succeeded - right.feedback.failed) - (left.feedback.succeeded - left.feedback.failed)
     || right.lastObservedAt.localeCompare(left.lastObservedAt));
 }
@@ -162,15 +188,15 @@ export function evaluatePreflight(records, feedback, input, evaluatedAt = new Da
     ? Number((recent.successRate - baseline.successRate).toFixed(4))
     : null;
   const alerts = [];
-  if (recent.failedNodeCount >= input.minimumSignedNodes && recent.successfulNodeCount === 0) {
+  if (recent.failedControllerGroupCount >= input.minimumSignedNodes && recent.successfulControllerGroupCount === 0) {
     alerts.push({
       type: "POSSIBLE_OUTAGE",
       severity: "high",
       message: "No recent signed-node successes and multiple recent failures were observed for the current route.",
     });
   }
-  if (recent.distinctSignedNodeCount >= input.minimumSignedNodes
-      && baseline.distinctSignedNodeCount >= input.minimumSignedNodes
+  if (recent.distinctControllerGroupCount >= input.minimumSignedNodes
+      && baseline.distinctControllerGroupCount >= input.minimumSignedNodes
       && successRateDrop <= -0.25) {
     alerts.push({
       type: "REGRESSION",
@@ -192,10 +218,12 @@ export function evaluatePreflight(records, feedback, input, evaluatedAt = new Da
     candidate.toolVersion === input.toolVersion && candidate.clientVersion === input.clientVersion);
   const alternative = candidates.find((candidate) => candidate.supported
     && (candidate.toolVersion !== input.toolVersion || candidate.clientVersion !== input.clientVersion));
+  const labAlternative = candidates.find((candidate) => candidate.firstPartyLabReplicated
+    && (candidate.toolVersion !== input.toolVersion || candidate.clientVersion !== input.clientVersion));
   let action = "PROCEED_WITH_CAUTION";
-  if (current.distinctSignedNodeCount === 0) action = alternative ? "UNLOCK_SUPPORTED_ROUTE" : "NO_RECENT_EVIDENCE";
-  else if (alerts.length > 0 || (current.successRate ?? 0) < 0.5) action = alternative ? "UNLOCK_SUPPORTED_ROUTE" : "AVOID_CURRENT_ROUTE";
-  else if (current.successRate >= 0.8 && current.distinctSignedNodeCount >= input.minimumSignedNodes) action = "PROCEED";
+  if (current.distinctControllerGroupCount === 0) action = alternative ? "UNLOCK_SUPPORTED_ROUTE" : labAlternative ? "UNLOCK_LAB_ROUTE" : "NO_RECENT_EVIDENCE";
+  else if (alerts.length > 0 || (current.successRate ?? 0) < 0.5) action = alternative ? "UNLOCK_SUPPORTED_ROUTE" : labAlternative ? "UNLOCK_LAB_ROUTE" : "AVOID_CURRENT_ROUTE";
+  else if (current.successRate >= 0.8 && current.distinctControllerGroupCount >= input.minimumSignedNodes) action = "PROCEED";
 
   return {
     schema: "agentwex.preflight-assessment.v0.1",
@@ -218,9 +246,10 @@ export function evaluatePreflight(records, feedback, input, evaluatedAt = new Da
     recommendation: {
       action,
       supportedAlternativeAvailable: Boolean(alternative),
+      firstPartyLabAlternativeAvailable: Boolean(labAlternative),
       currentRouteSupported: Boolean(currentCandidate?.supported),
-      routeDetailsSealed: action === "UNLOCK_SUPPORTED_ROUTE",
-      creditRequiredToUnlock: action === "UNLOCK_SUPPORTED_ROUTE" ? 1 : 0,
+      routeDetailsSealed: ["UNLOCK_SUPPORTED_ROUTE", "UNLOCK_LAB_ROUTE"].includes(action),
+      creditRequiredToUnlock: ["UNLOCK_SUPPORTED_ROUTE", "UNLOCK_LAB_ROUTE"].includes(action) ? 1 : 0,
       gateRequired: true,
       authorityGranted: false,
     },
@@ -228,6 +257,7 @@ export function evaluatePreflight(records, feedback, input, evaluatedAt = new Da
       supportedCandidates: candidates.filter((candidate) => candidate.supported).length,
       observedCandidates: candidates.length,
       strongestDistinctSignedNodeCount: candidates[0]?.distinctSignedNodeCount ?? 0,
+      strongestDistinctControllerGroupCount: candidates[0]?.distinctControllerGroupCount ?? 0,
       feedbackImpact,
     },
     _rankedCandidates: candidates,
@@ -238,7 +268,8 @@ export function evaluatePreflight(records, feedback, input, evaluatedAt = new Da
 }
 
 export function publicPreflightAssessment(assessment) {
-  const { _rankedCandidates, ...visible } = assessment;
+  const visible = { ...assessment };
+  delete visible._rankedCandidates;
   return visible;
 }
 

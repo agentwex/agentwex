@@ -5,10 +5,11 @@ and ID, client ID, environment class, authentication mode, and operation. Tool
 and client versions, outcome, resolution kind, observation time, and an opaque
 route fingerprint describe candidates.
 
-Receipts collapse first by provenance root and then to one support claim per
-registered signing node and candidate. The current API exposes
-`distinctSignedNodeCount`. Legacy `independentRootCount` fields remain in the
-v0.1 wire format, but they do not mean independently controlled operators.
+Receipts collapse first by provenance root, registered signing node, participant,
+and controller group. Unmapped community nodes remain separate provisional
+controller groups; this is still not proof of independent ownership. First-party
+lab machines are explicitly enrolled under one controller group, so extra keys,
+runtimes, and devices cannot manufacture network support.
 
 Every returned route states:
 
@@ -21,6 +22,11 @@ Every returned route states:
   "authorityGranted": false
 }
 ```
+
+Two first-party lab participants under the same controller may reproduce a
+route as `first-party-lab-replicated`. That route is provisional and visibly
+distinct from `unverified-network-evidence` supported by the configured number
+of controller groups. Both remain non-authoritative and require Gate.
 
 ## Navigator matching
 
@@ -41,9 +47,10 @@ Semantic similarity may discover a candidate for future testing, but it never
 counts as route support. Unsupported candidates remain visible as next-best
 evidence and cannot become the released working route.
 
-Ranking is conservative: supported routes precede unsupported candidates;
+Ranking is conservative: controller-group-supported routes precede replicated
+first-party lab observations and unsupported candidates;
 exact matches precede compatible and cross-tool alternatives; then distinct
-signed-node support and freshness break ties. Every cross-tool result sets
+controller groups, participants, and freshness break ties. Every cross-tool result sets
 `substitutionRequired: true` and must return through Gate.
 
 Signup is free and starts at zero credits. An accepted fresh first
@@ -57,8 +64,9 @@ and access; they are non-transferable and never affect evidence weight.
 
 A preflight query asks whether the caller's exact public tool/client route is
 working before another tool call is made. For each time window, Agent WEX uses
-only the latest accepted outcome from each signed node, so repeated runs from one
-node cannot dominate the rate. It reports:
+only the latest accepted outcome from each controller group, while retaining
+the separate signed-node and participant counts. Repeated nodes owned by one
+controller therefore cannot dominate the rate. It reports:
 
 - distinct signed-node successes and failures;
 - success rate, freshness, and low-cardinality failure classes;
@@ -83,11 +91,12 @@ The executable v0.1 schemas and evaluator live in
 
 ## Public coverage
 
-`GET /api/exchange/coverage` publishes supported compatibility cells and
-day-rounded freshness. A cell is withheld until at least two distinct signed
-nodes have accepted receipts. The response states that controller independence
-and execution truth remain unverified; it never exposes contributing node IDs
-or provenance roots.
+`GET /api/exchange/coverage` publishes network-supported compatibility cells,
+first-party lab reproductions, and day-rounded freshness as separate lists.
+Network cells require at least two controller groups. Lab cells require two
+physical participants enrolled under the first-party controller. The response
+states that controller independence and execution truth remain unverified; it
+never exposes contributing node IDs, participant IDs, or provenance roots.
 
 Hosted verification policy and operating controls are documented in
 [`VERIFIER-OPERATIONS.md`](VERIFIER-OPERATIONS.md).

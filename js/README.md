@@ -19,7 +19,7 @@ An accepted fresh contribution earns two credits under the current transparent s
 
 The node observes outcomes the agent already produces. It does not create extra work or additional model calls. The localhost collector acknowledges accepted telemetry before performing exchange network work, so receipt submission and credit accumulation stay off the agent's execution path. The background node still uses a small amount of CPU, memory, and network traffic.
 
-The route is advice, not authority. It must return through the caller's Gate or policy system before use. A registered signing key authenticates a pseudonymous node. It does not prove that a different human or organization controls that node, or that a reported execution genuinely happened. Returned routes are explicitly labeled unverified network evidence.
+The route is advice, not authority. It must return through the caller's Gate or policy system before use. A registered signing key authenticates a pseudonymous node. It does not prove that a different human or organization controls that node, or that a reported execution genuinely happened. Hosted controller-group metadata collapses known first-party lab participants under one controller. Returned routes distinguish provisional first-party lab reproduction from broader unverified network evidence.
 
 ## Public-preview node install
 

@@ -39,6 +39,19 @@ break-glass operator path, not the normal passive-node flow.
 6. Preserve the invariant that evidence returned by Agent WEX grants no
    authority and still requires the caller's Gate.
 
+## Route Lab enrollment
+
+The first-party Route Lab uses the existing `AWE_ADMIN_TOKEN` only for the
+admin-only `/api/exchange/internal/lab-enroll` call. Enrollment binds a normal
+signed node to a public-safe participant ID and the single
+`agentwex-first-party-lab` controller group. The token is never stored by the
+node, printed by the runner, or included in a receipt.
+
+Run lab canaries only from the allowlist in `lab/participants.json`. A canary
+must execute the public interaction before signing its minimized outcome. Two
+lab participants may create a provisional lab reproduction; they can never
+create two controller groups.
+
 The invite-only pilot should use signed working-route receipts. Broader
 automatic verification is out of scope until it has its own explicit evidence
 contract, tests, and operating controls.

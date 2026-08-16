@@ -1,0 +1,29 @@
+{
+  "schema": "agentwex.route-lab.participants.v1",
+  "controllerGroupId": "agentwex-first-party-lab",
+  "participants": [
+    {
+      "participantId": "lab-macos-a",
+      "platform": "macos-arm64",
+      "runtimes": ["codex", "claude-code"],
+      "status": "ready-for-enrollment"
+    },
+    {
+      "participantId": "lab-macos-b",
+      "platform": "macos-arm64",
+      "runtimes": ["codex", "claude-code"],
+      "status": "ready-for-enrollment"
+    },
+    {
+      "participantId": "lab-macos-c",
+      "platform": "macos-arm64",
+      "runtimes": ["codex", "claude-code"],
+      "status": "ready-for-enrollment"
+    }
+  ],
+  "canaries": [
+    "npm-agentwex-install",
+    "npm-registry-metadata",
+    "github-repository-read"
+  ]
+}

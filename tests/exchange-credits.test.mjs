@@ -5,6 +5,7 @@ import { creditsForAcceptedContribution } from "../db/credits.mjs";
 import {
   acceptContribution,
   createRouteQuery,
+  enrollLabParticipant,
   ensureExchangeSchema,
   getAgentAccount,
   listAgentContributions,
@@ -220,6 +221,58 @@ test("working-route validation rejects private tool content", () => {
   assert.equal(validateRouteFeedback({ resultId: "working-route:routeq_abc123", outcome: "failed" }), null);
   assert.equal(validateRouteFeedback({ resultId: "working-route:routeq_abc123", outcome: "failed", failureClass: "one-off-private-detail" }), null);
   assert.equal(validateRouteFeedback({ resultId: "working-route:routeq_abc123", outcome: "failed", failureClass: "compatibility" })?.failureClass, "compatibility");
+});
+
+test("two enrolled lab participants unlock only a visibly provisional first-party route", async () => {
+  const db = d1TestDatabase();
+  await ensureExchangeSchema(db);
+  const requester = await signupAgent(db, {
+    ...signupBody,
+    agent: { ...signupBody.agent, name: "Lab Requester", externalSubject: "lab-requester" },
+  });
+  const first = await signupAgent(db, {
+    ...signupBody,
+    agent: { ...signupBody.agent, name: "Lab A", externalSubject: "lab-a" },
+  });
+  const second = await signupAgent(db, {
+    ...signupBody,
+    agent: { ...signupBody.agent, name: "Lab B", externalSubject: "lab-b" },
+  });
+  for (const [account, participantId] of [[first.account, "lab-macos-a"], [second.account, "lab-macos-b"]]) {
+    const enrolled = await enrollLabParticipant(db, {
+      agentId: account.agentId, controllerGroupId: "agentwex-first-party-lab", participantId,
+    });
+    assert.equal(enrolled.status, 201);
+  }
+  const credit = await submitContribution(db, requester.account.agentId, {
+    recordKind: "tool-result", topic: "lab-route-request", provenanceRootId: "lab-request-credit",
+    independenceBasis: "attested", freshnessDays: 0,
+  });
+  await acceptContribution(db, {
+    contributionId: credit.contribution.contributionId,
+    verifierReceiptId: "lab-request-credit-verifier",
+    independentlyAdditive: true,
+  });
+  for (const [account, suffix] of [[first.account, "a"], [second.account, "b"]]) {
+    const submitted = await submitWorkingRouteComp(db, account.agentId, {
+      ...routeComp, provenanceRootId: `lab-route-${suffix}`,
+    });
+    assert.equal(submitted.status, 202);
+    await acceptContribution(db, {
+      contributionId: submitted.contribution.contributionId,
+      verifierReceiptId: `lab-route-verifier-${suffix}`,
+      independentlyAdditive: true,
+    });
+  }
+  const query = await createRouteQuery(db, requester.account.agentId, routeQuery);
+  assert.equal(query.query.status, "LAB_RESULT_AVAILABLE");
+  assert.equal(query.query.resultSealed, true);
+  const access = await reserveResultAccess(db, requester.account.agentId, query.query.resultId);
+  assert.equal(access.status, 200);
+  assert.equal(access.access.routeReceipt.workingRoute.supportStatus, "lab-observed");
+  assert.equal(access.access.routeReceipt.workingRoute.distinctControllerGroupCount, 1);
+  assert.equal(access.access.routeReceipt.workingRoute.distinctParticipantCount, 2);
+  assert.equal(access.access.routeReceipt.workingRoute.controllerIndependenceVerified, false);
 });
 
 test("preflight seals a supported alternative, spends one earned credit on unlock, and records bounded impact feedback", async () => {

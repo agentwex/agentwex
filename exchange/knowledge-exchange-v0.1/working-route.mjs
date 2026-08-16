@@ -17,6 +17,9 @@ const MATCH_PRIORITY = {
   ALTERNATIVE_ROUTE: 2,
 };
 
+const controllerKey = (record) => record.controllerGroupId ?? record.agentId ?? `legacy-root:${record.provenanceRootId}`;
+const participantKey = (record) => record.participantId ?? record.agentId ?? `legacy-root:${record.provenanceRootId}`;
+
 export function classifyRouteMatch(record, query) {
   if (record.status !== "accepted" || record.environment !== query.environment) return null;
   const exactCell = record.toolRegistry === query.toolRegistry
@@ -82,20 +85,34 @@ export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().to
   const successfulRoutes = new Map();
   for (const record of successfulRootRecords) {
     const key = routeKey(record);
-    const route = successfulRoutes.get(key) ?? { records: [], agents: new Set(), key, matchType: record.matchType };
+    const route = successfulRoutes.get(key) ?? {
+      records: [], agents: new Set(), participants: new Set(), controllerGroups: new Set(),
+      labParticipants: new Set(), key, matchType: record.matchType,
+    };
     const agentKey = record.agentId ?? `legacy-root:${record.provenanceRootId}`;
     if (route.agents.has(agentKey)) continue;
     route.agents.add(agentKey);
+    route.participants.add(participantKey(record));
+    route.controllerGroups.add(controllerKey(record));
+    if (record.evidenceScope === "lab") route.labParticipants.add(participantKey(record));
     route.records.push(record);
     successfulRoutes.set(key, route);
   }
 
+  const isSupported = (route) => route.controllerGroups.size >= query.minimumIndependentRoots;
+  const isLabReplicated = (route) => route.controllerGroups.size === 1
+    && route.labParticipants.size >= 2
+    && route.records.every((record) => record.evidenceScope === "lab");
   const rankedRoutes = [...successfulRoutes.values()].sort((left, right) =>
-    Number(right.records.length >= query.minimumIndependentRoots) - Number(left.records.length >= query.minimumIndependentRoots)
+    Number(isSupported(right)) - Number(isSupported(left))
+    || Number(isLabReplicated(right)) - Number(isLabReplicated(left))
     || MATCH_PRIORITY[left.matchType] - MATCH_PRIORITY[right.matchType]
-    || right.records.length - left.records.length
+    || right.controllerGroups.size - left.controllerGroups.size
+    || right.participants.size - left.participants.size
     || right.records[0].observedAt.localeCompare(left.records[0].observedAt));
-  const winner = rankedRoutes.find((route) => route.records.length >= query.minimumIndependentRoots);
+  const supportedWinner = rankedRoutes.find(isSupported);
+  const labWinner = supportedWinner ? null : rankedRoutes.find(isLabReplicated);
+  const winner = supportedWinner ?? labWinner;
   const candidateRoutes = rankedRoutes.map((candidate, index) => ({
     rank: index + 1,
     matchType: candidate.matchType,
@@ -118,21 +135,27 @@ export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().to
     capabilityEquivalenceVerified: false,
     routeFingerprint: candidate.records[0].routeFingerprint,
     distinctSignedNodeCount: candidate.records.length,
+    distinctParticipantCount: candidate.participants.size,
+    distinctControllerGroupCount: candidate.controllerGroups.size,
+    firstPartyLabReplicated: isLabReplicated(candidate),
+    supportStatus: isSupported(candidate) ? "supported" : isLabReplicated(candidate) ? "lab-observed" : "observed",
     controllerIndependenceVerified: false,
     executionTruthVerified: false,
     evidenceStatus: "unverified-network-evidence",
     // Legacy wire name retained through v0.1. It counts deduplicated signed nodes,
     // not independently controlled operators.
-    independentRootCount: candidate.records.length,
+    independentRootCount: candidate.controllerGroups.size,
     minimumIndependentRoots: query.minimumIndependentRoots,
     firstObservedAt: candidate.records.at(-1).observedAt,
     lastObservedAt: candidate.records[0].observedAt,
     evidenceWindowDays: query.maxAgeDays,
-    supported: candidate.records.length >= query.minimumIndependentRoots,
+    supported: isSupported(candidate),
     selected: candidate.key === winner?.key,
   }));
-  const status = winner
+  const status = supportedWinner
     ? "RESULT_AVAILABLE"
+    : labWinner
+      ? "LAB_RESULT_AVAILABLE"
     : compatible.length === 0
       ? "BOUNTY_OPEN"
       : "SEEK_MORE_INDEPENDENT_RUNS";
@@ -157,9 +180,14 @@ export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().to
       recordedIndependentRoots: rootRecords.length,
       copiesCollapsed: compatible.length - byRoot.size,
       repeatedNodeReceiptsCollapsed: successfulRootRecords.length - [...successfulRoutes.values()].reduce((total, route) => total + route.records.length, 0),
-      successfulIndependentRoots: winner?.records.length ?? rankedRoutes[0]?.records.length ?? 0,
+      controllerGroupsCollapsed: (winner?.records.length ?? rankedRoutes[0]?.records.length ?? 0)
+        - (winner?.controllerGroups.size ?? rankedRoutes[0]?.controllerGroups.size ?? 0),
+      successfulIndependentRoots: winner?.controllerGroups.size ?? rankedRoutes[0]?.controllerGroups.size ?? 0,
       minimumIndependentRoots: query.minimumIndependentRoots,
       distinctSignedNodeSupport: winner?.records.length ?? rankedRoutes[0]?.records.length ?? 0,
+      distinctParticipantSupport: winner?.participants.size ?? rankedRoutes[0]?.participants.size ?? 0,
+      distinctControllerGroupSupport: winner?.controllerGroups.size ?? rankedRoutes[0]?.controllerGroups.size ?? 0,
+      firstPartyLabReplicated: Boolean(labWinner),
       controllerIndependenceVerified: false,
       executionTruthVerified: false,
     },
@@ -167,8 +195,8 @@ export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().to
       compatibility: query.alternativePolicy === "same-capability"
         ? "exact cell plus explicitly labeled same-capability and same-effect alternatives"
         : "exact tool, client, environment, auth mode, and operation cell",
-      supportUnit: "distinct-signed-node",
-      primaryRank: "supported status, then match proximity, then distinct signed node count after provenance-root collapse",
+      supportUnit: "distinct-controller-group; unmapped community nodes remain separate provisional groups",
+      primaryRank: "supported status, then first-party lab replication, match proximity, controller groups, participants, and recency",
       tieBreak: "latest signed successful observation",
       versionPreference: "none",
       alternativePolicy: query.alternativePolicy ?? "exact-only",
@@ -197,23 +225,32 @@ export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().to
       capabilityEquivalenceVerified: false,
       routeFingerprint: winner.records[0].routeFingerprint,
       distinctSignedNodeCount: winner.records.length,
+      distinctParticipantCount: winner.participants.size,
+      distinctControllerGroupCount: winner.controllerGroups.size,
+      firstPartyLabReplicated: Boolean(labWinner),
+      supportStatus: labWinner ? "lab-observed" : "supported",
       controllerIndependenceVerified: false,
       executionTruthVerified: false,
-      evidenceStatus: "unverified-network-evidence",
-      independentRootCount: winner.records.length,
+      evidenceStatus: labWinner ? "first-party-lab-replicated" : "unverified-network-evidence",
+      independentRootCount: winner.controllerGroups.size,
       evidenceWindowDays: query.maxAgeDays,
       lastObservedAt: winner.records[0].observedAt,
-      verificationLevel: winner.records.every((record) => record.verificationLevel === "distinct-signed-node-v1")
-        ? "distinct-signed-node-v1"
+      verificationLevel: labWinner
+        ? "first-party-lab-replicated-v1"
+        : winner.records.every((record) => record.verificationLevel === "distinct-signed-node-v1")
+          ? "distinct-signed-node-v1"
         : "mixed-exchange-verification",
     } : null,
     bounty: status === "RESULT_AVAILABLE" ? null : {
-      requestedIndependentRuns: Math.max(1, query.minimumIndependentRoots - (rankedRoutes[0]?.records.length ?? 0)),
+      requestedIndependentRuns: Math.max(1, query.minimumIndependentRoots - (winner?.controllerGroups.size ?? rankedRoutes[0]?.controllerGroups.size ?? 0)),
       reward: "Standard credits are issued only for accepted, additive Working Route Comps from a distinct signed node.",
+      labRouteAlreadyObserved: status === "LAB_RESULT_AVAILABLE",
       arbitraryExecutionAuthorized: false,
     },
     nextAction: status === "RESULT_AVAILABLE"
       ? "Reserve one earned credit, then return the bounded route to Gate before acting."
+      : status === "LAB_RESULT_AVAILABLE"
+        ? "A first-party route was reproduced by two lab participants. Return it to Gate as provisional evidence and keep seeking an external controller."
       : status === "BOUNTY_OPEN"
         ? "Publish the missing compatibility cell to eligible agents; do not authorize arbitrary execution."
         : "Keep the bounty open until enough distinct signed nodes support one route.",

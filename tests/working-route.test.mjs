@@ -14,6 +14,8 @@ test("working-route exchange returns a route only after distinct signed-node sup
   assert.equal(assessment.workingRoute.clientVersion, "1.8.0");
   assert.equal(assessment.workingRoute.independentRootCount, 2);
   assert.equal(assessment.workingRoute.distinctSignedNodeCount, 2);
+  assert.equal(assessment.workingRoute.distinctControllerGroupCount, 2);
+  assert.equal(assessment.workingRoute.supportStatus, "supported");
   assert.equal(assessment.workingRoute.controllerIndependenceVerified, false);
   assert.equal(assessment.workingRoute.executionTruthVerified, false);
   assert.equal(assessment.workingRoute.evidenceWindowDays, 7);
@@ -24,8 +26,8 @@ test("working-route exchange returns a route only after distinct signed-node sup
   assert.equal(assessment.candidateRoutes[0].selected, true);
   assert.deepEqual(assessment.selectionPolicy, {
     compatibility: "exact cell plus explicitly labeled same-capability and same-effect alternatives",
-    supportUnit: "distinct-signed-node",
-    primaryRank: "supported status, then match proximity, then distinct signed node count after provenance-root collapse",
+    supportUnit: "distinct-controller-group; unmapped community nodes remain separate provisional groups",
+    primaryRank: "supported status, then first-party lab replication, match proximity, controller groups, participants, and recency",
     tieBreak: "latest signed successful observation",
     versionPreference: "none",
     alternativePolicy: "same-capability",
@@ -73,6 +75,35 @@ test("multiple roots from one authenticated node remain one support signal", () 
   assert.equal(assessment.status, "SEEK_MORE_INDEPENDENT_RUNS");
   assert.equal(assessment.evidence.successfulIndependentRoots, 1);
   assert.equal(assessment.evidence.repeatedNodeReceiptsCollapsed, 1);
+});
+
+test("two first-party lab participants under one controller produce a provisional route, not independent support", () => {
+  const records = [
+    { ...sampleRouteRecords[0], agentId: "lab-node-a", participantId: "lab-macos-a", controllerGroupId: "agentwex-first-party-lab", evidenceScope: "lab", provenanceRootId: "lab-root-a" },
+    { ...sampleRouteRecords[1], agentId: "lab-node-b", participantId: "lab-macos-b", controllerGroupId: "agentwex-first-party-lab", evidenceScope: "lab", provenanceRootId: "lab-root-b" },
+  ];
+  const assessment = evaluateWorkingRoute(records, sampleRouteQuery, "2026-08-15T19:00:00.000Z");
+  assert.equal(assessment.status, "LAB_RESULT_AVAILABLE");
+  assert.equal(assessment.workingRoute.supportStatus, "lab-observed");
+  assert.equal(assessment.workingRoute.firstPartyLabReplicated, true);
+  assert.equal(assessment.workingRoute.distinctSignedNodeCount, 2);
+  assert.equal(assessment.workingRoute.distinctParticipantCount, 2);
+  assert.equal(assessment.workingRoute.distinctControllerGroupCount, 1);
+  assert.equal(assessment.workingRoute.independentRootCount, 1);
+  assert.equal(assessment.workingRoute.verificationLevel, "first-party-lab-replicated-v1");
+  assert.equal(assessment.workingRoute.controllerIndependenceVerified, false);
+  assert.equal(assessment.bounty.requestedIndependentRuns, 1);
+});
+
+test("multiple keys for one lab participant do not create lab replication", () => {
+  const records = [
+    { ...sampleRouteRecords[0], agentId: "lab-key-a", participantId: "lab-macos-a", controllerGroupId: "agentwex-first-party-lab", evidenceScope: "lab", provenanceRootId: "lab-key-root-a" },
+    { ...sampleRouteRecords[1], agentId: "lab-key-b", participantId: "lab-macos-a", controllerGroupId: "agentwex-first-party-lab", evidenceScope: "lab", provenanceRootId: "lab-key-root-b" },
+  ];
+  const assessment = evaluateWorkingRoute(records, sampleRouteQuery, "2026-08-15T19:00:00.000Z");
+  assert.equal(assessment.status, "SEEK_MORE_INDEPENDENT_RUNS");
+  assert.equal(assessment.workingRoute, null);
+  assert.equal(assessment.candidateRoutes[0].distinctParticipantCount, 1);
 });
 
 test("receipts outside the requested evidence window cannot support a route", () => {

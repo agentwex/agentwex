@@ -213,6 +213,7 @@ test("one zero-fill install command creates a generated private node identity wi
   ], { cwd: resolve("."), timeout: 10_000 });
   assert.equal(stderr, "");
   assert.match(stdout, /Agent WEX node installed/);
+  assert.match(stdout, /Identity: agent_[a-f0-9]{32}/);
   assert.match(stdout, /source .*otel\.env/);
   const configText = await readFile(configPath, "utf8");
   const config = JSON.parse(configText);
