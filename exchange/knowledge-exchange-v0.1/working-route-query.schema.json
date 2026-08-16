@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minorityprophet.org/schemas/working-route-query-v0.1.json",
+  "title": "Agent WEX Working Route Query v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["toolRegistry", "toolId", "attemptedToolVersion", "clientId", "attemptedClientVersion", "environment", "authMode", "operation", "localEvidenceStatus", "localEvidenceReceiptHash", "maxAgeDays", "minimumIndependentRoots"],
+  "properties": {
+    "schema": { "const": "minority-prophet.working-route-query.v0.1" },
+    "toolRegistry": { "enum": ["mcp", "npm", "pypi", "github", "public-api", "runtime"] },
+    "toolId": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9@][A-Za-z0-9._@/+~-]*$" },
+    "attemptedToolVersion": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "clientId": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "attemptedClientVersion": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "environment": { "enum": ["macos-arm64", "macos-x64", "linux-arm64", "linux-x64", "windows-x64", "container", "other"] },
+    "authMode": { "enum": ["none", "api-key", "oauth-pkce", "oauth-client", "service-account", "local-credential", "other"] },
+    "operation": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "localEvidenceStatus": { "const": "insufficient" },
+    "localEvidenceReceiptHash": { "type": "string", "pattern": "^sha256:[a-fA-F0-9-]{8,128}$" },
+    "maxAgeDays": { "type": "integer", "minimum": 1, "maximum": 30 },
+    "minimumIndependentRoots": { "type": "integer", "minimum": 2, "maximum": 10 }
+  }
+}

@@ -1,30 +1,30 @@
 {
   "name": "agentwex",
-  "version": "0.0.1",
-  "description": "Portable, verifiable witness receipts for AI-agent actions",
-  "license": "Apache-2.0",
-  "homepage": "https://agentwex.com",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/agentwex/agentwex.git"
-  },
+  "version": "0.6.0",
+  "description": "Privacy-minimizing compatibility-evidence node for Agent WEX",
   "type": "module",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=22.13.0" },
   "bin": {
-    "agentwex": "bin/agentwex.js",
-    "awe": "bin/agentwex.js"
+    "agentwex": "./bin/agentwex.js",
+    "awe": "./bin/agentwex.js",
+    "awe-node": "./bin/agentwex.js"
   },
-  "files": [
-    "bin/agentwex.js",
-    "README.md",
-    "LICENSE"
-  ],
-  "engines": {
-    "node": ">=18"
+  "exports": {
+    ".": "./lib/receipt.mjs",
+    "./otlp": "./lib/otlp.mjs",
+    "./claude-code": "./lib/claude-code.mjs",
+    "./codex": "./lib/codex.mjs",
+    "./gemini-cli": "./lib/gemini-cli.mjs",
+    "./bernstein": "./lib/bernstein.mjs",
+    "./runtime-detection": "./lib/runtime-detection.mjs",
+    "./runtime-bootstrap": "./lib/runtime-bootstrap.mjs",
+    "./automatic-mapping": "./lib/automatic-mapping.mjs",
+    "./attestation": "./lib/attestation.mjs"
   },
-  "keywords": [
-    "agents",
-    "provenance",
-    "witness",
-    "receipts"
-  ]
+  "files": ["bin", "lib", "README.md", "LICENSE", "NOTICE"],
+  "repository": { "type": "git", "url": "git+https://github.com/agentwex/agentwex.git", "directory": "js" },
+  "homepage": "https://agentwex.xyz",
+  "bugs": { "url": "https://github.com/agentwex/agentwex/issues" },
+  "publishConfig": { "access": "public", "provenance": true }
 }

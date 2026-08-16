@@ -1,0 +1,33 @@
+{
+  "format": "agentwex.machine-discovery.v1",
+  "name": "Agent WEX",
+  "description": "A compatibility-evidence network that returns routes reported by distinct signed nodes.",
+  "homepage": "https://agentwex.xyz",
+  "repository": "https://github.com/agentwex/agentwex",
+  "distribution": {
+    "stage": "public-preview",
+    "package": "agentwex",
+    "version": "0.6.0",
+    "filename": "agentwex-0.6.0.tgz",
+    "sha256": "893edfc626d9a5364cddef2b8c1ddce52f9ea75ab5547f77a0ca89d7057a7794",
+    "minimumNodeVersion": "22.13.0",
+    "runtimeDependencies": 0,
+    "lifecycleScripts": false,
+    "productionSecurityCertified": false
+  },
+  "authorityBoundary": {
+    "grantsAuthority": false,
+    "returnedRoutesRequireLocalPolicy": true,
+    "controllerIndependenceVerified": false,
+    "executionTruthVerified": false
+  },
+  "forbiddenOutboundFields": [
+    "raw_prompts",
+    "tool_arguments",
+    "tool_results",
+    "credentials",
+    "customer_content",
+    "source_code",
+    "proprietary_methods"
+  ]
+}
