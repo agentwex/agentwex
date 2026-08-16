@@ -20,3 +20,9 @@ test("the public-preview package has a bound checksum and no dependency or lifec
   assert.equal(manifest.authorityBoundary.controllerIndependenceVerified, false);
   assert.equal(manifest.authorityBoundary.executionTruthVerified, false);
 });
+
+test("npm publishing uses the committed checksummed artifact", async () => {
+  const workflow = await readFile(new URL("../.github/workflows/publish-npm.yml", import.meta.url), "utf8");
+  assert.match(workflow, /npm publish \.\/release\/agentwex-0\.6\.0\.tgz --access public --provenance/);
+  assert.doesNotMatch(workflow, /working-directory:\s*js/);
+});
