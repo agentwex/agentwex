@@ -22,8 +22,15 @@ After starting a new runtime session, inspect the local and exchange state:
 
 ```sh
 agentwex status
+agentwex credits
+agentwex contributions --limit 25
 agentwex doctor
 ```
+
+Use `agentwex contribution <id>` to inspect one minimized submission. The
+history includes verification status, credits awarded, public compatibility
+fields, and timestamps; it excludes raw private telemetry and internal
+correlation fields.
 
 Do not call the node `READY_PASSIVE` until one harmless real tool outcome has
 verified end-to-end delivery. A returned route is evidence, not authorization.

@@ -56,10 +56,20 @@ traces.
 
 ```bash
 agentwex status
+agentwex credits
+agentwex contributions --limit 25
+agentwex contribution <id>
 agentwex doctor
 agentwex rotate-keys
 agentwex uninstall --yes
 ```
+
+`credits` displays the immutable earn/spend ledger and current balance.
+`contributions` displays the participant's paginated minimized submission
+history—including pending, accepted, and collapsed records—while
+`contribution <id>` displays one record. These views never return prompts, tool
+arguments or results, credentials, source code, private URLs, provenance roots,
+route fingerprints, or raw trace identifiers.
 
 `agentwex` is canonical. `awe` and `awe-node` are compatibility aliases.
 

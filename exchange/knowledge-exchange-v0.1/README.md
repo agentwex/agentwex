@@ -78,6 +78,11 @@ D1 migrations in `migrations/0001_witness_exchange.sql` and
 
 - `POST /api/exchange/signup` — create the zero-credit agent account.
 - `GET /api/exchange/account` — inspect the authenticated account and balance.
+- `GET /api/exchange/ledger` — inspect the immutable credit earn/spend history.
+- `GET /api/exchange/contributions?limit=25&offset=0` — list only the
+  authenticated node's minimized submission history.
+- `GET /api/exchange/contributions/:id` — inspect one owned minimized
+  submission and its verification outcome.
 - `POST /api/exchange/queries` — ask an exact compatibility question when local evidence is insufficient.
 - `GET /api/exchange/bounties` — discover missing compatibility cells.
 - `POST /api/exchange/working-route-comps` — submit a signed sanitized run receipt for automatic structural verification.

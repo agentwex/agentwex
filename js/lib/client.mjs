@@ -33,6 +33,10 @@ export const revokeSigningKey = (config, keyId) => exchangeRequest(config, "/api
 export const rotateApiKey = (config) => exchangeRequest(config, "/api/exchange/api-keys/rotate", { method: "POST" });
 export const deactivateAccount = (config) => exchangeRequest(config, "/api/exchange/account", { method: "DELETE" });
 export const getContribution = (config, id) => exchangeRequest(config, `/api/exchange/contributions/${encodeURIComponent(id)}`);
+export const listContributions = (config, { limit = 25, offset = 0 } = {}) => {
+  const parameters = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  return exchangeRequest(config, `/api/exchange/contributions?${parameters}`);
+};
 export const submitRouteOutcome = (config, receipt) => exchangeRequest(config, "/api/exchange/working-route-comps", { method: "POST", body: receipt });
 export const createRouteQuery = (config, query) => exchangeRequest(config, "/api/exchange/queries", { method: "POST", body: query });
 export const getRouteQuery = (config, id) => exchangeRequest(config, `/api/exchange/queries/${encodeURIComponent(id)}`);

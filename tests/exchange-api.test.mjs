@@ -109,6 +109,40 @@ test("first node can submit idempotently, await verification, and earn durable c
   const contribution = await acceptedStatus.json();
   assert.equal(contribution.status, "accepted");
   assert.equal(contribution.creditsAwarded, 2);
+  assert.equal(contribution.verificationDecision, "accepted");
+  assert.equal(contribution.verificationReason, "reproduced_public_tool_outcome");
+  assert.equal(contribution.sensitivePayloadStored, false);
+
+  const historyResponse = await handleExchangeApi(apiRequest("/api/exchange/contributions?limit=1&offset=0", {
+    token: signup.apiKey,
+  }), db, { verifierToken });
+  assert.equal(historyResponse.status, 200);
+  const history = await historyResponse.json();
+  assert.equal(history.total, 1);
+  assert.equal(history.limit, 1);
+  assert.equal(history.offset, 0);
+  assert.equal(history.hasMore, false);
+  assert.equal(history.contributions[0].contributionId, submitted.contributionId);
+  assert.equal(history.contributions[0].creditsAwarded, 2);
+  assert.equal(history.contributions[0].verificationReason, "reproduced_public_tool_outcome");
+  assert.equal("provenanceRootId" in history.contributions[0], false);
+
+  const otherSignupResponse = await handleExchangeApi(apiRequest("/api/exchange/signup", {
+    method: "POST",
+    body: {
+      agent: { name: "Other Node", identityProvider: "custom", externalSubject: "other-node" },
+      participation: { heartbeatMinutes: 15, deliveryChannel: "nexus-api", dailyCreditSpendLimit: 10 },
+    },
+  }), db, { verifierToken });
+  const otherSignup = await otherSignupResponse.json();
+  const otherHistory = await handleExchangeApi(apiRequest("/api/exchange/contributions", {
+    token: otherSignup.apiKey,
+  }), db, { verifierToken });
+  assert.equal((await otherHistory.json()).total, 0);
+  const crossAccountDetail = await handleExchangeApi(apiRequest(`/api/exchange/contributions/${submitted.contributionId}`, {
+    token: otherSignup.apiKey,
+  }), db, { verifierToken });
+  assert.equal(crossAccountDetail.status, 404);
 
   const accountResponse = await handleExchangeApi(apiRequest("/api/exchange/account", { token: signup.apiKey }), db, { verifierToken });
   assert.equal((await accountResponse.json()).creditBalance, 2);

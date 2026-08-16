@@ -7,6 +7,7 @@ import {
   createRouteQuery,
   ensureExchangeSchema,
   getAgentAccount,
+  listAgentContributions,
   listOpenRouteBounties,
   reserveResultAccess,
   signupAgent,
@@ -194,6 +195,15 @@ test("an empty query opens a bounty and two accepted independent comps complete 
     freshnessDays: 0,
   });
   assert.equal(firstAcceptance.queryStatus, "SEEK_MORE_INDEPENDENT_RUNS");
+  const firstHistory = await listAgentContributions(db, firstContributor.account.agentId, { limit: 25 });
+  assert.equal(firstHistory.total, 1);
+  assert.equal(firstHistory.contributions[0].toolId, routeComp.toolId);
+  assert.equal(firstHistory.contributions[0].clientId, routeComp.clientId);
+  assert.equal(firstHistory.contributions[0].outcome, "success");
+  assert.equal(firstHistory.contributions[0].creditsAwarded, 2);
+  assert.equal(firstHistory.contributions[0].sensitivePayloadStored, false);
+  assert.equal("provenanceRootId" in firstHistory.contributions[0], false);
+  assert.equal("routeFingerprint" in firstHistory.contributions[0], false);
 
   const second = await submitWorkingRouteComp(db, secondContributor.account.agentId, {
     ...routeComp,

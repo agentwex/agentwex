@@ -6,7 +6,7 @@ import { arch, platform } from "node:os";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
-import { deactivateAccount, signup, getAccount, getLedger, registerSigningKey, revokeSigningKey, rotateApiKey } from "../lib/client.mjs";
+import { deactivateAccount, signup, getAccount, getContribution, getLedger, listContributions, registerSigningKey, revokeSigningKey, rotateApiKey } from "../lib/client.mjs";
 import { defaultConfigPath, readConfig, validateBaseUrl, writePrivateJson, writePrivateText } from "../lib/config.mjs";
 import { runDaemon } from "../lib/daemon.mjs";
 import { installBackgroundService, uninstallBackgroundService } from "../lib/service.mjs";
@@ -33,7 +33,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  process.stdout.write(`Agent WEX node v0.6.0\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  daemon [--config PATH]\n  status [--config PATH]\n  ledger [--config PATH]\n  routes [--config PATH]\n  doctor [--config PATH]\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
+  process.stdout.write(`Agent WEX node v0.6.0\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  routes [--config PATH]\n  doctor [--config PATH]\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
 }
 
 function environmentClass() {
@@ -327,6 +327,20 @@ async function ledger(configPath) {
   process.stdout.write(`${JSON.stringify(await getLedger(config), null, 2)}\n`);
 }
 
+async function contributions(configPath, options) {
+  const config = await readConfig(configPath);
+  process.stdout.write(`${JSON.stringify(await listContributions(config, {
+    limit: options.limit ?? 25,
+    offset: options.offset ?? 0,
+  }), null, 2)}\n`);
+}
+
+async function contribution(configPath, contributionId) {
+  if (!contributionId) throw new Error("Contribution ID is required: agentwex contribution <id>");
+  const config = await readConfig(configPath);
+  process.stdout.write(`${JSON.stringify(await getContribution(config, contributionId), null, 2)}\n`);
+}
+
 async function doctor(configPath) {
   const config = await readConfig(configPath);
   const checks = [];
@@ -358,7 +372,9 @@ async function main() {
   if (command === "adapter" && positional[0] === "bernstein") return configureBernstein(configPath, options);
   if (command === "daemon") return runDaemon(configPath);
   if (command === "status") return status(configPath);
-  if (command === "ledger") return ledger(configPath);
+  if (command === "ledger" || command === "credits") return ledger(configPath);
+  if (command === "contributions") return contributions(configPath, options);
+  if (command === "contribution") return contribution(configPath, positional[0]);
   if (command === "routes") return routes(configPath);
   if (command === "doctor") return doctor(configPath);
   throw new Error(`Unknown command: ${command}`);

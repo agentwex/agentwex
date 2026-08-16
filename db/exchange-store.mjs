@@ -298,12 +298,71 @@ export async function acceptContribution(db, { contributionId, verifierReceiptId
 
 export async function getContributionStatus(db, agentId, contributionId) {
   const contribution = await db.prepare(`SELECT c.id AS contributionId, c.record_kind AS recordKind,
-      c.topic, c.status, c.created_at AS createdAt, c.accepted_at AS acceptedAt,
+      c.topic, c.status, c.freshness_days AS freshnessDays,
+      c.created_at AS createdAt, c.accepted_at AS acceptedAt,
+      w.tool_registry AS toolRegistry, w.tool_id AS toolId, w.tool_version AS toolVersion,
+      w.client_id AS clientId, w.client_version AS clientVersion, w.environment,
+      w.auth_mode AS authMode, w.operation, w.outcome, w.error_class AS errorClass,
+      w.resolution_kind AS resolutionKind, w.observed_at AS observedAt,
+      a.receipt_hash AS receiptHash, v.decision AS verificationDecision,
+      v.reason AS verificationReason,
       COALESCE((SELECT SUM(credits) FROM exchange_credit_entries e
         WHERE e.contribution_id = c.id AND e.entry_type = 'earn'), 0) AS creditsAwarded
-    FROM exchange_contributions c WHERE c.id = ? AND c.agent_id = ?`)
+    FROM exchange_contributions c
+    LEFT JOIN exchange_working_route_comps w ON w.contribution_id = c.id
+    LEFT JOIN exchange_working_route_attestations a ON a.contribution_id = c.id
+    LEFT JOIN exchange_verification_records v ON v.contribution_id = c.id
+    WHERE c.id = ? AND c.agent_id = ?`)
     .bind(contributionId, agentId).first();
-  return contribution ? { ...contribution, creditsAwarded: Number(contribution.creditsAwarded ?? 0), authorityGranted: false } : null;
+  return contribution ? {
+    ...contribution,
+    creditsAwarded: Number(contribution.creditsAwarded ?? 0),
+    sensitivePayloadStored: false,
+    authorityGranted: false,
+  } : null;
+}
+
+export async function listAgentContributions(db, agentId, { limit = 25, offset = 0 } = {}) {
+  const parsedLimit = Number(limit);
+  const parsedOffset = Number(offset);
+  const boundedLimit = Number.isInteger(parsedLimit) ? Math.min(100, Math.max(1, parsedLimit)) : 25;
+  const boundedOffset = Number.isInteger(parsedOffset) ? Math.min(1_000_000, Math.max(0, parsedOffset)) : 0;
+  const [response, count] = await Promise.all([
+    db.prepare(`SELECT c.id AS contributionId, c.record_kind AS recordKind,
+      c.topic, c.status, c.freshness_days AS freshnessDays,
+      c.created_at AS createdAt, c.accepted_at AS acceptedAt,
+      w.tool_registry AS toolRegistry, w.tool_id AS toolId, w.tool_version AS toolVersion,
+      w.client_id AS clientId, w.client_version AS clientVersion, w.environment,
+      w.auth_mode AS authMode, w.operation, w.outcome, w.error_class AS errorClass,
+      w.resolution_kind AS resolutionKind, w.observed_at AS observedAt,
+      a.receipt_hash AS receiptHash, v.decision AS verificationDecision,
+      v.reason AS verificationReason,
+      COALESCE((SELECT SUM(credits) FROM exchange_credit_entries e
+        WHERE e.contribution_id = c.id AND e.entry_type = 'earn'), 0) AS creditsAwarded
+    FROM exchange_contributions c
+    LEFT JOIN exchange_working_route_comps w ON w.contribution_id = c.id
+    LEFT JOIN exchange_working_route_attestations a ON a.contribution_id = c.id
+    LEFT JOIN exchange_verification_records v ON v.contribution_id = c.id
+    WHERE c.agent_id = ?
+    ORDER BY c.created_at DESC, c.id DESC LIMIT ? OFFSET ?`)
+      .bind(agentId, boundedLimit, boundedOffset).all(),
+    db.prepare(`SELECT COUNT(*) AS total FROM exchange_contributions WHERE agent_id = ?`)
+      .bind(agentId).first(),
+  ]);
+  const total = Number(count?.total ?? 0);
+  const contributions = (response?.results ?? []).map((contribution) => ({
+    ...contribution,
+    creditsAwarded: Number(contribution.creditsAwarded ?? 0),
+    sensitivePayloadStored: false,
+    authorityGranted: false,
+  }));
+  return {
+    contributions,
+    total,
+    limit: boundedLimit,
+    offset: boundedOffset,
+    hasMore: boundedOffset + contributions.length < total,
+  };
 }
 
 export async function reserveResultAccess(db, agentId, resultId) {

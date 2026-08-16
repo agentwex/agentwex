@@ -480,4 +480,31 @@ test("localhost collector authenticates intake and queues exchange work off the 
   assert.equal(geminiResponse.status, 202);
   assert.deepEqual(await geminiResponse.json(), { accepted: true, queued: 1 });
   await node.runtime.drain();
+
+  const creditsCommand = await execFileAsync(process.execPath, [
+    resolve("js/bin/agentwex.js"), "credits", "--config", configPath,
+  ]);
+  const credits = JSON.parse(creditsCommand.stdout);
+  assert.ok(credits.creditBalance >= 2);
+  assert.ok(credits.entries.some((entry) => entry.entryType === "earn"));
+
+  const historyCommand = await execFileAsync(process.execPath, [
+    resolve("js/bin/agentwex.js"), "contributions", "--limit", "2", "--config", configPath,
+  ]);
+  const history = JSON.parse(historyCommand.stdout);
+  assert.equal(history.limit, 2);
+  assert.ok(history.total >= 5);
+  assert.equal(history.contributions.length, 2);
+  assert.equal(history.hasMore, true);
+  assert.ok(history.contributions.every((entry) => entry.sensitivePayloadStored === false));
+  assert.ok(history.contributions.every((entry) => !("provenanceRootId" in entry)));
+  assert.ok(history.contributions.every((entry) => !("routeFingerprint" in entry)));
+
+  const detailCommand = await execFileAsync(process.execPath, [
+    resolve("js/bin/agentwex.js"), "contribution", history.contributions[0].contributionId,
+    "--config", configPath,
+  ]);
+  const detail = JSON.parse(detailCommand.stdout);
+  assert.equal(detail.contributionId, history.contributions[0].contributionId);
+  assert.equal(detail.sensitivePayloadStored, false);
 });

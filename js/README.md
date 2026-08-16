@@ -107,10 +107,21 @@ Then inspect the node:
 
 ```sh
 agentwex status
+agentwex credits
+agentwex contributions --limit 25
+agentwex contribution <id>
 agentwex ledger
 agentwex routes
 agentwex doctor
 ```
+
+`credits` is the human-discoverable alias for the immutable `ledger` output.
+`contributions` returns the authenticated node's paginated minimized history,
+including pending, accepted, and collapsed records; `contribution <id>` returns
+one record. History contains public compatibility fields, status, verification
+reason, timestamps, receipt hash, and credits awarded. It never returns prompts,
+arguments, results, credentials, source code, private URLs, provenance roots,
+route fingerprints, or raw trace identifiers.
 
 Rotate both the API credential and local Ed25519 identity with `agentwex rotate-keys`. Remove the background service, exact Agent WEX runtime settings, local config, and remote pseudonymous account with `agentwex uninstall --yes`. Add `--keep-account` or `--keep-local` only when you deliberately want those retained. Runtime-setting backups are kept locally.
 

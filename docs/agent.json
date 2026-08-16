@@ -9,7 +9,7 @@
     "package": "agentwex",
     "version": "0.6.0",
     "filename": "agentwex-0.6.0.tgz",
-    "sha256": "7a483b65ca219f597948300d46720716ce8f4ea38d3e78f7d3b2e50f56a9ad2e",
+    "sha256": "140e8b82dd01725f1b932d832a85d21d2cf0fd09d7f277090f8a5b8d5a5b04b7",
     "minimumNodeVersion": "22.13.0",
     "runtimeDependencies": 0,
     "lifecycleScripts": false,
