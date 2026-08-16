@@ -4,23 +4,30 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("the standalone site makes prevention, failure value, and scope explicit", async () => {
-  const [page, protocol, llms, skill] = await Promise.all([
+  const [page, protocol, llms, skill, css] = await Promise.all([
     readFile(new URL("../app/exchange/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/exchange/protocol/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../public/llms.txt", import.meta.url), "utf8"),
     readFile(new URL("../public/exchange/skill.md", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /Check before the call/);
   assert.match(page, /npm install -g agentwex@0\.6\.0/);
+  assert.match(page, /href="#install"/);
+  assert.match(page, /<AweCommand id="install"/);
   assert.match(page, /Aggregate preflight is free/);
-  assert.match(page, /Failure pays back/i);
+  assert.match(page, /Failure earns credits/i);
+  assert.match(page, /Enterprises can pay for a private implementation/);
+  assert.equal((page.match(/\bpay(?:ment)?\b/gi) ?? []).length, 2);
+  assert.doesNotMatch([protocol, llms, skill].join("\n"), /\b(?:pay|pays|paid|payment|charge|costs?|spend|spends|spent|purchase|purchased)\b/i);
   assert.match(page, /Duplicate retries neither manufacture consensus nor mint more credits/);
   assert.match(page, /unrestricted cross-provider optimization/);
   assert.doesNotMatch(page, /awe contribute|awe ask|awe route apply/);
   assert.match(protocol, /Broader fleet routing/);
   assert.match(llms, /fewer failed calls/i);
   assert.match(skill, /agentwex contributions --limit 25/);
+  assert.match(css, /background-image:radial-gradient\(circle,#7cf0bd38/);
 });
 
 test("machine discovery and the downloadable package are aligned", async () => {

@@ -52,7 +52,7 @@ export default function ExchangePage() {
 
     <nav className="awe-nav" aria-label="Agent WEX">
       <a className="awe-brand agentwex-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
-      <div className="awe-nav-links"><a href="#product">How it works</a><Link href="/coverage">Coverage</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><a href="#connect">Install</a><Link href="/exchange/protocol">Protocol</Link></div>
+      <div className="awe-nav-links"><a href="#product">How it works</a><Link href="/coverage">Coverage</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><a href="#install">Install</a><Link href="/exchange/protocol">Protocol</Link></div>
     </nav>
 
     <header className="awe-hero" id="top">
@@ -67,20 +67,20 @@ export default function ExchangePage() {
       <div className="awe-hero-copy" id="quickstart">
         <p className="awe-kicker">SHARED RELIABILITY FOR AGENT TOOLS</p>
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
-        <p className="awe-hero-lede">Agent WEX checks whether an exact public tool path is working before another agent spends the call. When one still fails, its minimized outcome can earn access credit, warn the network, and unlock a supported route now or later.</p>
-        <AweCommand step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.0 && agentwex install'} />
+        <p className="awe-hero-lede">Check whether an exact public tool path is working before another agent makes the call. If it fails, the minimized outcome can earn credits and unlock a supported route.</p>
+        <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.0 && agentwex install'} />
         <div className="awe-actions"><a href="#product">See the value loop <span>→</span></a><Link href="/exchange/protocol">Read the protocol</Link></div>
-        <p className="awe-preview-note">Public preview for macOS with Node.js 22.13 or newer. Installation creates a pseudonymous node identity, configures an available telemetry slot, and starts a local service. It does not prove that a node is an independent controller or that a reported run genuinely occurred. Existing telemetry destinations are never overwritten.</p>
+        <p className="awe-preview-note">Public preview: macOS, Node.js 22.13+, and public tools only. Installs a local service and never overwrites existing telemetry.</p>
       </div>
       <aside className="awe-hero-offer" aria-label="Agent WEX exchange value">
         <span>THE IMMEDIATE PAYOFF</span>
-        <h2>Recover value from calls<br />you already lost.</h2>
+        <h2>Recover value from<br />failed calls.</h2>
         <div>
-          <p><b>CHECK FREE</b><small>See recent reliability, freshness, and alerts before the call.</small></p>
+          <p><b>CHECK FREE</b><small>See recent reliability before the call.</small></p>
           <i>→</i>
-          <p><b>FAILURE PAYS BACK</b><small>An accepted fresh, additive failure can earn two access credits.</small></p>
+          <p><b>FAILURE EARNS CREDITS</b><small>Accepted new evidence adds to your balance.</small></p>
           <i>→</i>
-          <p><b>ANSWER OR BANK IT</b><small>Spend one when a supported route exists; keep the credits when it does not.</small></p>
+          <p><b>ANSWER OR BANK IT</b><small>Use a credit for a supported route—or save it.</small></p>
         </div>
         <a href="#product">See the complete loop <span>↓</span></a>
       </aside>
@@ -102,7 +102,7 @@ export default function ExchangePage() {
         <p>Compute savings are a consequence. The product value is avoiding the operational loop around a broken tool path.</p>
       </div>
       <div className="awe-savings-grid">
-        <article><span>01</span><h3>Fewer failed calls</h3><p>Check recent evidence before spending the attempt.</p></article>
+        <article><span>01</span><h3>Fewer failed calls</h3><p>Check recent evidence before making the attempt.</p></article>
         <article><span>02</span><h3>Fewer retries</h3><p>Do not let one transient-looking failure trigger a blind loop.</p></article>
         <article><span>03</span><h3>Less documentation search</h3><p>Reuse a route that recently worked in the same compatibility cell.</p></article>
         <article><span>04</span><h3>Less diagnostic reasoning</h3><p>Start from shared failure and recovery evidence instead of rediscovering it.</p></article>
@@ -111,22 +111,22 @@ export default function ExchangePage() {
       </div>
     </section>
 
-    <aside className="awe-testimony-template" aria-label="Agent WEX product boundary">
-      <span>PRODUCT BOUNDARY</span>
-      <blockquote>Agent runtimes execute work. Agent WEX indexes bounded compatibility outcomes.</blockquote>
-      <p>It does not build, host, orchestrate, or autonomously authorize agents. Returned routes remain advice for the caller&apos;s own policy gate.</p>
+    <aside className="awe-testimony-template" aria-label="Early Agent WEX user reaction">
+      <span>EARLY USER REACTION</span>
+      <blockquote>“It&apos;s like Waze for agents navigating tools.”</blockquote>
+      <p>Shared during product development.</p>
     </aside>
 
     <section className="awe-trade-economics" id="economics">
       <div>
         <p>THE TRADE</p>
         <h2>Turn sunk failures<br />into access.</h2>
-        <p>The failed call already cost the agent. Agent WEX preserves only its safe residue—what public route failed, where, and when—so it can become credit, a warning, and a request for a working route.</p>
+        <p>The failed call already wasted time and compute. Agent WEX preserves only its safe residue—what public route failed, where, and when—so it can become credit, a warning, and a request for a working route.</p>
       </div>
       <div className="awe-trade-rule" aria-label="Agent WEX exchange rule">
         <header><span>THE EXCHANGE RULE</span><b>CONTRIBUTION EARNS ACCESS</b></header>
         <ol>
-          <li><b>0</b><p><span>Join freely</span><small>No card. No purchased trust.</small></p></li>
+          <li><b>0</b><p><span>Join free</span><small>Contributions earn credits.</small></p></li>
           <li><b>+1–2</b><p><span>Recover value from an outcome</span><small>Accepted additive failure or confirmation from this signed node.</small></p></li>
           <li><b>−1</b><p><span>Unlock a supported route</span><small>Immediately when available, or later from banked credits.</small></p></li>
         </ol>
@@ -164,8 +164,8 @@ export default function ExchangePage() {
         <article><span>AVAILABLE</span><h3>Recovery</h3><p>Unlock a configuration that resolved the same bounded compatibility problem.</p></article>
         <article><span>AVAILABLE</span><h3>Regression alerts</h3><p>Warn when a previously reliable combination drops materially against its recent baseline.</p></article>
         <article><span>AVAILABLE</span><h3>Collective testing</h3><p>Open missing cells so agents can fill a gap once instead of everyone repeating it.</p></article>
-        <article><span>AS COVERAGE GROWS</span><h3>Vendor intelligence</h3><p>Aggregate failures can reveal rollout, authentication, client, and platform trouble without exposing workload content.</p></article>
-        <article><span>NEXT ROUTING LAYER</span><h3>Fleet choice</h3><p>Broader comparison across tools, providers, authentication methods, and runtimes requires cross-cell coverage and is not claimed in this preview.</p></article>
+        <article className="awe-intelligence-future"><span>AS COVERAGE GROWS</span><h3>Vendor intelligence</h3><p>Aggregate failures can reveal rollout, authentication, client, and platform trouble without exposing workload content.</p></article>
+        <article className="awe-intelligence-future"><span>NEXT ROUTING LAYER</span><h3>Fleet choice</h3><p>Broader comparison across tools, providers, authentication methods, and runtimes requires cross-cell coverage and is not claimed in this preview.</p></article>
       </div>
     </section>
 
@@ -180,8 +180,8 @@ export default function ExchangePage() {
     </section>
 
     <section className="awe-operating-model" aria-label="Deployment and business models">
-      <article><span>PUBLIC PREVIEW</span><h3>Shared routes.<br />Bounded claims.</h3><p>The preview counts distinct registered nodes, not proven independent controllers. Exchange credits coordinate reciprocity; they are not purchased evidence weight.</p></article>
-      <article><span>PRIVATE NETWORK</span><h3>Private infrastructure.<br />The same evidence rules.</h3><p>Organizations can pay for hosting, retention, identity, controls, support, and dedicated verification. Payment buys service—not epistemic influence.</p></article>
+      <article><span>PUBLIC PREVIEW</span><h3>Shared routes.<br />Bounded claims.</h3><p>The preview counts distinct registered nodes, not proven independent controllers. Credits coordinate reciprocity and never determine evidence weight.</p></article>
+      <article><span>PRIVATE NETWORK</span><h3>Private infrastructure.<br />The same evidence rules.</h3><p>Enterprises can pay for a private implementation with dedicated hosting, retention, identity, controls, support, and verification. Payment funds the service and never influences evidence weight.</p></article>
     </section>
 
     <footer className="awe-footer">

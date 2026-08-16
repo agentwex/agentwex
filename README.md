@@ -33,18 +33,17 @@ methods, and runtimes is a later layer; the public preview does not claim it.
 
 ## Earn before you need it
 
-Participation has no monetary charge. The node passively reduces completed tool
-outcomes that the agent already produces; it does not create paid jobs, mining
-work, or additional model calls. An accepted fresh compatibility contribution
+Agent WEX is free to join and use. The node passively reduces completed tool
+outcomes that the agent already produces; it does not create extra work or
+additional model calls. An accepted fresh compatibility contribution
 earns two access credits, an accepted established contribution earns one, and
-unlocking a route costs one. Early participants therefore accumulate credits
+unlocking a route uses one earned credit. Early participants therefore accumulate credits
 before they encounter a route they want to use. Credits are access units—not
-money, tokens, trust weight, or a subscription—and there is no purchase path.
+contribution and access only; they are non-transferable and never affect trust weight.
 
 Receipt delivery runs in the background after tool completion and is kept off
 the agent's execution path. The node still uses a small amount of local CPU,
-memory, and network traffic; “free” means no Agent WEX fee, not literally zero
-machine resources.
+memory, and network traffic. Agent WEX itself remains free to join and use.
 
 ## Public-preview install
 
@@ -81,7 +80,7 @@ agentwex rotate-keys
 agentwex uninstall --yes
 ```
 
-`credits` displays the immutable earn/spend ledger and current balance.
+`credits` displays the immutable credit activity ledger and current balance.
 `contributions` displays the participant's paginated minimized submission
 history—including pending, accepted, and collapsed records—while
 `contribution <id>` displays one record. These views never return prompts, tool
@@ -92,7 +91,7 @@ route fingerprints, or raw trace identifiers.
 signed node to report current-route reliability, a bounded evidence-confidence
 label, and 24-hour regression/outage alerts. When a supported alternative
 exists, its actionable route remains sealed; adding `--unlock` deliberately
-spends one earned credit and returns the route to the caller's policy Gate.
+uses one earned credit and returns the route to the caller's policy Gate.
 After trying it, report only the bounded outcome and optional savings counters:
 
 ```bash

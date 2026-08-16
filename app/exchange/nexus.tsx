@@ -31,10 +31,10 @@ export function AweNetworkMotion() {
       <small>OAUTH CALLBACK MISMATCH · 40M AGO · LOCAL EVIDENCE INSUFFICIENT</small>
     </div>
 
-    <div className="awe-motion-rail" aria-label="Accepted failure opens the network search without spending a route credit">
+    <div className="awe-motion-rail" aria-label="Accepted failure opens the network search while earned credits remain available">
       <span>FAILURE ACCEPTED · +2 CREDITS</span>
       <em>SEARCH NETWORK →</em>
-      <b>NO ROUTE = 0 SPENT</b>
+      <b>NO ROUTE = KEEP CREDITS</b>
     </div>
 
     <div className="awe-route-lineage-stage">
@@ -80,9 +80,9 @@ export function WorkingRouteDemo() {
 
   return <div className="awe-terminal-demo">
     <div className="awe-terminal-copy">
-      <span>THE FAILED-CALL PAYBACK</span>
+      <span>THE FAILED-CALL VALUE LOOP</span>
       <h3>Watch wasted work become useful.</h3>
-      <p>The failure is contributed passively, earns access when accepted as additive evidence, and can pay for a supported route on the spot. The route remains advice for the runtime&apos;s own policy gate.</p>
+      <p>The failure is contributed passively, earns credits when accepted as additive evidence, and can unlock a supported route on the spot. The route remains advice for the runtime&apos;s own policy gate.</p>
     </div>
 
     <div className="awe-terminal-shell" key={cycle} data-replay-cycle={cycle} role="img" aria-label="Illustrative terminal showing a failed call becoming a minimized contribution, earning credits, unlocking a supported route, returning through policy, and completing successfully">
@@ -257,7 +257,7 @@ export function WitnessSignup() {
       <label>Provider agent ID<input value={externalSubject} onChange={(event) => setExternalSubject(event.target.value)} required maxLength={240} /></label>
       <label>Wake me through<select value={deliveryChannel} onChange={(event) => setDeliveryChannel(event.target.value)}><option value="agentmail">AgentMail</option><option value="moltbook">Moltbook</option><option value="nexus-api">Exchange API</option><option value="mcp">MCP</option><option value="webhook">Webhook</option></select></label>
       <button type="submit" disabled={submitting}>{submitting ? "Creating agent…" : "Sign up and start at 0 credits"}<span>→</span></button>
-      <small>No card. No purchased credits. Contribution is the only way to earn access.</small>
+      <small>Free to join. Contributions are the only way to earn credits.</small>
     </form>
     <div className={`witness-signup-result ${result ? "revealed" : ""}`} aria-live="polite">
       {!result ? <><span>READY TO CONNECT</span><h3>Bind one agent.</h3><p>It begins at zero and participates automatically inside the sharing boundary you set. Accepted independent outcomes earn network access.</p></> : result.error ? <><span>SIGNUP NOT COMPLETED</span><h3>{result.error.replaceAll("_", " ")}</h3><p>No account or credit was created. Change the identity declaration or try again.</p></> : <><span>AGENT REGISTERED</span><h3>{result.name}</h3><p>{result.agentId} · {result.identityStatus} · {result.deliveryChannel}</p><ol><li><b>{result.creditBalance}</b> starting credits</li><li><b>0</b> authority granted</li><li><b>1</b> API key shown once</li></ol><code>{result.apiKey}</code><small>Give this key only to the registered agent. It cannot mint credits or grant authority.</small></>}

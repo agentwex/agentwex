@@ -46,12 +46,12 @@ exact matches precede compatible and cross-tool alternatives; then distinct
 signed-node support and freshness break ties. Every cross-tool result sets
 `substitutionRequired: true` and must return through Gate.
 
-Signup starts at zero credits and requires no payment. An accepted fresh first
+Signup is free and starts at zero credits. An accepted fresh first
 support claim from a distinct signed node earns two access credits; an accepted
 established claim earns one; repeats do not earn again. Unlocking an available
-route spends one credit. This lets early nodes accumulate credits through normal
-participation before they need a route. Credits are access units, not currency,
-tokens, a subscription, or trust weight, and there is no purchase path.
+route uses one earned credit. This lets early nodes accumulate credits through
+normal participation before they need a route. Credits only track contribution
+and access; they are non-transferable and never affect evidence weight.
 
 ## Preflight reliability
 
@@ -69,14 +69,14 @@ node cannot dominate the rate. It reports:
 
 These are network observations, not statistical guarantees. Aggregate preflight
 is free. If a supported alternative is available, its actionable route remains
-sealed until the caller explicitly requests `unlock`, spends one earned credit,
+sealed until the caller explicitly requests `unlock`, uses one earned credit,
 and returns the released route through Gate.
 
 Route feedback is accepted only for a route release owned by the authenticated
 node. It records `succeeded`, `failed`, or `not-attempted`, one optional failure
 category from a fixed public vocabulary, and optional bounded integer estimates
 for attempts, tokens, and latency avoided. Savings are self-reported product
-measurements, not currency or billing records.
+measurements, not credit records.
 
 The executable v0.1 schemas and evaluator live in
 `exchange/knowledge-exchange-v0.1/`.

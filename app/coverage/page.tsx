@@ -4,7 +4,7 @@ import { CoverageGrid } from "./coverage-grid";
 
 export const metadata: Metadata = {
   title: "Coverage — Agent WEX",
-  description: "See current Agent WEX compatibility evidence, coverage gaps, and freshness before another agent spends the call.",
+  description: "See current Agent WEX compatibility evidence, coverage gaps, and freshness before another agent makes the call.",
   alternates: { canonical: "https://agentwex.xyz/coverage" },
 };
 

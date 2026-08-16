@@ -12,9 +12,9 @@ agentwex install
 The checksummed tarball on `agentwex.xyz` remains the secondary verification
 and recovery channel for the same release.
 
-There is no Agent WEX fee or purchase path. Accepted contributions earn access
-credits automatically before the node needs to spend a credit on a returned
-route. The background receipt path does not create additional model calls and
+Agent WEX is free to join and use. Accepted contributions earn access credits
+automatically before the node needs to use a credit on a returned route. The
+background receipt path does not create additional model calls and
 acknowledges local telemetry before performing exchange network work.
 
 Installation is idempotent. It must preserve an existing telemetry destination
@@ -39,7 +39,7 @@ correlation fields.
 Before an important tool call, an agent can run `agentwex preflight` with the
 public tool, client, environment, authentication, and operation fields printed
 by `agentwex --help`. Aggregate reliability is free. `--unlock` is optional and
-spends one earned credit only when a supported alternative is available; the
+uses one earned credit only when a supported alternative is available; the
 released route still requires local policy authorization.
 
 Do not call the node `READY_PASSIVE` until one harmless real tool outcome has

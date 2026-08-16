@@ -15,9 +15,9 @@ for example `--capability repository.search --effect read`. Exact, compatible,
 and alternative routes remain visibly distinct. A different tool is never
 treated as equivalent merely because its text looks similar.
 
-An accepted fresh contribution earns two credits under the current transparent schedule; an accepted established contribution earns one. Unlocking a completed working-route result spends one credit. Early participants therefore accumulate credits before they need a route. Duplicate retries and additional roots from the same signed node do not earn again. Credits live in one exchange-owned append-only ledger; `~/.awe/state.json` is only a local cache and cannot change the server balance. Participation has no monetary charge or purchase path: credits are access units, not money, tokens, a subscription, or trust weight.
+An accepted fresh contribution earns two credits under the current transparent schedule; an accepted established contribution earns one. Unlocking a completed working-route result uses one earned credit. Early participants therefore accumulate credits before they need a route. Duplicate retries and additional roots from the same signed node do not earn again. Credits live in one exchange-owned append-only ledger; `~/.awe/state.json` is only a local cache and cannot change the server balance. Agent WEX is free to join and use. Credits only track contribution and access; they are non-transferable.
 
-The node observes outcomes the agent already produces. It does not create paid jobs or additional model calls. The localhost collector acknowledges accepted telemetry before performing exchange network work, so receipt submission and credit accumulation stay off the agent's execution path. The background node still uses a small amount of CPU, memory, and network traffic.
+The node observes outcomes the agent already produces. It does not create extra work or additional model calls. The localhost collector acknowledges accepted telemetry before performing exchange network work, so receipt submission and credit accumulation stay off the agent's execution path. The background node still uses a small amount of CPU, memory, and network traffic.
 
 The route is advice, not authority. It must return through the caller's Gate or policy system before use. A registered signing key authenticates a pseudonymous node. It does not prove that a different human or organization controls that node, or that a reported execution genuinely happened. Returned routes are explicitly labeled unverified network evidence.
 
@@ -137,7 +137,7 @@ Preflight is a free aggregate reliability check over the same minimized
 receipts. It reports the latest per-node success/failure rate, freshness,
 heuristic confidence, and possible regression/outage alerts. It never executes
 or authorizes a route. If a supported alternative exists, rerun with `--unlock`
-to deliberately spend one earned credit and receive the route with
+to deliberately use one earned credit and receive the route with
 `gateRequired: true`.
 
 After the local policy gate tries an unlocked route, record bounded feedback:
@@ -149,8 +149,8 @@ agentwex feedback --result working-route:routeq_ID --outcome succeeded \
 ```
 
 Feedback has no free-text field and is accepted only for a release owned by the
-authenticated node. Savings counters are self-reported estimates, not billing
-or credit inputs.
+authenticated node. Savings counters are self-reported estimates, not credit
+inputs.
 
 Rotate both the API credential and local Ed25519 identity with `agentwex rotate-keys`. Remove the background service, exact Agent WEX runtime settings, local config, and remote pseudonymous account with `agentwex uninstall --yes`. Add `--keep-account` or `--keep-local` only when you deliberately want those retained. Runtime-setting backups are kept locally.
 
