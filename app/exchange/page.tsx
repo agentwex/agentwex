@@ -48,8 +48,6 @@ function AgentWexBrand() {
 
 export default function ExchangePage() {
   return <main className="awe-site awe-compact">
-    <a className="awe-launch-strip" href="#quickstart">PUBLIC PREVIEW · MACOS · NO SENSITIVE WORKLOADS <span>Review before installing →</span></a>
-
     <header className="awe-hero" id="top">
       <div className="awe-hero-signal-field" aria-hidden="true">
         <div className="awe-field-grid" />

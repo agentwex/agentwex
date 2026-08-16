@@ -1150,8 +1150,6 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
   background:var(--awe-paper);
   color:var(--awe-ink);
 }
-.awe-compact .awe-launch-strip { min-height:30px; padding:7px 4vw; display:flex; justify-content:center; gap:9px; background:var(--awe-banner); color:#34352f; font:700 10px/1.4 ui-sans-serif,system-ui,sans-serif; }
-.awe-compact .awe-launch-strip span { color:var(--awe-accent); }
 .awe-compact .awe-nav { top:0; min-height:76px; border-color:#e1dfd8; background:#fbfaf6f2; }
 .awe-compact .awe-brand strong { background:var(--awe-accent); }
 .awe-compact .awe-nav-cta { background:var(--awe-ink); }
@@ -1240,7 +1238,7 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
   .awe-compact .awe-hero{grid-template-columns:1fr;padding-top:70px}.awe-compact .awe-network-motion{justify-self:start;max-width:640px}.awe-compact-heading{grid-template-columns:1fr}.awe-compact-heading>p:last-child{max-width:650px}.awe-compact-trust{grid-template-columns:1fr 1fr}.awe-compact-links{grid-column:1/3;flex-direction:row}.awe-compact-links a{flex:1}.awe-compact-status{justify-content:flex-start;overflow-x:auto;white-space:nowrap}.awe-compact-status::-webkit-scrollbar{display:none}
 }
 @media(max-width:660px){
-  .awe-compact .awe-launch-strip{justify-content:flex-start;padding-left:20px}.awe-compact .awe-hero{min-height:auto;padding:62px 22px 78px}.awe-compact .awe-hero-copy h1{font-size:clamp(52px,15vw,68px)}.awe-compact .awe-network-motion{box-shadow:10px 10px 0 #e8e3d9}.awe-compact-status{min-height:54px;padding:0 22px;gap:22px}.awe-product,.awe-background,.awe-deploy,.awe-connect{padding:76px 22px}.awe-compact-heading{margin-bottom:38px}.awe-compact-heading h2,.awe-compact-trust h2{font-size:48px}.awe-deploy-grid,.awe-credit-line{grid-template-columns:1fr}.awe-deploy-grid article{min-height:350px;padding:24px}.awe-deploy-grid h3{margin-top:55px;font-size:38px}.awe-credit-line p{border-right:0;border-bottom:1px solid var(--awe-line)}.awe-credit-line p:last-child{border-bottom:0}.awe-compact-trust{padding:75px 22px;grid-template-columns:1fr}.awe-compact-links{grid-column:1;flex-direction:column}.awe-compact .awe-terminal-copy h3,.awe-compact .awe-background-copy h3{font-size:42px}
+  .awe-compact .awe-hero{min-height:auto;padding:62px 22px 78px}.awe-compact .awe-hero-copy h1{font-size:clamp(52px,15vw,68px)}.awe-compact .awe-network-motion{box-shadow:10px 10px 0 #e8e3d9}.awe-compact-status{min-height:54px;padding:0 22px;gap:22px}.awe-product,.awe-background,.awe-deploy,.awe-connect{padding:76px 22px}.awe-compact-heading{margin-bottom:38px}.awe-compact-heading h2,.awe-compact-trust h2{font-size:48px}.awe-deploy-grid,.awe-credit-line{grid-template-columns:1fr}.awe-deploy-grid article{min-height:350px;padding:24px}.awe-deploy-grid h3{margin-top:55px;font-size:38px}.awe-credit-line p{border-right:0;border-bottom:1px solid var(--awe-line)}.awe-credit-line p:last-child{border-bottom:0}.awe-compact-trust{padding:75px 22px;grid-template-columns:1fr}.awe-compact-links{grid-column:1;flex-direction:column}.awe-compact .awe-terminal-copy h3,.awe-compact .awe-background-copy h3{font-size:42px}
 }
 
 .awe-policy { min-height:100vh; padding:0 7vw 80px; background:#090b0d; color:#f5f7f3; font-family:Inter,ui-sans-serif,system-ui,sans-serif; }
@@ -1274,8 +1272,6 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
   font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 .awe-compact h1,.awe-compact h2,.awe-compact h3,.awe-compact em { font-family:inherit; font-style:normal; }
-.awe-compact .awe-launch-strip { background:var(--awe-accent); color:#0b1310; }
-.awe-compact .awe-launch-strip span { color:#0b1310; text-decoration:underline; text-underline-offset:3px; }
 .awe-compact .awe-nav { min-height:70px; border-color:#24282a; background:#090b0df3; color:#f7f8f5; }
 .awe-compact .awe-brand strong { width:42px; height:42px; border-radius:8px; background:var(--awe-accent); color:#09110d; box-shadow:none; }
 .awe-compact .awe-brand span,.awe-compact .awe-nav-links { color:#d7dbd7; }
@@ -2483,16 +2479,6 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
 @media(max-width:700px){
   .awe-compact,
   .awe-compact * { min-width:0; }
-
-  .awe-compact .awe-launch-strip {
-    min-height:38px;
-    padding:8px 14px;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:2px 8px;
-    text-align:center;
-    font-size:9px;
-  }
 
   .awe-compact .awe-nav {
     min-height:62px;
