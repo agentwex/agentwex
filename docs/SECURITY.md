@@ -10,8 +10,10 @@ bodies, bounded OTLP bodies, node and salted-signup rate limits, duplicate
 collapse, credential rotation/revocation, and fail-closed handling of existing
 telemetry exporters.
 
-Install only a versioned package whose checksum matches `SHA256SUMS`. The Node
-package has no runtime dependencies or installation lifecycle scripts.
+For normal installation, use the versioned npm package and run `agentwex
+install`. The checksummed tarball is an optional manual-verification and
+recovery channel, not an additional requirement. The Node package has no
+runtime dependencies or installation lifecycle scripts.
 
 Known limits include coordinated Sybil identities, lack of Linux service
 installation, no independent security assessment, and incomplete operational
