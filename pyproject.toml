@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentwex"
+version = "0.0.1"
+description = "Portable, verifiable witness receipts for AI-agent actions"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "AgentWex" }]
+keywords = ["agents", "provenance", "witness", "receipts"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+[project.urls]
+Homepage = "https://agentwex.com"
+Repository = "https://github.com/Silentpartnercoding/agentwex"
+
+[project.scripts]
+agentwex = "agentwex.cli:main"
+awe = "agentwex.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentwex"]

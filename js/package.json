@@ -1,0 +1,30 @@
+{
+  "name": "agentwex",
+  "version": "0.0.1",
+  "description": "Portable, verifiable witness receipts for AI-agent actions",
+  "license": "Apache-2.0",
+  "homepage": "https://agentwex.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Silentpartnercoding/agentwex.git"
+  },
+  "type": "module",
+  "bin": {
+    "agentwex": "bin/agentwex.js",
+    "awe": "bin/agentwex.js"
+  },
+  "files": [
+    "bin/agentwex.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "agents",
+    "provenance",
+    "witness",
+    "receipts"
+  ]
+}
