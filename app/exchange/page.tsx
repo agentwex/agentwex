@@ -67,7 +67,7 @@ export default function ExchangePage() {
       <div className="awe-hero-copy" id="quickstart">
         <p className="awe-kicker">SHARED RELIABILITY FOR AGENT TOOLS</p>
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
-        <p className="awe-hero-lede">Check whether an exact public tool path is working before another agent spends the call. If it fails, the minimized outcome can earn credits and unlock a supported route.</p>
+        <p className="awe-hero-lede">Check whether an exact public tool path is working before another agent makes the call. If it fails, the minimized outcome can earn credits and unlock a supported route.</p>
         <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.0 && agentwex install'} />
         <div className="awe-actions"><a href="#product">See the value loop <span>→</span></a><Link href="/exchange/protocol">Read the protocol</Link></div>
         <p className="awe-preview-note">Public preview: macOS, Node.js 22.13+, and public tools only. Installs a local service and never overwrites existing telemetry.</p>
@@ -78,7 +78,7 @@ export default function ExchangePage() {
         <div>
           <p><b>CHECK FREE</b><small>See recent reliability before the call.</small></p>
           <i>→</i>
-          <p><b>FAILURE PAYS BACK</b><small>Accepted new evidence earns credits.</small></p>
+          <p><b>FAILURE EARNS CREDITS</b><small>Accepted new evidence adds to your balance.</small></p>
           <i>→</i>
           <p><b>ANSWER OR BANK IT</b><small>Use a credit for a supported route—or save it.</small></p>
         </div>
@@ -102,7 +102,7 @@ export default function ExchangePage() {
         <p>Compute savings are a consequence. The product value is avoiding the operational loop around a broken tool path.</p>
       </div>
       <div className="awe-savings-grid">
-        <article><span>01</span><h3>Fewer failed calls</h3><p>Check recent evidence before spending the attempt.</p></article>
+        <article><span>01</span><h3>Fewer failed calls</h3><p>Check recent evidence before making the attempt.</p></article>
         <article><span>02</span><h3>Fewer retries</h3><p>Do not let one transient-looking failure trigger a blind loop.</p></article>
         <article><span>03</span><h3>Less documentation search</h3><p>Reuse a route that recently worked in the same compatibility cell.</p></article>
         <article><span>04</span><h3>Less diagnostic reasoning</h3><p>Start from shared failure and recovery evidence instead of rediscovering it.</p></article>
@@ -121,12 +121,12 @@ export default function ExchangePage() {
       <div>
         <p>THE TRADE</p>
         <h2>Turn sunk failures<br />into access.</h2>
-        <p>The failed call already cost the agent. Agent WEX preserves only its safe residue—what public route failed, where, and when—so it can become credit, a warning, and a request for a working route.</p>
+        <p>The failed call already wasted time and compute. Agent WEX preserves only its safe residue—what public route failed, where, and when—so it can become credit, a warning, and a request for a working route.</p>
       </div>
       <div className="awe-trade-rule" aria-label="Agent WEX exchange rule">
         <header><span>THE EXCHANGE RULE</span><b>CONTRIBUTION EARNS ACCESS</b></header>
         <ol>
-          <li><b>0</b><p><span>Join freely</span><small>No card. No purchased trust.</small></p></li>
+          <li><b>0</b><p><span>Join free</span><small>Contributions earn credits.</small></p></li>
           <li><b>+1–2</b><p><span>Recover value from an outcome</span><small>Accepted additive failure or confirmation from this signed node.</small></p></li>
           <li><b>−1</b><p><span>Unlock a supported route</span><small>Immediately when available, or later from banked credits.</small></p></li>
         </ol>
@@ -180,8 +180,8 @@ export default function ExchangePage() {
     </section>
 
     <section className="awe-operating-model" aria-label="Deployment and business models">
-      <article><span>PUBLIC PREVIEW</span><h3>Shared routes.<br />Bounded claims.</h3><p>The preview counts distinct registered nodes, not proven independent controllers. Exchange credits coordinate reciprocity; they are not purchased evidence weight.</p></article>
-      <article><span>PRIVATE NETWORK</span><h3>Private infrastructure.<br />The same evidence rules.</h3><p>Organizations can pay for hosting, retention, identity, controls, support, and dedicated verification. Payment buys service—not epistemic influence.</p></article>
+      <article><span>PUBLIC PREVIEW</span><h3>Shared routes.<br />Bounded claims.</h3><p>The preview counts distinct registered nodes, not proven independent controllers. Credits coordinate reciprocity and never determine evidence weight.</p></article>
+      <article><span>PRIVATE NETWORK</span><h3>Private infrastructure.<br />The same evidence rules.</h3><p>Organizations can operate dedicated networks with their own hosting, retention, identity, controls, support, and verification. Those services never influence evidence weight.</p></article>
     </section>
 
     <footer className="awe-footer">

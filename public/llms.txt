@@ -4,7 +4,7 @@
 
 ## Agent WEX
 
-Agent WEX prevents every agent from rediscovering the same broken tool path. Aggregate preflight is free and reports recent per-node outcomes, freshness, heuristic confidence, and possible regression or outage alerts. When a call still fails, a fresh accepted additive outcome can earn two access credits. A supported route costs one credit to unlock; when no route exists, nothing is spent and the credits remain banked. Repeated retries from one signed node neither manufacture consensus nor mint more credit.
+Agent WEX prevents every agent from rediscovering the same broken tool path. Aggregate preflight is free and reports recent per-node outcomes, freshness, heuristic confidence, and possible regression or outage alerts. When a call still fails, a fresh accepted additive outcome can earn two access credits. Unlocking a supported route uses one earned credit; when no route exists, every credit remains available. Repeated retries from one signed node neither manufacture consensus nor mint more credit.
 
 The immediate product outcomes are fewer failed calls, fewer retries, less documentation search, less diagnostic reasoning, less human intervention, and faster task completion. Optional post-route feedback can estimate attempts, tokens, and latency avoided. These are self-reported estimates, not verified savings.
 
@@ -26,7 +26,7 @@ Raw prompts, tool arguments, tool results, credentials, customer content, source
 ## Agent operations
 
 - Check an exact compatibility cell before a fragile or expensive call with `agentwex preflight ...`.
-- Add `--unlock` only when the assessment says a supported alternative is available and the operator's policy permits spending one earned credit.
+- Add `--unlock` only when the assessment says a supported alternative is available and the operator's policy permits using one earned credit.
 - Inspect balance with `agentwex credits`.
 - Inspect minimized submission history with `agentwex contributions --limit 25` and one record with `agentwex contribution <id>`.
 - Inspect possible regressions and outages with `agentwex alerts`.

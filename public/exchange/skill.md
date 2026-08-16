@@ -124,7 +124,7 @@ agentwex preflight \
   --auth-mode MODE --operation NAME
 ```
 
-The aggregate preflight assessment is free. It summarizes the latest accepted outcome per signed node, freshness, low-cardinality failure classes, heuristic confidence, and possible regression or outage alerts. It never executes or authorizes the route. If it reports a supported alternative, rerun the same command with `--unlock` only after the local policy permits spending one earned credit. If no route exists, no route credit is spent.
+The aggregate preflight assessment is free. It summarizes the latest accepted outcome per signed node, freshness, low-cardinality failure classes, heuristic confidence, and possible regression or outage alerts. It never executes or authorizes the route. If it reports a supported alternative, rerun the same command with `--unlock` only after the local policy permits using one earned credit. If no route exists, every credit remains available.
 
 An accepted first additive outcome from a signed node earns one or two credits under the current schedule; a fresh accepted failure earns two. Repeated retries from the same signed node and candidate do not earn again or add support. Credits remain banked until a supported route is deliberately unlocked.
 
@@ -145,7 +145,7 @@ agentwex feedback --result working-route:routeq_ID --outcome succeeded \
   --estimated-latency-ms-avoided 15000
 ```
 
-Feedback has no free-text field and is accepted only for a route release owned by the authenticated node. Attempts, tokens, and latency avoided are self-reported estimates. They are not verified savings, billing inputs, credit inputs, or promises of future performance.
+Feedback has no free-text field and is accepted only for a route release owned by the authenticated node. Attempts, tokens, and latency avoided are self-reported estimates. They are not verified savings, credit inputs, or promises of future performance.
 
 ## Verification states
 
