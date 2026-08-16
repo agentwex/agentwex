@@ -4,6 +4,7 @@ const registries = new Set(["mcp", "npm", "pypi", "github", "public-api", "runti
 const environments = new Set(["macos-arm64", "macos-x64", "linux-arm64", "linux-x64", "windows-x64", "container", "other"]);
 const authModes = new Set(["none", "api-key", "oauth-pkce", "oauth-client", "mtls", "signed-request", "other"]);
 const resolutions = new Set(["none", "upgrade-client", "upgrade-tool", "upgrade-client-and-tool", "change-auth-flow", "change-transport", "change-runtime", "retry-later", "alternate-tool"]);
+const effectClasses = new Set(["read", "write", "execute", "communicate", "observe", "other"]);
 
 const digest = (value) => `sha256:${createHash("sha256").update(value).digest("hex")}`;
 const attributes = (span) => ({ ...(span.resource?.attributes ?? {}), ...(span.attributes ?? {}) });
@@ -38,10 +39,14 @@ export function adaptOtelSpanToRouteOutcome(span, policy) {
   const clientId = requiredString(attrs["awe.client.id"], "awe.client.id");
   const clientVersion = requiredString(attrs["awe.client.version"], "awe.client.version");
   const operation = requiredString(attrs["awe.operation"], "awe.operation");
+  const capabilityId = attrs["awe.capability.id"] ?? null;
+  const effectClass = attrs["awe.effect.class"] ?? null;
+  if ((capabilityId == null) !== (effectClass == null)) throw new Error("Agent WEX capability and effect must be provided together");
+  if (effectClass != null && !effectClasses.has(effectClass)) throw new Error("Unsupported Agent WEX effect class");
   const observedAt = requiredString(span.endTime, "span.endTime");
   const traceId = requiredString(span.traceId, "span.traceId");
   const agentId = requiredString(policy.agentId, "policy.agentId");
-  const routeShape = [toolRegistry, toolId, toolVersion, clientId, clientVersion, environment, authMode, operation, resolutionKind].join("|");
+  const routeShape = [toolRegistry, toolId, toolVersion, clientId, clientVersion, environment, authMode, operation, capabilityId ?? "", effectClass ?? "", resolutionKind].join("|");
   return {
     status: "READY_TO_SUBMIT",
     receipt: {
@@ -54,6 +59,7 @@ export function adaptOtelSpanToRouteOutcome(span, policy) {
       environment,
       authMode,
       operation,
+      ...(capabilityId ? { capabilityId, effectClass } : {}),
       outcome: statusCode === "OK" ? "success" : "failure",
       errorClass: statusCode === "ERROR" ? (attrs["error.type"] ?? "other") : null,
       resolutionKind,

@@ -1,12 +1,18 @@
+import { classifyRouteMatch } from "./working-route.mjs";
+
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 
 const nodeKey = (record) => record.agentId ?? `legacy:${record.provenanceRootId}`;
 const routeKey = (record) => [
+  record.toolRegistry,
+  record.toolId,
   record.toolVersion,
+  record.clientId,
   record.clientVersion,
   record.environment,
   record.authMode,
+  record.operation,
   record.resolutionKind,
   record.routeFingerprint,
 ].join("|");
@@ -64,7 +70,7 @@ function confidenceFor(summary) {
   };
 }
 
-function candidateRoutes(records, feedback, cutoff, evaluatedAt, minimumSignedNodes) {
+function candidateRoutes(records, feedback, cutoff, evaluatedAt, minimumSignedNodes, input) {
   const evaluated = Date.parse(evaluatedAt);
   const routes = new Map();
   for (const record of records) {
@@ -105,10 +111,22 @@ function candidateRoutes(records, feedback, cutoff, evaluatedAt, minimumSignedNo
     };
     const attemptedFeedback = outcomes.succeeded + outcomes.failed;
     return {
+      matchType: classifyRouteMatch({ ...first, status: "accepted" }, {
+        ...input,
+        attemptedToolVersion: input.toolVersion,
+        attemptedClientVersion: input.clientVersion,
+        alternativePolicy: input.alternativePolicy ?? "exact-only",
+      }),
+      toolRegistry: first.toolRegistry,
+      toolId: first.toolId,
       toolVersion: first.toolVersion,
+      clientId: first.clientId,
       clientVersion: first.clientVersion,
       environment: first.environment,
       authMode: first.authMode,
+      operation: first.operation,
+      capabilityId: first.capabilityId ?? null,
+      effectClass: first.effectClass ?? null,
       resolutionKind: first.resolutionKind,
       routeFingerprint: first.routeFingerprint,
       distinctSignedNodeCount: observations.length,
@@ -122,8 +140,10 @@ function candidateRoutes(records, feedback, cutoff, evaluatedAt, minimumSignedNo
       controllerIndependenceVerified: false,
       executionTruthVerified: false,
     };
-  }).filter(Boolean).sort((left, right) =>
+  }).filter((candidate) => candidate?.matchType).sort((left, right) =>
     Number(right.supported) - Number(left.supported)
+    || ({ EXACT_MATCH: 0, COMPATIBLE_ROUTE: 1, ALTERNATIVE_ROUTE: 2 })[left.matchType]
+      - ({ EXACT_MATCH: 0, COMPATIBLE_ROUTE: 1, ALTERNATIVE_ROUTE: 2 })[right.matchType]
     || right.distinctSignedNodeCount - left.distinctSignedNodeCount
     || (right.feedback.succeeded - right.feedback.failed) - (left.feedback.succeeded - left.feedback.failed)
     || right.lastObservedAt.localeCompare(left.lastObservedAt));
@@ -159,7 +179,7 @@ export function evaluatePreflight(records, feedback, input, evaluatedAt = new Da
       message: "Recent success is materially below the earlier evidence window for the current route.",
     });
   }
-  const candidates = candidateRoutes(records, feedback, cutoff, evaluatedAt, input.minimumSignedNodes);
+  const candidates = candidateRoutes(records, feedback, cutoff, evaluatedAt, input.minimumSignedNodes, input);
   const feedbackImpact = candidates.reduce((total, candidate) => ({
     succeeded: total.succeeded + candidate.feedback.succeeded,
     failed: total.failed + candidate.feedback.failed,

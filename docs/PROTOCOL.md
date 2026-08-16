@@ -22,6 +22,30 @@ Every returned route states:
 }
 ```
 
+## Navigator matching
+
+Navigator keeps three classes separate:
+
+- `EXACT_MATCH`: the observed route uses the attempted tool, client, versions,
+  authentication mode, and operation.
+- `COMPATIBLE_ROUTE`: the same public compatibility cell worked with a different
+  tool or client version.
+- `ALTERNATIVE_ROUTE`: a different tool, client, authentication mode, or operation
+  carries the same explicitly declared `capabilityId` and `effectClass` in the
+  same environment.
+
+Cross-tool search is opt-in through `alternativePolicy: same-capability`. Both
+the query and evidence receipts must carry the same capability and effect. A
+read request therefore cannot select write, execute, or communication evidence.
+Semantic similarity may discover a candidate for future testing, but it never
+counts as route support. Unsupported candidates remain visible as next-best
+evidence and cannot become the released working route.
+
+Ranking is conservative: supported routes precede unsupported candidates;
+exact matches precede compatible and cross-tool alternatives; then distinct
+signed-node support and freshness break ties. Every cross-tool result sets
+`substitutionRequired: true` and must return through Gate.
+
 Signup starts at zero credits and requires no payment. An accepted fresh first
 support claim from a distinct signed node earns two access credits; an accepted
 established claim earns one; repeats do not earn again. Unlocking an available

@@ -53,6 +53,9 @@ export const exchangeSchemaStatements = [
     environment TEXT NOT NULL,
     auth_mode TEXT NOT NULL,
     operation TEXT NOT NULL,
+    capability_id TEXT,
+    effect_class TEXT,
+    alternative_policy TEXT NOT NULL DEFAULT 'exact-only',
     local_evidence_status TEXT NOT NULL,
     local_evidence_receipt_hash TEXT NOT NULL,
     max_age_days INTEGER NOT NULL,
@@ -71,6 +74,8 @@ export const exchangeSchemaStatements = [
     environment TEXT NOT NULL,
     auth_mode TEXT NOT NULL,
     operation TEXT NOT NULL,
+    capability_id TEXT,
+    effect_class TEXT,
     outcome TEXT NOT NULL,
     error_class TEXT,
     resolution_kind TEXT NOT NULL,
@@ -124,8 +129,16 @@ export const exchangeSchemaStatements = [
     agent_id TEXT NOT NULL REFERENCES exchange_agents(id),
     query_id TEXT NOT NULL REFERENCES exchange_route_queries(id),
     route_fingerprint TEXT NOT NULL,
+    match_type TEXT NOT NULL DEFAULT 'COMPATIBLE_ROUTE',
+    tool_registry TEXT,
+    tool_id TEXT,
     tool_version TEXT NOT NULL,
+    client_id TEXT,
     client_version TEXT NOT NULL,
+    auth_mode TEXT,
+    operation TEXT,
+    capability_id TEXT,
+    effect_class TEXT,
     resolution_kind TEXT NOT NULL,
     issued_at TEXT NOT NULL
   )`,
@@ -161,6 +174,8 @@ export const exchangeSchemaStatements = [
    ON exchange_route_queries(agent_id, local_evidence_receipt_hash)`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_working_route_signature
    ON exchange_working_route_comps(tool_registry, tool_id, client_id, environment, auth_mode, operation)`,
+  `CREATE INDEX IF NOT EXISTS idx_exchange_working_route_capability
+   ON exchange_working_route_comps(capability_id, effect_class, environment, observed_at)`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_verification_created
    ON exchange_verification_records(created_at)`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_signing_keys_agent

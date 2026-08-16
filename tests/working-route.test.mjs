@@ -23,11 +23,13 @@ test("working-route exchange returns a route only after distinct signed-node sup
   assert.equal(assessment.candidateRoutes[0].rank, 1);
   assert.equal(assessment.candidateRoutes[0].selected, true);
   assert.deepEqual(assessment.selectionPolicy, {
-    compatibility: "exact tool, client, environment, auth mode, and operation cell",
+    compatibility: "exact cell plus explicitly labeled same-capability and same-effect alternatives",
     supportUnit: "distinct-signed-node",
-    primaryRank: "distinct signed node count after provenance-root collapse",
+    primaryRank: "supported status, then match proximity, then distinct signed node count after provenance-root collapse",
     tieBreak: "latest signed successful observation",
     versionPreference: "none",
+    alternativePolicy: "same-capability",
+    semanticSimilarityGrantsSupport: false,
     evidenceWindowDays: 7,
   });
   assert.equal(assessment.authorityGranted, false);
@@ -105,4 +107,56 @@ test("exchange requires the agent to use sufficient local evidence first", () =>
     nextAction: "Use the requesting agent's available evidence before asking the exchange.",
     authorityGranted: false,
   });
+});
+
+test("navigator returns a supported cross-tool route only for the same declared capability and effect", () => {
+  const alternative = [
+    { ...sampleRouteRecords[0], agentId: "agent-alt-a", provenanceRootId: "alt-root-a", toolRegistry: "github", toolId: "gh-cli", toolVersion: "2.80.0", clientId: "shell", clientVersion: "1.0.0", authMode: "local-credential", operation: "repo-search", resolutionKind: "alternate-tool", routeFingerprint: "sha256:gh-cli-route" },
+    { ...sampleRouteRecords[1], agentId: "agent-alt-b", provenanceRootId: "alt-root-b", toolRegistry: "github", toolId: "gh-cli", toolVersion: "2.80.0", clientId: "shell", clientVersion: "1.0.0", authMode: "local-credential", operation: "repo-search", resolutionKind: "alternate-tool", routeFingerprint: "sha256:gh-cli-route" },
+  ];
+  const failedExact = sampleRouteRecords.filter((record) => record.outcome === "failure");
+  const assessment = evaluateWorkingRoute([...failedExact, ...alternative], sampleRouteQuery, "2026-08-15T19:00:00.000Z");
+
+  assert.equal(assessment.status, "RESULT_AVAILABLE");
+  assert.equal(assessment.workingRoute.matchType, "ALTERNATIVE_ROUTE");
+  assert.equal(assessment.workingRoute.toolId, "gh-cli");
+  assert.equal(assessment.workingRoute.substitutionRequired, true);
+  assert.ok(assessment.workingRoute.changedDimensions.includes("tool"));
+  assert.equal(assessment.selectionPolicy.semanticSimilarityGrantsSupport, false);
+});
+
+test("navigator rejects cross-tool routes with a stronger effect than the request", () => {
+  const unsafe = [
+    { ...sampleRouteRecords[0], agentId: "agent-unsafe-a", provenanceRootId: "unsafe-a", toolId: "repo-writer", effectClass: "write", resolutionKind: "alternate-tool", routeFingerprint: "sha256:unsafe-route" },
+    { ...sampleRouteRecords[1], agentId: "agent-unsafe-b", provenanceRootId: "unsafe-b", toolId: "repo-writer", effectClass: "write", resolutionKind: "alternate-tool", routeFingerprint: "sha256:unsafe-route" },
+  ];
+  const assessment = evaluateWorkingRoute(unsafe, sampleRouteQuery, "2026-08-15T19:00:00.000Z");
+
+  assert.equal(assessment.status, "BOUNTY_OPEN");
+  assert.deepEqual(assessment.candidateRoutes, []);
+});
+
+test("navigator exposes unsupported alternatives as next-best candidates but never selects them", () => {
+  const oneObservation = {
+    ...sampleRouteRecords[0], agentId: "agent-one-alt", provenanceRootId: "one-alt", toolId: "gh-cli",
+    toolRegistry: "github", clientId: "shell", authMode: "local-credential", operation: "repo-search",
+    resolutionKind: "alternate-tool", routeFingerprint: "sha256:one-alt",
+  };
+  const assessment = evaluateWorkingRoute([oneObservation], sampleRouteQuery, "2026-08-15T19:00:00.000Z");
+
+  assert.equal(assessment.status, "SEEK_MORE_INDEPENDENT_RUNS");
+  assert.equal(assessment.workingRoute, null);
+  assert.equal(assessment.candidateRoutes[0].matchType, "ALTERNATIVE_ROUTE");
+  assert.equal(assessment.candidateRoutes[0].supported, false);
+  assert.equal(assessment.candidateRoutes[0].selected, false);
+});
+
+test("legacy queries remain exact-only even when records carry capability labels", () => {
+  const alternative = [
+    { ...sampleRouteRecords[0], agentId: "agent-alt-a", provenanceRootId: "legacy-alt-a", toolId: "gh-cli" },
+    { ...sampleRouteRecords[1], agentId: "agent-alt-b", provenanceRootId: "legacy-alt-b", toolId: "gh-cli" },
+  ];
+  const legacyQuery = { ...sampleRouteQuery, capabilityId: undefined, effectClass: undefined, alternativePolicy: undefined };
+  const assessment = evaluateWorkingRoute(alternative, legacyQuery, "2026-08-15T19:00:00.000Z");
+  assert.equal(assessment.status, "BOUNTY_OPEN");
 });
