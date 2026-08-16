@@ -9,6 +9,7 @@ if (!process.argv.includes("--live")) {
 const baseUrl = process.env.AGENTWEX_PUBLIC_URL ?? "https://agentwex.xyz";
 const runId = randomUUID().replaceAll("-", "").slice(0, 12);
 const accounts = [];
+const smokeToolId = `io.agentwex/live-smoke-tool-${runId}`;
 const sha = (value) => `sha256:${createHash("sha256").update(value).digest("hex")}`;
 
 async function request(path, { method = "GET", account, body } = {}) {
@@ -50,7 +51,7 @@ function receipt(account, { queryId, outcome, toolVersion, clientVersion, resolu
   return signRouteReceipt({
     ...(queryId ? { queryId } : {}),
     toolRegistry: "mcp",
-    toolId: "io.agentwex/live-smoke-tool",
+    toolId: smokeToolId,
     toolVersion,
     clientId: "agentwex-live-smoke",
     clientVersion,
@@ -88,7 +89,7 @@ try {
     account: requester,
     body: {
       toolRegistry: "mcp",
-      toolId: "io.agentwex/live-smoke-tool",
+      toolId: smokeToolId,
       attemptedToolVersion: "0.0.1-smoke",
       clientId: "agentwex-live-smoke",
       attemptedClientVersion: "0.0.1-smoke",
