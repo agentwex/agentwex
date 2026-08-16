@@ -15,6 +15,8 @@ test("the standalone site makes prevention, failure value, and scope explicit", 
   assert.match(page, /Check before the call/);
   assert.match(page, /npm install -g agentwex@0\.6\.1/);
   assert.doesNotMatch(page, /className="awe-nav"/);
+  assert.match(page, /className="awe-brand agentwex-brand awe-hero-brand"/);
+  assert.doesNotMatch(page, /awe-launch-strip/);
   assert.match(page, /<AweCommand id="install"/);
   assert.match(page, /Aggregate preflight is free/);
   assert.match(page, /Failure earns credits/i);
