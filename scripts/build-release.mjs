@@ -36,6 +36,19 @@ try {
     lifecycleScripts: false,
     source: "https://github.com/agentwex/agentwex",
   }, null, 2)}\n`);
+  const discoveryPath = resolve(root, "docs", "agent.json");
+  const discovery = JSON.parse(await readFile(discoveryPath, "utf8"));
+  discovery.distribution = {
+    ...discovery.distribution,
+    package: manifest.name,
+    version: manifest.version,
+    filename,
+    sha256,
+    minimumNodeVersion: manifest.engines.node.replace(/^>=/, ""),
+    runtimeDependencies: 0,
+    lifecycleScripts: false,
+  };
+  await writeFile(discoveryPath, `${JSON.stringify(discovery, null, 2)}\n`);
   process.stdout.write(`${filename} ${sha256}\n`);
 } finally {
   await rm(stagingRoot, { recursive: true, force: true });

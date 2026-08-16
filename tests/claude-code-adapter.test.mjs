@@ -14,6 +14,8 @@ const adapter = {
       toolVersion: "3.2.0",
       authMode: "oauth-pkce",
       operation: "repository-search",
+      capabilityId: "repository.search",
+      effectClass: "read",
       resolutionKind: "upgrade-client-and-tool",
     },
   },
@@ -54,6 +56,8 @@ test("Claude Code tool_result logs translate into the canonical minimized receip
   assert.equal(result.receipt.clientId, "claude-code");
   assert.equal(result.receipt.outcome, "failure");
   assert.equal(result.receipt.toolVersion, "3.2.0");
+  assert.equal(result.receipt.capabilityId, "repository.search");
+  assert.equal(result.receipt.effectClass, "read");
   const serialized = JSON.stringify(result);
   for (const secret of ["PRIVATE-CLAUDE-TOOL-USE-ID", "PRIVATE TOOL RESULT BODY", "PRIVATE TOOL PARAMETERS", "PRIVATE TOOL OUTPUT"]) {
     assert.doesNotMatch(serialized, new RegExp(secret));
