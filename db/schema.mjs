@@ -115,6 +115,14 @@ export const exchangeSchemaStatements = [
     created_at TEXT NOT NULL,
     PRIMARY KEY(agent_id, label)
   )`,
+  `CREATE TABLE IF NOT EXISTS exchange_agent_controller_groups (
+    agent_id TEXT PRIMARY KEY REFERENCES exchange_agents(id),
+    controller_group_id TEXT NOT NULL,
+    participant_id TEXT NOT NULL,
+    evidence_scope TEXT NOT NULL CHECK(evidence_scope IN ('lab', 'community')),
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )`,
   `INSERT OR IGNORE INTO exchange_agent_labels (agent_id, label, source, created_at)
    SELECT id, 'test', 'legacy-live-smoke-name', created_at
    FROM exchange_agents
@@ -194,6 +202,8 @@ export const exchangeSchemaStatements = [
    ON exchange_agent_signing_keys(agent_id, status)`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_agent_labels_label
    ON exchange_agent_labels(label, agent_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_exchange_controller_groups_scope
+   ON exchange_agent_controller_groups(evidence_scope, controller_group_id, participant_id)`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_rate_limits_expiry
    ON exchange_rate_limits(expires_at)`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_route_releases_fingerprint

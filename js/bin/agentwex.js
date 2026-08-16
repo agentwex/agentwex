@@ -262,7 +262,8 @@ async function install(options) {
         : backgroundReady
           ? "INSTALLED_RESTART_REQUIRED"
           : "BACKGROUND_SERVICE_UNAVAILABLE";
-  process.stdout.write(`Agent WEX node ${existingIdentity ? "rechecked" : "installed"}.\nIdentity: ${account.agentId}\nCollector: http://127.0.0.1:${port}/v1/traces\nCredits: ${account.creditBalance}\nAccepted contributions earn credits automatically; route access costs credits, never money.\nRaw prompts, arguments, results, credentials, URLs, and trace IDs are not submitted.\n`);
+  const accountAgentId = account.agentId ?? account.id ?? config.agentId;
+  process.stdout.write(`Agent WEX node ${existingIdentity ? "rechecked" : "installed"}.\nIdentity: ${accountAgentId}\nCollector: http://127.0.0.1:${port}/v1/traces\nCredits: ${account.creditBalance}\nAccepted contributions earn credits automatically; route access costs credits, never money.\nRaw prompts, arguments, results, credentials, URLs, and trace IDs are not submitted.\n`);
   if (service) process.stdout.write(`Background service: ${service.label}\n`);
   else process.stdout.write(`Start locally: agentwex daemon --config ${configPath}\n`);
   process.stdout.write(`Connect an OTLP/HTTP JSON runtime without exposing the local token:\n  source ${environmentPath}\n`);

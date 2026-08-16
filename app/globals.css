@@ -2921,6 +2921,9 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
 .awe-coverage-empty b { font:700 clamp(30px,4vw,54px)/1 Arial,sans-serif; letter-spacing:-.045em; }
 .awe-coverage-empty span { max-width:690px; color:#66706a; font:500 17px/1.55 Arial,sans-serif; }
 .awe-coverage-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.awe-coverage-groups,.awe-coverage-grid-group { display:grid; gap:34px; }
+.awe-coverage-grid-group+.awe-coverage-grid-group { margin-top:34px; padding-top:42px; border-top:1px solid #cbd0cb; }
+.awe-coverage-grid-label { margin:0; color:#247954; font:700 11px/1 monospace; letter-spacing:.16em; }
 .awe-coverage-grid article { min-height:370px; padding:32px; border:1px solid #cbd0cb; border-radius:20px; background:#fff; }
 .awe-coverage-grid article header { display:flex; align-items:center; justify-content:space-between; gap:18px; }
 .awe-coverage-grid article header b { color:#4f5954; font:700 10px/1 monospace; letter-spacing:.12em; text-transform:uppercase; }

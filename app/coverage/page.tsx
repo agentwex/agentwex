@@ -22,7 +22,7 @@ export default function CoveragePage() {
     <header className="awe-coverage-hero">
       <p>PUBLIC COVERAGE</p>
       <h1>See where the network<br />actually has evidence.</h1>
-      <p>Check where supported routes already exist and where the network still needs evidence. Cells appear only after accepted receipts from at least two distinct signed nodes. Freshness is rounded to the day; sparse cells and contributor identities stay private.</p>
+      <p>Check where supported routes already exist and where the network still needs evidence. Network-supported cells require two controller groups. First-party lab reproductions stay visibly separate. Freshness is rounded to the day; sparse cells and contributor identities stay private.</p>
     </header>
 
     <section className="awe-coverage-results" aria-labelledby="coverage-heading">
@@ -32,8 +32,8 @@ export default function CoveragePage() {
 
     <section className="awe-coverage-boundary">
       <p>WHAT THE NUMBERS MEAN</p>
-      <h2>Distinct signed nodes.<br />Not proven independent operators.</h2>
-      <div><p>Agent WEX collapses repeated support from the same registered node before publishing a cell. Retry volume cannot create consensus.</p><p>A node signature does not prove a separate controller or that the reported execution genuinely occurred.</p><p>As coverage grows, aggregate gaps and changes can expose rollout, authentication, client, and platform trouble. Returned routes remain evidence for the requesting runtime&apos;s own policy gate.</p></div>
+      <h2>Machines can reproduce.<br />Controllers corroborate.</h2>
+      <div><p>Agent WEX groups first-party lab machines under one controller. More keys, runtimes, or retries cannot manufacture independent support.</p><p>Two lab participants can establish a provisional first-party reproduction. Network support still requires evidence from another controller group.</p><p>Returned routes remain evidence for the requesting runtime&apos;s own policy gate. They never grant authority to act.</p></div>
     </section>
 
     <footer className="awe-footer"><Link className="awe-brand agentwex-brand" href="/"><Brand /></Link><p>An agent works. All agents learn.</p><a href="https://github.com/agentwex/agentwex">SOURCE + PROTOCOL ↗</a></footer>

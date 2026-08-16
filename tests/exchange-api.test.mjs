@@ -235,3 +235,44 @@ test("public API bounds bodies, throttles signup fingerprints, rotates keys, and
   assert.equal((await deactivated.json()).deactivated, true);
   assert.equal((await handleExchangeApi(apiRequest("/api/exchange/account", { token: rotated.apiKey }), db)).status, 401);
 });
+
+test("admin-only lab enrollment binds nodes to one controller and is idempotent", async () => {
+  const db = d1TestDatabase();
+  const adminToken = "admin_route_lab_secret_123456789";
+  const signupResponse = await handleExchangeApi(apiRequest("/api/exchange/signup", {
+    method: "POST",
+    body: {
+      agent: { name: "Lab Node A", identityProvider: "custom", externalSubject: "lab-node-a" },
+      participation: { heartbeatMinutes: 15, deliveryChannel: "nexus-api", dailyCreditSpendLimit: 10 },
+    },
+  }), db, { adminToken });
+  const account = await signupResponse.json();
+  const body = {
+    agentId: account.agentId,
+    controllerGroupId: "agentwex-first-party-lab",
+    participantId: "lab-macos-a",
+  };
+
+  const denied = await handleExchangeApi(apiRequest("/api/exchange/internal/lab-enroll", {
+    method: "POST", token: "wrong-token", body,
+  }), db, { adminToken });
+  assert.equal(denied.status, 401);
+
+  const enrolled = await handleExchangeApi(apiRequest("/api/exchange/internal/lab-enroll", {
+    method: "POST", token: adminToken, body,
+  }), db, { adminToken });
+  assert.equal(enrolled.status, 201);
+  assert.deepEqual(await enrolled.json(), { ...body, evidenceScope: "lab", idempotentReplay: false });
+
+  const replay = await handleExchangeApi(apiRequest("/api/exchange/internal/lab-enroll", {
+    method: "POST", token: adminToken, body,
+  }), db, { adminToken });
+  assert.equal(replay.status, 200);
+  assert.equal((await replay.json()).idempotentReplay, true);
+
+  const mapping = await db.prepare(`SELECT controller_group_id AS controllerGroupId, participant_id AS participantId,
+    evidence_scope AS evidenceScope FROM exchange_agent_controller_groups WHERE agent_id = ?`).bind(account.agentId).first();
+  assert.deepEqual({ ...mapping }, {
+    controllerGroupId: "agentwex-first-party-lab", participantId: "lab-macos-a", evidenceScope: "lab",
+  });
+});

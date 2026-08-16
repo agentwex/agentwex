@@ -18,6 +18,7 @@ const routeQueryFields = new Set(["schema", "toolRegistry", "toolId", "attempted
 const workingRouteCompFields = new Set(["schema", "queryId", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "outcome", "errorClass", "resolutionKind", "routeFingerprint", "observedAt", "provenanceRootId", "independenceBasis", "attestation"]);
 const preflightFields = new Set(["schema", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "maxAgeDays", "minimumSignedNodes", "unlock"]);
 const routeFeedbackFields = new Set(["schema", "resultId", "outcome", "failureClass", "attemptsAvoided", "estimatedTokensAvoided", "estimatedLatencyMsAvoided"]);
+const labEnrollmentFields = new Set(["agentId", "controllerGroupId", "participantId"]);
 
 const now = () => new Date().toISOString();
 const newId = (prefix) => `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`;
@@ -36,6 +37,40 @@ function validateSigningKey(value) {
   if (!/^wexkey_[a-f0-9]{24}$/.test(value.keyId ?? "")) return null;
   if (!/^[A-Za-z0-9_-]{40,160}$/.test(value.publicKeySpki ?? "")) return null;
   return { algorithm: "Ed25519", keyId: value.keyId, publicKeySpki: value.publicKeySpki };
+}
+
+function labIdentifier(value) {
+  return typeof value === "string" && /^[a-z0-9][a-z0-9._-]{2,79}$/.test(value) ? value : null;
+}
+
+export async function enrollLabParticipant(db, body) {
+  if (!body || Object.keys(body).some((key) => !labEnrollmentFields.has(key))) {
+    return { ok: false, status: 400, error: "invalid_lab_enrollment" };
+  }
+  const agentId = typeof body.agentId === "string" && /^agent_[a-f0-9]{32}$/.test(body.agentId) ? body.agentId : null;
+  const controllerGroupId = labIdentifier(body.controllerGroupId);
+  const participantId = labIdentifier(body.participantId);
+  if (!agentId || !controllerGroupId || !participantId) return { ok: false, status: 400, error: "invalid_lab_enrollment" };
+  const agent = await db.prepare("SELECT id FROM exchange_agents WHERE id = ? AND status = 'active'").bind(agentId).first();
+  if (!agent) return { ok: false, status: 404, error: "agent_not_found" };
+  const existing = await db.prepare(`SELECT controller_group_id AS controllerGroupId, participant_id AS participantId,
+      evidence_scope AS evidenceScope FROM exchange_agent_controller_groups WHERE agent_id = ?`).bind(agentId).first();
+  if (existing) {
+    const same = existing.controllerGroupId === controllerGroupId
+      && existing.participantId === participantId && existing.evidenceScope === "lab";
+    return same
+      ? { ok: true, status: 200, enrollment: { agentId, controllerGroupId, participantId, evidenceScope: "lab", idempotentReplay: true } }
+      : { ok: false, status: 409, error: "agent_controller_group_already_assigned" };
+  }
+  const createdAt = now();
+  await db.batch([
+    db.prepare(`INSERT INTO exchange_agent_controller_groups
+      (agent_id, controller_group_id, participant_id, evidence_scope, source, created_at)
+      VALUES (?, ?, ?, 'lab', 'admin-enrollment-v1', ?)`).bind(agentId, controllerGroupId, participantId, createdAt),
+    db.prepare(`INSERT OR IGNORE INTO exchange_agent_labels (agent_id, label, source, created_at)
+      VALUES (?, 'lab', 'admin-enrollment-v1', ?)`).bind(agentId, createdAt),
+  ]);
+  return { ok: true, status: 201, enrollment: { agentId, controllerGroupId, participantId, evidenceScope: "lab", idempotentReplay: false } };
 }
 
 export async function registerAgentSigningKey(db, agentId, value) {
@@ -162,7 +197,7 @@ export async function ensureExchangeSchema(db) {
 }
 
 export async function getPublicCoverage(db, at = Date.now()) {
-  const result = await db.prepare(`SELECT
+  const select = `SELECT
       r.tool_registry AS toolRegistry,
       r.tool_id AS toolId,
       r.tool_version AS toolVersion,
@@ -175,20 +210,29 @@ export async function getPublicCoverage(db, at = Date.now()) {
       r.resolution_kind AS resolutionKind,
       COUNT(*) AS acceptedReceipts,
       COUNT(DISTINCT c.agent_id) AS distinctSignedNodes,
+      COUNT(DISTINCT COALESCE(g.controller_group_id, c.agent_id)) AS distinctControllerGroups,
+      COUNT(DISTINCT COALESCE(g.participant_id, c.agent_id)) AS distinctParticipants,
       COUNT(DISTINCT r.route_fingerprint) AS distinctRouteVariants,
       MAX(r.observed_at) AS lastObservedAt
     FROM exchange_working_route_comps r
     JOIN exchange_contributions c ON c.id = r.contribution_id
     JOIN exchange_agents a ON a.id = c.agent_id
+    LEFT JOIN exchange_agent_controller_groups g ON g.agent_id = c.agent_id
     WHERE c.status = 'accepted'
       AND a.status = 'active'
       AND NOT EXISTS (SELECT 1 FROM exchange_agent_labels l WHERE l.agent_id = a.id AND l.label = 'test')
+      AND COALESCE(g.evidence_scope, 'community') = ?
     GROUP BY r.tool_registry, r.tool_id, r.tool_version, r.client_id, r.client_version,
-      r.environment, r.auth_mode, r.operation, r.outcome, r.resolution_kind
-    HAVING COUNT(DISTINCT c.agent_id) >= 2
-    ORDER BY lastObservedAt DESC
-    LIMIT 250`).all();
-  const cells = (result?.results ?? []).map((row) => {
+      r.environment, r.auth_mode, r.operation, r.outcome, r.resolution_kind`;
+  const [community, lab] = await Promise.all([
+    db.prepare(`${select}
+      HAVING COUNT(DISTINCT COALESCE(g.controller_group_id, c.agent_id)) >= 2
+      ORDER BY lastObservedAt DESC LIMIT 250`).bind("community").all(),
+    db.prepare(`${select}
+      HAVING COUNT(DISTINCT COALESCE(g.participant_id, c.agent_id)) >= 2
+      ORDER BY lastObservedAt DESC LIMIT 250`).bind("lab").all(),
+  ]);
+  const normalize = (rows, evidenceStatus) => (rows ?? []).map((row) => {
     const observed = Date.parse(row.lastObservedAt);
     const freshnessDays = Number.isFinite(observed) ? Math.max(0, Math.floor((at - observed) / 86_400_000)) : null;
     const freshness = freshnessDays == null ? "unknown" : freshnessDays <= 1 ? "fresh" : freshnessDays <= 7 ? "current" : freshnessDays <= 30 ? "aging" : "stale";
@@ -205,19 +249,28 @@ export async function getPublicCoverage(db, at = Date.now()) {
       resolutionKind: row.resolutionKind,
       acceptedReceipts: Number(row.acceptedReceipts),
       distinctSignedNodes: Number(row.distinctSignedNodes),
+      distinctControllerGroups: Number(row.distinctControllerGroups),
+      distinctParticipants: Number(row.distinctParticipants),
       distinctRouteVariants: Number(row.distinctRouteVariants),
       lastObservedDate: Number.isFinite(observed) ? new Date(observed).toISOString().slice(0, 10) : null,
       freshnessDays,
       freshness,
+      evidenceStatus,
     };
   });
+  const cells = normalize(community?.results, "network-supported");
+  const labCells = normalize(lab?.results, "first-party-lab-replicated");
   return {
     schema: "agentwex.public-coverage.v1",
     asOf: new Date(at).toISOString(),
     minimumDistinctSignedNodes: 2,
+    minimumDistinctControllerGroups: 2,
+    minimumLabParticipants: 2,
     cells,
+    labCells,
     boundaries: {
-      evidenceUnit: "distinct_signed_nodes",
+      evidenceUnit: "distinct_controller_groups",
+      labEvidenceUnit: "distinct_first_party_participants_within_one_controller_group",
       controllerIndependenceVerified: false,
       executionTruthVerified: false,
       sparseCellsWithheld: true,
@@ -487,7 +540,7 @@ export async function reserveResultAccess(db, agentId, resultId) {
   if (!query || query.agentId !== agentId) return { ok: false, status: 404, error: "working_route_query_not_found" };
   const records = await routeRecordsForQuery(db, query);
   const assessment = evaluateWorkingRoute(records, query, now());
-  if (assessment.status !== "RESULT_AVAILABLE" || !assessment.workingRoute) {
+  if (!["RESULT_AVAILABLE", "LAB_RESULT_AVAILABLE"].includes(assessment.status) || !assessment.workingRoute) {
     return { ok: false, status: 409, error: "working_route_not_available" };
   }
 
@@ -652,6 +705,9 @@ async function routeRecordsForQuery(db, query) {
       c.status AS status,
       c.provenance_root_id AS provenanceRootId,
       c.independence_basis AS independenceBasis,
+      COALESCE(g.controller_group_id, c.agent_id) AS controllerGroupId,
+      COALESCE(g.participant_id, c.agent_id) AS participantId,
+      COALESCE(g.evidence_scope, 'community') AS evidenceScope,
       r.tool_registry AS toolRegistry,
       r.tool_id AS toolId,
       r.tool_version AS toolVersion,
@@ -671,7 +727,10 @@ async function routeRecordsForQuery(db, query) {
     FROM exchange_working_route_comps r
     JOIN exchange_contributions c ON c.id = r.contribution_id
     LEFT JOIN exchange_working_route_attestations a ON a.contribution_id = c.id
-    WHERE c.status = 'accepted' AND r.environment = ? AND (
+    LEFT JOIN exchange_agent_controller_groups g ON g.agent_id = c.agent_id
+    WHERE c.status = 'accepted'
+      AND NOT EXISTS (SELECT 1 FROM exchange_agent_labels l WHERE l.agent_id = c.agent_id AND l.label = 'test')
+      AND r.environment = ? AND (
       (r.tool_registry = ? AND r.tool_id = ? AND r.client_id = ? AND r.auth_mode = ? AND r.operation = ?)
       OR (? = 'same-capability' AND r.capability_id = ? AND r.effect_class = ?)
     )`)
@@ -804,7 +863,7 @@ export async function getRouteQueryStatus(db, agentId, queryId) {
     queryId,
     status: assessment.status,
     resultId: `working-route:${queryId}`,
-    resultSealed: assessment.status === "RESULT_AVAILABLE",
+    resultSealed: ["RESULT_AVAILABLE", "LAB_RESULT_AVAILABLE"].includes(assessment.status),
     evidence: assessment.evidence,
     bounty: assessment.bounty,
     authorityGranted: false,
@@ -863,11 +922,13 @@ export async function createRouteQuery(db, agentId, body) {
       queryId,
       status: assessment.status,
       resultId: `working-route:${queryId}`,
-      resultSealed: assessment.status === "RESULT_AVAILABLE",
+      resultSealed: ["RESULT_AVAILABLE", "LAB_RESULT_AVAILABLE"].includes(assessment.status),
       evidence: assessment.evidence,
       bounty: assessment.bounty,
       nextAction: assessment.status === "RESULT_AVAILABLE"
         ? "Spend one earned credit to send the sealed route to Gate for bounded release."
+        : assessment.status === "LAB_RESULT_AVAILABLE"
+          ? "A first-party route was reproduced by two lab participants. Unlock it as provisional evidence and keep seeking external confirmation."
         : assessment.nextAction,
       authorityGranted: false,
     },
@@ -894,7 +955,7 @@ export async function runPreflight(db, agentId, body) {
   ]);
   const evaluated = evaluatePreflight(records, feedback, input, now());
   const assessment = publicPreflightAssessment(evaluated);
-  if (evaluated.recommendation.action !== "UNLOCK_SUPPORTED_ROUTE") {
+  if (!["UNLOCK_SUPPORTED_ROUTE", "UNLOCK_LAB_ROUTE"].includes(evaluated.recommendation.action)) {
     return { ok: true, status: 200, assessment };
   }
 

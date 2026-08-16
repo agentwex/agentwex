@@ -85,7 +85,7 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
       try {
         const query = await getRouteQuery(config, tracked.queryId);
         tracked.status = query.status;
-        if (query.status === "RESULT_AVAILABLE" && state.creditBalance > 0) {
+        if (["RESULT_AVAILABLE", "LAB_RESULT_AVAILABLE"].includes(query.status) && state.creditBalance > 0) {
           const access = await unlockRoute(config, query.resultId);
           tracked.unlockedAt = new Date().toISOString();
           state.creditBalance = access.creditBalance;
