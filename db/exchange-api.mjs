@@ -1,4 +1,4 @@
-import { acceptContribution, authenticateAgent, consumeRateLimit, createRouteQuery, deactivateAgent, ensureExchangeSchema, getAgentAccount, getContributionStatus, getCreditLedger, getRouteQueryStatus, listAgentContributions, listOpenRouteBounties, listReliabilityAlerts, registerAgentSigningKey, reserveResultAccess, revokeAgentSigningKey, rotateAgentApiKey, runPreflight, signupAgent, submitContribution, submitRouteFeedback, submitWorkingRouteComp } from "./exchange-store.mjs";
+import { acceptContribution, authenticateAgent, consumeRateLimit, createRouteQuery, deactivateAgent, ensureExchangeSchema, getAgentAccount, getContributionStatus, getCreditLedger, getPublicCoverage, getRouteQueryStatus, listAgentContributions, listOpenRouteBounties, listReliabilityAlerts, registerAgentSigningKey, reserveResultAccess, revokeAgentSigningKey, rotateAgentApiKey, runPreflight, signupAgent, submitContribution, submitRouteFeedback, submitWorkingRouteComp } from "./exchange-store.mjs";
 
 const json = (body, status = 200, headers = {}) => Response.json(body, { status, headers: { "cache-control": "no-store", ...headers } });
 const maximumJsonBytes = 65_536;
@@ -50,6 +50,10 @@ export async function handleExchangeApi(request, db, options = {}) {
   if (!db) return json({ error: "exchange_database_unavailable" }, 503);
   await ensureExchangeSchema(db);
   const url = new URL(request.url);
+
+  if (url.pathname === "/api/exchange/coverage" && request.method === "GET") {
+    return json(await getPublicCoverage(db), 200, { "cache-control": "public, max-age=300" });
+  }
 
   if (url.pathname === "/api/exchange/signup" && request.method === "POST") {
     if (options.requireClientFingerprint && !options.clientFingerprint) return json({ error: "signup_rate_limit_unconfigured" }, 503);

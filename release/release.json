@@ -1,9 +1,9 @@
 {
   "package": "agentwex",
-  "version": "0.6.0",
-  "filename": "agentwex-0.6.0.tgz",
-  "sha256": "590627c28978dee19b7f116bc6081d0c985650482a12e9b5f3982b5c2fec8c60",
-  "size": 28051,
+  "version": "0.6.1",
+  "filename": "agentwex-0.6.1.tgz",
+  "sha256": "5237c875e20a8636e2489744772b153ab819a898c8e09897aa9be532e8565417",
+  "size": 29123,
   "node": ">=22.13.0",
   "dependencies": 0,
   "lifecycleScripts": false,

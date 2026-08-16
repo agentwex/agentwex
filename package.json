@@ -1,6 +1,6 @@
 {
   "name": "agentwex-repository",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -13,7 +13,8 @@
     "test": "node --test tests/*.test.mjs",
     "verify": "npm run lint && npm test && npm run build",
     "demo": "node exchange/knowledge-exchange-v0.1/demo.mjs",
-    "release": "node scripts/build-release.mjs"
+    "release": "node scripts/build-release.mjs",
+    "smoke:production": "node scripts/smoke-production.mjs"
   },
   "dependencies": {
     "next": "16.3.0",
