@@ -2388,7 +2388,7 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
 .awe-compact .awe-operating-model article:last-child,
 .awe-compact .awe-footer {
   background-color:#090b0d;
-  background-image:radial-gradient(circle,#7cf0bd24 0 .65px,transparent 1.25px);
+  background-image:radial-gradient(circle,#7cf0bd38 0 .8px,transparent 1.5px);
   background-size:31px 31px;
   background-position:0 0;
 }

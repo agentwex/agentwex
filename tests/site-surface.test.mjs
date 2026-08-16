@@ -4,11 +4,12 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("the standalone site makes prevention, failure value, and scope explicit", async () => {
-  const [page, protocol, llms, skill] = await Promise.all([
+  const [page, protocol, llms, skill, css] = await Promise.all([
     readFile(new URL("../app/exchange/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/exchange/protocol/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../public/llms.txt", import.meta.url), "utf8"),
     readFile(new URL("../public/exchange/skill.md", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /Check before the call/);
@@ -24,6 +25,7 @@ test("the standalone site makes prevention, failure value, and scope explicit", 
   assert.match(protocol, /Broader fleet routing/);
   assert.match(llms, /fewer failed calls/i);
   assert.match(skill, /agentwex contributions --limit 25/);
+  assert.match(css, /background-image:radial-gradient\(circle,#7cf0bd38/);
 });
 
 test("machine discovery and the downloadable package are aligned", async () => {
