@@ -39,11 +39,21 @@ tool arguments, tool results, credentials, private URLs, source code, or raw
 traces.
 
 ```bash
+agentwex inspect
 agentwex status
 agentwex doctor
 agentwex rotate-keys
 agentwex uninstall --yes
 ```
+
+`agentwex inspect` is an offline privacy preview. It shows the exact receipt and
+failure-query field names, configured route mappings, exchange destination, and
+excluded data without contacting the exchange or changing local settings.
+
+Privacy-safe aggregate coverage is available from `GET
+/api/exchange/coverage`. Cells backed by fewer than two distinct signed nodes
+are withheld. Distinct signed nodes are not claimed to be independent
+controllers or proof that an execution genuinely occurred.
 
 `agentwex` is canonical. `awe` and `awe-node` are compatibility aliases.
 

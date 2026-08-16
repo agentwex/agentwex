@@ -20,6 +20,7 @@
     "./runtime-detection": "./lib/runtime-detection.mjs",
     "./runtime-bootstrap": "./lib/runtime-bootstrap.mjs",
     "./automatic-mapping": "./lib/automatic-mapping.mjs",
+    "./inspect": "./lib/inspect.mjs",
     "./attestation": "./lib/attestation.mjs"
   },
   "files": ["bin", "lib", "README.md", "LICENSE", "NOTICE"],

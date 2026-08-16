@@ -110,6 +110,76 @@ async function contributionByDedupeKey(db, agentId, dedupeKey) {
 
 export async function ensureExchangeSchema(db) {
   await db.batch(exchangeSchemaStatements.map((statement) => db.prepare(statement)));
+  const agentColumns = await db.prepare("PRAGMA table_info(exchange_agents)").all();
+  const knownAgentColumns = new Set((agentColumns?.results ?? []).map((column) => column.name));
+  const migrations = [];
+  if (!knownAgentColumns.has("deactivated_at")) migrations.push(db.prepare("ALTER TABLE exchange_agents ADD COLUMN deactivated_at TEXT"));
+  if (!knownAgentColumns.has("purge_after")) migrations.push(db.prepare("ALTER TABLE exchange_agents ADD COLUMN purge_after TEXT"));
+  if (migrations.length > 0) await db.batch(migrations);
+}
+
+export async function getPublicCoverage(db, at = Date.now()) {
+  const result = await db.prepare(`SELECT
+      r.tool_registry AS toolRegistry,
+      r.tool_id AS toolId,
+      r.tool_version AS toolVersion,
+      r.client_id AS clientId,
+      r.client_version AS clientVersion,
+      r.environment,
+      r.auth_mode AS authMode,
+      r.operation,
+      r.outcome,
+      r.resolution_kind AS resolutionKind,
+      COUNT(*) AS acceptedReceipts,
+      COUNT(DISTINCT c.agent_id) AS distinctSignedNodes,
+      COUNT(DISTINCT r.route_fingerprint) AS distinctRouteVariants,
+      MAX(r.observed_at) AS lastObservedAt
+    FROM exchange_working_route_comps r
+    JOIN exchange_contributions c ON c.id = r.contribution_id
+    JOIN exchange_agents a ON a.id = c.agent_id
+    WHERE c.status = 'accepted'
+      AND a.status = 'active'
+      AND NOT EXISTS (SELECT 1 FROM exchange_agent_labels l WHERE l.agent_id = a.id AND l.label = 'test')
+    GROUP BY r.tool_registry, r.tool_id, r.tool_version, r.client_id, r.client_version,
+      r.environment, r.auth_mode, r.operation, r.outcome, r.resolution_kind
+    HAVING COUNT(DISTINCT c.agent_id) >= 2
+    ORDER BY lastObservedAt DESC
+    LIMIT 250`).all();
+  const cells = (result?.results ?? []).map((row) => {
+    const observed = Date.parse(row.lastObservedAt);
+    const freshnessDays = Number.isFinite(observed) ? Math.max(0, Math.floor((at - observed) / 86_400_000)) : null;
+    const freshness = freshnessDays == null ? "unknown" : freshnessDays <= 1 ? "fresh" : freshnessDays <= 7 ? "current" : freshnessDays <= 30 ? "aging" : "stale";
+    return {
+      toolRegistry: row.toolRegistry,
+      toolId: row.toolId,
+      toolVersion: row.toolVersion,
+      clientId: row.clientId,
+      clientVersion: row.clientVersion,
+      environment: row.environment,
+      authMode: row.authMode,
+      operation: row.operation,
+      outcome: row.outcome,
+      resolutionKind: row.resolutionKind,
+      acceptedReceipts: Number(row.acceptedReceipts),
+      distinctSignedNodes: Number(row.distinctSignedNodes),
+      distinctRouteVariants: Number(row.distinctRouteVariants),
+      lastObservedDate: Number.isFinite(observed) ? new Date(observed).toISOString().slice(0, 10) : null,
+      freshnessDays,
+      freshness,
+    };
+  });
+  return {
+    schema: "agentwex.public-coverage.v1",
+    asOf: new Date(at).toISOString(),
+    minimumDistinctSignedNodes: 2,
+    cells,
+    boundaries: {
+      evidenceUnit: "distinct_signed_nodes",
+      controllerIndependenceVerified: false,
+      executionTruthVerified: false,
+      sparseCellsWithheld: true,
+    },
+  };
 }
 
 export function validateSignup(body) {

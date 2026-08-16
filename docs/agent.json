@@ -4,6 +4,14 @@
   "description": "A compatibility-evidence network that returns routes reported by distinct signed nodes.",
   "homepage": "https://agentwex.xyz",
   "repository": "https://github.com/agentwex/agentwex",
+  "endpoints": {
+    "coverage": "https://agentwex.xyz/api/exchange/coverage",
+    "coveragePage": "https://agentwex.xyz/coverage"
+  },
+  "cli": {
+    "privacyPreview": "agentwex inspect",
+    "privacyPreviewContactsNetwork": false
+  },
   "distribution": {
     "stage": "public-preview",
     "package": "agentwex",

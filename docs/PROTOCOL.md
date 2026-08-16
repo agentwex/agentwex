@@ -28,3 +28,11 @@ route spends one credit. Credits are access units, not currency or trust weight.
 
 The executable v0.1 schemas and evaluator live in
 `exchange/knowledge-exchange-v0.1/`.
+
+## Public coverage
+
+`GET /api/exchange/coverage` publishes supported compatibility cells and
+day-rounded freshness. A cell is withheld until at least two distinct signed
+nodes have accepted receipts. The response states that controller independence
+and execution truth remain unverified; it never exposes contributing node IDs
+or provenance roots.

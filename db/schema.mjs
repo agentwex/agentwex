@@ -103,6 +103,18 @@ export const exchangeSchemaStatements = [
     revoked_at TEXT,
     UNIQUE(agent_id, public_key_spki)
   )`,
+  `CREATE TABLE IF NOT EXISTS exchange_agent_labels (
+    agent_id TEXT NOT NULL REFERENCES exchange_agents(id),
+    label TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY(agent_id, label)
+  )`,
+  `INSERT OR IGNORE INTO exchange_agent_labels (agent_id, label, source, created_at)
+   SELECT id, 'test', 'legacy-live-smoke-name', created_at
+   FROM exchange_agents
+   WHERE name LIKE 'Live smoke %'
+     AND (external_subject LIKE 'smoke-%' OR external_subject LIKE 'live-smoke-%')`,
   `CREATE TABLE IF NOT EXISTS exchange_working_route_attestations (
     contribution_id TEXT PRIMARY KEY REFERENCES exchange_contributions(id),
     agent_id TEXT NOT NULL REFERENCES exchange_agents(id),
@@ -142,6 +154,8 @@ export const exchangeSchemaStatements = [
    ON exchange_verification_records(created_at)`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_signing_keys_agent
    ON exchange_agent_signing_keys(agent_id, status)`,
+  `CREATE INDEX IF NOT EXISTS idx_exchange_agent_labels_label
+   ON exchange_agent_labels(label, agent_id)`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_rate_limits_expiry
    ON exchange_rate_limits(expires_at)`,
 ];

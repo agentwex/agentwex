@@ -107,11 +107,16 @@ The private environment file contains the localhost collector credential and is 
 Then inspect the node:
 
 ```sh
+agentwex inspect
 agentwex status
 agentwex ledger
 agentwex routes
 agentwex doctor
 ```
+
+`agentwex inspect` works before installation as well. It does not contact the
+exchange; it prints the outbound receipt and failure-query schemas, configured
+route mappings, and the fields that are explicitly excluded.
 
 Rotate both the API credential and local Ed25519 identity with `agentwex rotate-keys`. Remove the background service, exact Agent WEX runtime settings, local config, and remote pseudonymous account with `agentwex uninstall --yes`. Add `--keep-account` or `--keep-local` only when you deliberately want those retained. Runtime-setting backups are kept locally.
 
