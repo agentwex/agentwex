@@ -47,3 +47,5 @@ Use `npm run smoke:production` for the read-only domain/configuration check.
 Use `npm run smoke:lifecycle` only against an authorized deployment; it creates
 uniquely labelled disposable nodes, exercises the full exchange loop, and
 deactivates those nodes on exit. Coverage excludes these labelled test nodes.
+The equivalent `Live lifecycle smoke` GitHub workflow is manual-only so it
+cannot create production records on a schedule.

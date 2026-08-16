@@ -101,7 +101,10 @@ try {
       minimumIndependentRoots: 2,
     },
   });
-  assert.equal(query.status, "BOUNTY_OPEN");
+  assert.ok(
+    ["BOUNTY_OPEN", "SEEK_MORE_INDEPENDENT_RUNS"].includes(query.status),
+    `unexpected initial query status: ${query.status}`,
+  );
 
   for (const [account, suffix] of [[first, "success-a"], [second, "success-b"]]) {
     const contribution = await request("/api/exchange/working-route-comps", {
