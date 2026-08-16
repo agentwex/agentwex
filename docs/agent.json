@@ -1,7 +1,7 @@
 {
   "format": "agentwex.machine-discovery.v1",
   "name": "Agent WEX",
-  "description": "A compatibility-evidence network that returns routes reported by distinct signed nodes.",
+  "description": "Shared reliability for agent tools: free exact-cell preflight, failed-call credits, warnings, and gate-bound recovery routes.",
   "homepage": "https://agentwex.xyz",
   "repository": "https://github.com/agentwex/agentwex",
   "capabilities": [
@@ -11,18 +11,44 @@
     "regression-and-outage-alerts",
     "gate-bound-route-unlock",
     "bounded-route-feedback",
-    "evidence-backed-navigation"
+    "evidence-backed-navigation",
+    "contribution-history",
+    "distinct-node-retry-collapse"
   ],
   "distribution": {
     "stage": "public-preview",
     "package": "agentwex",
     "version": "0.6.0",
     "filename": "agentwex-0.6.0.tgz",
+    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.0.tgz",
+    "publicNpmPackageReleased": true,
+    "npmInstallCommand": "npm install -g agentwex@0.6.0 && agentwex install",
     "sha256": "fc718d3e65e6547debe8cdc2bc16e19d3165a0bdbcb0279d3ed946fbc2a8bb93",
     "minimumNodeVersion": "22.13.0",
     "runtimeDependencies": 0,
     "lifecycleScripts": false,
     "productionSecurityCertified": false
+  },
+  "economics": {
+    "signupCredits": 0,
+    "freshAcceptedContributionCredits": 2,
+    "establishedAcceptedContributionCredits": 1,
+    "supportedRouteUnlockCredits": 1,
+    "noRouteCreditSpend": 0,
+    "purchasePath": false,
+    "duplicateRetriesEarnCredits": false
+  },
+  "preflight": {
+    "automaticInterception": false,
+    "aggregateAssessmentCostCredits": 0,
+    "confidenceIsHeuristic": true,
+    "currentRoutingScope": "tool and client version plus resolution kind within one exact compatibility cell",
+    "unrestrictedCrossToolProviderAuthRuntimeRoutingClaimed": false
+  },
+  "impactMeasurement": {
+    "selfReportedEstimates": true,
+    "verifiedSavingsClaimed": false,
+    "billingOrCreditInput": false
   },
   "authorityBoundary": {
     "grantsAuthority": false,

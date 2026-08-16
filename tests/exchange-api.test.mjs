@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { handleExchangeApi } from "../db/exchange-api.mjs";
+import { ensureExchangeSchema } from "../db/exchange-store.mjs";
 
 function d1TestDatabase() {
   const sqlite = new DatabaseSync(":memory:");
@@ -41,6 +42,30 @@ function apiRequest(path, { method = "GET", token, body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
 }
+
+test("schema setup upgrades a legacy preview database before navigator indexes are created", async () => {
+  const db = d1TestDatabase();
+  await db.prepare(`CREATE TABLE exchange_agents (
+    id TEXT PRIMARY KEY, name TEXT NOT NULL, identity_provider TEXT NOT NULL,
+    external_subject TEXT NOT NULL, api_key_hash TEXT NOT NULL,
+    heartbeat_minutes INTEGER NOT NULL, delivery_channel TEXT NOT NULL,
+    daily_credit_spend_limit INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL
+  )`).run();
+  await db.prepare(`CREATE TABLE exchange_working_route_comps (
+    contribution_id TEXT PRIMARY KEY, query_id TEXT, tool_registry TEXT NOT NULL,
+    tool_id TEXT NOT NULL, tool_version TEXT NOT NULL, client_id TEXT NOT NULL,
+    client_version TEXT NOT NULL, environment TEXT NOT NULL, auth_mode TEXT NOT NULL,
+    operation TEXT NOT NULL, outcome TEXT NOT NULL, error_class TEXT,
+    resolution_kind TEXT NOT NULL, route_fingerprint TEXT NOT NULL, observed_at TEXT NOT NULL
+  )`).run();
+
+  await ensureExchangeSchema(db);
+  const columns = await db.prepare("PRAGMA table_info(exchange_working_route_comps)").all();
+  assert.ok(columns.results.some((column) => column.name === "capability_id"));
+  assert.ok(columns.results.some((column) => column.name === "effect_class"));
+  const index = await db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_exchange_working_route_capability'").first();
+  assert.equal(index.name, "idx_exchange_working_route_capability");
+});
 
 test("first node can submit idempotently, await verification, and earn durable credits", async () => {
   const db = d1TestDatabase();

@@ -115,7 +115,50 @@ async function contributionByDedupeKey(db, agentId, dedupeKey) {
 }
 
 export async function ensureExchangeSchema(db) {
-  await db.batch(exchangeSchemaStatements.map((statement) => db.prepare(statement)));
+  const indexStatements = exchangeSchemaStatements.filter((statement) => statement.trimStart().startsWith("CREATE INDEX"));
+  const foundationStatements = exchangeSchemaStatements.filter((statement) => !statement.trimStart().startsWith("CREATE INDEX"));
+  await db.batch(foundationStatements.map((statement) => db.prepare(statement)));
+
+  // CREATE TABLE IF NOT EXISTS does not add columns to an existing D1 table.
+  // Upgrade legacy preview databases before creating indexes or running queries
+  // that reference navigator/release fields introduced after the first launch.
+  const upgrades = {
+    exchange_agents: {
+      identity_status: "TEXT NOT NULL DEFAULT 'self-registered'",
+      status: "TEXT NOT NULL DEFAULT 'active'",
+      deactivated_at: "TEXT",
+      purge_after: "TEXT",
+    },
+    exchange_route_queries: {
+      capability_id: "TEXT",
+      effect_class: "TEXT",
+      alternative_policy: "TEXT NOT NULL DEFAULT 'exact-only'",
+    },
+    exchange_working_route_comps: {
+      capability_id: "TEXT",
+      effect_class: "TEXT",
+    },
+    exchange_route_releases: {
+      match_type: "TEXT NOT NULL DEFAULT 'COMPATIBLE_ROUTE'",
+      tool_registry: "TEXT",
+      tool_id: "TEXT",
+      client_id: "TEXT",
+      auth_mode: "TEXT",
+      operation: "TEXT",
+      capability_id: "TEXT",
+      effect_class: "TEXT",
+    },
+  };
+  for (const [table, columns] of Object.entries(upgrades)) {
+    const tableInfo = await db.prepare(`PRAGMA table_info(${table})`).all();
+    const existing = new Set((tableInfo?.results ?? []).map((column) => column.name));
+    const missing = Object.entries(columns)
+      .filter(([column]) => !existing.has(column))
+      .map(([column, definition]) => db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`));
+    if (missing.length > 0) await db.batch(missing);
+  }
+
+  await db.batch(indexStatements.map((statement) => db.prepare(statement)));
 }
 
 export function validateSignup(body) {
