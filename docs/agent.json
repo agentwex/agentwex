@@ -23,7 +23,7 @@
     "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.0.tgz",
     "publicNpmPackageReleased": true,
     "npmInstallCommand": "npm install -g agentwex@0.6.0 && agentwex install",
-    "sha256": "fc718d3e65e6547debe8cdc2bc16e19d3165a0bdbcb0279d3ed946fbc2a8bb93",
+    "sha256": "590627c28978dee19b7f116bc6081d0c985650482a12e9b5f3982b5c2fec8c60",
     "minimumNodeVersion": "22.13.0",
     "runtimeDependencies": 0,
     "lifecycleScripts": false,
