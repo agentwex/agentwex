@@ -58,6 +58,7 @@ export default function ExchangePage() {
         <div className="awe-field-equation"><b>CHECK</b><span>avoid known failures</span><i>→</i><b>FAIL</b><span>recover sunk value</span><i>→</i><b>RESUME</b></div>
       </div>
       <div className="awe-hero-copy" id="quickstart">
+        <a className="awe-brand agentwex-brand awe-hero-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
         <p className="awe-kicker">SHARED RELIABILITY FOR AGENT TOOLS</p>
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
         <p className="awe-hero-lede">Check whether an exact public tool path is working before another agent makes the call. If it fails, the minimized outcome can earn credits and unlock a supported route.</p>

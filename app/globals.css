@@ -2455,6 +2455,13 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
   text-transform:none;
   white-space:nowrap;
 }
+.awe-hero-brand {
+  width:max-content;
+  margin:0 0 34px;
+}
+.awe-brand.agentwex-brand.awe-hero-brand .agentwex-wordmark {
+  display:block;
+}
 .awe-footer .awe-brand.agentwex-brand .agentwex-wordmark { color:#f4f6f2; }
 .agentwex-footer-wink {
   margin-left:.35em;
