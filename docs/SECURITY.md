@@ -15,7 +15,9 @@ package has no runtime dependencies or installation lifecycle scripts.
 
 Known limits include coordinated Sybil identities, lack of Linux service
 installation, no independent security assessment, and incomplete operational
-restore drills. Never use a returned route as an authorization decision.
+restore drills. Reliability rates and alerts inherit the same signed-node and
+execution-truth limits as their source receipts. Never use a confidence label,
+alert, or returned route as an authorization decision.
 
 Report vulnerabilities privately through
 [GitHub Security Advisories](https://github.com/agentwex/agentwex/security/advisories/new).

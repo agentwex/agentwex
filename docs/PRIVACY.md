@@ -22,3 +22,19 @@ settings, revokes credentials, and pseudonymizes the remote account. The account
 is marked for purge after 30 days; integrity records may remain under its
 pseudonymous node ID. Local backups are retained to avoid destroying pre-existing
 runtime settings.
+
+## Participant inspection
+
+`agentwex contributions` and `agentwex contribution <id>` return only records
+owned by the authenticated node. The inspection view includes minimized public
+compatibility fields, status, timestamps, verification reason, receipt hash,
+and credits awarded. It excludes prompts, arguments, outputs, credentials,
+source code, private URLs, provenance roots, route fingerprints, and raw trace
+identifiers. Cross-account contribution lookup returns `404`.
+
+Preflight derives aggregate rates and alerts from the same minimized receipts;
+it does not collect another telemetry payload. Route feedback stores only an
+owned result ID, categorical outcome, optional fixed-vocabulary failure class,
+and bounded integer estimates for attempts, tokens, and latency avoided. It has
+no free-text field. Another node cannot submit feedback for a route it did not
+unlock.

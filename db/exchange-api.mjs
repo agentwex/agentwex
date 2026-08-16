@@ -1,4 +1,4 @@
-import { acceptContribution, authenticateAgent, consumeRateLimit, createRouteQuery, deactivateAgent, ensureExchangeSchema, getAgentAccount, getContributionStatus, getCreditLedger, getRouteQueryStatus, listOpenRouteBounties, registerAgentSigningKey, reserveResultAccess, revokeAgentSigningKey, rotateAgentApiKey, signupAgent, submitContribution, submitWorkingRouteComp } from "./exchange-store.mjs";
+import { acceptContribution, authenticateAgent, consumeRateLimit, createRouteQuery, deactivateAgent, ensureExchangeSchema, getAgentAccount, getContributionStatus, getCreditLedger, getRouteQueryStatus, listAgentContributions, listOpenRouteBounties, listReliabilityAlerts, registerAgentSigningKey, reserveResultAccess, revokeAgentSigningKey, rotateAgentApiKey, runPreflight, signupAgent, submitContribution, submitRouteFeedback, submitWorkingRouteComp } from "./exchange-store.mjs";
 
 const json = (body, status = 200, headers = {}) => Response.json(body, { status, headers: { "cache-control": "no-store", ...headers } });
 const maximumJsonBytes = 65_536;
@@ -97,6 +97,24 @@ export async function handleExchangeApi(request, db, options = {}) {
     return json(await getCreditLedger(db, agent.id));
   }
 
+  if (url.pathname === "/api/exchange/preflight" && request.method === "POST") {
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    const result = await runPreflight(db, agent.id, body);
+    return json(result.ok ? result.assessment : { error: result.error }, result.status);
+  }
+
+  if (url.pathname === "/api/exchange/alerts" && request.method === "GET") {
+    return json(await listReliabilityAlerts(db, url.searchParams.get("limit") ?? 50));
+  }
+
+  if (url.pathname === "/api/exchange/route-feedback" && request.method === "POST") {
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    const result = await submitRouteFeedback(db, agent.id, body);
+    return json(result.ok ? result.feedback : { error: result.error }, result.status);
+  }
+
   if (url.pathname === "/api/exchange/signing-keys" && request.method === "POST") {
     const body = await limitedJson(request);
     if (body instanceof Response) return body;
@@ -128,6 +146,12 @@ export async function handleExchangeApi(request, db, options = {}) {
     return json(result.ok ? result.contribution : { error: result.error }, result.status);
   }
 
+  if (url.pathname === "/api/exchange/contributions" && request.method === "GET") {
+    return json(await listAgentContributions(db, agent.id, {
+      limit: url.searchParams.get("limit") ?? 25,
+      offset: url.searchParams.get("offset") ?? 0,
+    }));
+  }
 
   const contributionStatusMatch = url.pathname.match(/^\/api\/exchange\/contributions\/(comp|routecomp)_[A-Za-z0-9]+$/);
   if (contributionStatusMatch && request.method === "GET") {

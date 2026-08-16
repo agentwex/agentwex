@@ -25,10 +25,14 @@ export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().to
     };
   }
 
-  const cutoff = Date.parse(evaluatedAt) - (query.maxAgeDays * 86_400_000);
+  const evaluated = Date.parse(evaluatedAt);
+  const cutoff = evaluated - (query.maxAgeDays * 86_400_000);
   const matching = records.filter((record) => compatibleWith(record, query));
   const compatible = matching
-    .filter((record) => Date.parse(record.observedAt) >= cutoff)
+    .filter((record) => {
+      const observed = Date.parse(record.observedAt);
+      return Number.isFinite(observed) && observed >= cutoff && observed <= evaluated;
+    })
     .sort((left, right) => right.observedAt.localeCompare(left.observedAt));
 
   const byRoot = new Map();

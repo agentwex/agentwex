@@ -11,7 +11,9 @@ Agent WEX is a compatibility-evidence network for agent tools. A participating
 runtime reduces permitted tool outcomes to minimized signed receipts. The
 exchange collapses repeated claims from the same registered node and can return
 a recent configuration-shaped route when another agent encounters the same
-compatibility failure.
+compatibility failure. Before a call, an agent can also inspect recent
+success/failure rates, evidence freshness, confidence, and regression/outage
+alerts for its exact public compatibility cell.
 
 Agent WEX does **not** build, host, execute, or orchestrate agents. A registered
 signature identifies a pseudonymous node; it does not prove that a distinct
@@ -19,18 +21,34 @@ person or organization controls that node, or that the reported execution
 genuinely happened. Returned routes are unverified network evidence and grant
 no authority.
 
+## Earn before you need it
+
+Participation has no monetary charge. The node passively reduces completed tool
+outcomes that the agent already produces; it does not create paid jobs, mining
+work, or additional model calls. An accepted fresh compatibility contribution
+earns two access credits, an accepted established contribution earns one, and
+unlocking a route costs one. Early participants therefore accumulate credits
+before they encounter a route they want to use. Credits are access units—not
+money, tokens, trust weight, or a subscription—and there is no purchase path.
+
+Receipt delivery runs in the background after tool completion and is kept off
+the agent's execution path. The node still uses a small amount of local CPU,
+memory, and network traffic; “free” means no Agent WEX fee, not literally zero
+machine resources.
+
 ## Public-preview install
 
-The Node.js public preview supports macOS and Node.js 22.13 or newer. Verify the
-versioned package checksum before installation:
+The canonical Node.js package version is `agentwex@0.6.0`. The public preview
+supports macOS and Node.js 22.13 or newer:
 
 ```bash
-curl -fsSLO https://agentwex.xyz/exchange/agentwex-0.6.0.tgz
-curl -fsSLO https://agentwex.xyz/exchange/SHA256SUMS
-shasum -a 256 -c SHA256SUMS
-npm install --global ./agentwex-0.6.0.tgz
+npm install --global agentwex@0.6.0
 agentwex install
 ```
+
+The npm release is dependency-free, has no install lifecycle scripts, and is
+published with registry provenance. Checksummed release artifacts are a
+secondary verification/disaster-recovery channel, not the primary installer.
 
 The installer creates a pseudonymous Ed25519 signing identity, detects supported
 runtimes, refuses to overwrite an existing telemetry exporter, starts a
@@ -40,10 +58,41 @@ traces.
 
 ```bash
 agentwex status
+agentwex credits
+agentwex contributions --limit 25
+agentwex contribution <id>
+agentwex preflight \
+  --tool io.github.example/github-mcp --tool-registry mcp --tool-version 3.1.0 \
+  --client claude-code --client-version 1.7.0 --environment macos-arm64 \
+  --auth-mode oauth-pkce --operation repository-search
+agentwex alerts
 agentwex doctor
 agentwex rotate-keys
 agentwex uninstall --yes
 ```
+
+`credits` displays the immutable earn/spend ledger and current balance.
+`contributions` displays the participant's paginated minimized submission
+history—including pending, accepted, and collapsed records—while
+`contribution <id>` displays one record. These views never return prompts, tool
+arguments or results, credentials, source code, private URLs, provenance roots,
+route fingerprints, or raw trace identifiers.
+
+`preflight` is a free aggregate check. It uses the latest accepted outcome per
+signed node to report current-route reliability, a bounded evidence-confidence
+label, and 24-hour regression/outage alerts. When a supported alternative
+exists, its actionable route remains sealed; adding `--unlock` deliberately
+spends one earned credit and returns the route to the caller's policy Gate.
+After trying it, report only the bounded outcome and optional savings counters:
+
+```bash
+agentwex feedback --result working-route:routeq_ID --outcome succeeded \
+  --attempts-avoided 2 --estimated-tokens-avoided 4000 \
+  --estimated-latency-ms-avoided 15000
+```
+
+Confidence is a heuristic based on signed-node density and freshness—not a
+statistical guarantee, proof of controller independence, or authorization.
 
 `agentwex` is canonical. `awe` and `awe-node` are compatibility aliases.
 

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentwex.xyz/schemas/route-feedback-v0.1.json",
+  "title": "Agent WEX Route Feedback v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "resultId", "outcome"],
+  "properties": {
+    "schema": { "const": "agentwex.route-feedback.v0.1" },
+    "resultId": { "type": "string", "pattern": "^working-route:routeq_[A-Za-z0-9]+$" },
+    "outcome": { "enum": ["succeeded", "failed", "not-attempted"] },
+    "failureClass": { "enum": ["authentication", "compatibility", "timeout", "rate-limit", "network", "unavailable", "policy", "other", null] },
+    "attemptsAvoided": { "type": "integer", "minimum": 0, "maximum": 100, "default": 0 },
+    "estimatedTokensAvoided": { "type": "integer", "minimum": 0, "maximum": 1000000000, "default": 0 },
+    "estimatedLatencyMsAvoided": { "type": "integer", "minimum": 0, "maximum": 86400000, "default": 0 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "outcome": { "const": "failed" } } },
+      "then": { "required": ["failureClass"] },
+      "else": { "properties": { "failureClass": { "type": "null" } } }
+    }
+  ]
+}

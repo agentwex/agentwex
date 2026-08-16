@@ -12,6 +12,7 @@ The local node receives an OTLP span, immediately reduces it to a bounded compat
 - immutable credit entries;
 - verification receipts and decisions;
 - failed-route queries and their status.
+- released-route snapshots and bounded categorical effectiveness feedback.
 
 It does not intentionally store prompts, tool arguments, tool results, credentials, URLs, raw trace IDs, raw spans, or arbitrary executable routes.
 
@@ -22,6 +23,12 @@ For one node and an early design-partner pilot, the existing D1 schema is suffic
 After one explicit install and runtime connection:
 
 ```text
+before a tool call (when invoked)
+  -> free aggregate preflight
+  -> current reliability + confidence + alerts
+  -> optional one-credit supported-route unlock
+  -> route returns to Gate
+
 tool completes
   -> localhost collector
   -> privacy minimizer
@@ -29,12 +36,21 @@ tool completes
   -> signed-node verification
   -> credits update
   -> failure opens a route query
-  -> enough independent successes produce a bounded route
+  -> enough distinct signed-node reports produce a bounded route
   -> one credit unlocks it
   -> route returns to Gate
+  -> bounded outcome/savings feedback may be recorded
 ```
 
 The exchange never grants execution authority. A returned route is configuration-shaped evidence and is marked `gateRequired: true`.
+
+The localhost collector returns `202 Accepted` before exchange network work and
+performs receipt submission in its background queue. Participation creates no
+additional model calls or paid jobs. Agent WEX has no fee or credit-purchase
+path: accepted contributions earn access credits before a participant needs to
+spend one. The node still consumes bounded local CPU, memory, and network
+traffic, so this is a no-fee and off-critical-path claim, not a literal
+zero-resource claim.
 
 ## Already enforced
 
@@ -47,8 +63,11 @@ The exchange never grants execution authority. A returned route is configuration
 - API JSON bodies are capped at 64 KiB; signup fingerprints and authenticated nodes are rate limited.
 - API keys rotate, signing keys revoke, and account deactivation invalidates credentials and pseudonymizes registration fields.
 - The versioned dependency-free package includes Apache-2.0 license/notice files and a published SHA-256 manifest.
-- `awe-node uninstall --yes` removes exact Agent WEX runtime settings, stops the macOS service, and deactivates the remote account while retaining local backups.
+- `agentwex uninstall --yes` removes exact Agent WEX runtime settings, stops the macOS service, and deactivates the remote account while retaining local backups.
 - A node can unlock only a result for its own failed-route query.
+- Preflight aggregate statistics are free; actionable alternative details remain sealed until an explicit one-credit unlock.
+- Route feedback is accepted only for an owned release, is idempotent, and has no free-text field.
+- Outage and regression alerts require minimum signed-node evidence and grant no authority.
 - The collector binds to localhost and accepts OTLP/HTTP JSON only.
 - Uploads are size bounded.
 - Raw private telemetry fields are omitted from the receipt and covered by tests.
@@ -66,4 +85,4 @@ The exchange never grants execution authority. A returned route is configuration
 
 ## Honest installation claim
 
-`awe-node install` is the one explicit consent step. It can make subsequent participation passive, but it cannot observe a runtime that emits no events. The installer or an agent must connect that runtime to the localhost OTLP endpoint once.
+`agentwex install` is the one explicit consent step. It can make subsequent participation passive, but it cannot observe a runtime that emits no events. The installer or an agent must connect that runtime to the localhost OTLP endpoint once.

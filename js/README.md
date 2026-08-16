@@ -9,19 +9,18 @@ The Agent WEX node is an install-once, localhost-only collector for minimized to
 5. opens a working-route query after a failure;
 6. returns a signed-node-supported route receipt to the local agent when one becomes available.
 
-An accepted fresh contribution earns two credits under the current transparent schedule. Unlocking a completed working-route result spends one credit. Duplicate retries and additional roots from the same signed node do not earn again. Credits live in one exchange-owned append-only ledger; `~/.awe/state.json` is only a local cache and cannot change the server balance.
+An accepted fresh contribution earns two credits under the current transparent schedule; an accepted established contribution earns one. Unlocking a completed working-route result spends one credit. Early participants therefore accumulate credits before they need a route. Duplicate retries and additional roots from the same signed node do not earn again. Credits live in one exchange-owned append-only ledger; `~/.awe/state.json` is only a local cache and cannot change the server balance. Participation has no monetary charge or purchase path: credits are access units, not money, tokens, a subscription, or trust weight.
+
+The node observes outcomes the agent already produces. It does not create paid jobs or additional model calls. The localhost collector acknowledges accepted telemetry before performing exchange network work, so receipt submission and credit accumulation stay off the agent's execution path. The background node still uses a small amount of CPU, memory, and network traffic.
 
 The route is advice, not authority. It must return through the caller's Gate or policy system before use. A registered signing key authenticates a pseudonymous node. It does not prove that a different human or organization controls that node, or that a reported execution genuinely happened. Returned routes are explicitly labeled unverified network evidence.
 
 ## Public-preview node install
 
-Install the versioned dependency-free node package:
+Install the canonical dependency-free Node.js package, version `0.6.0`:
 
 ```sh
-curl -fsSLO https://agentwex.xyz/exchange/agentwex-0.6.0.tgz
-curl -fsSLO https://agentwex.xyz/exchange/SHA256SUMS
-shasum -a 256 -c SHA256SUMS
-npm install -g ./agentwex-0.6.0.tgz
+npm install --global agentwex@0.6.0
 agentwex install
 ```
 
@@ -108,10 +107,44 @@ Then inspect the node:
 
 ```sh
 agentwex status
+agentwex credits
+agentwex contributions --limit 25
+agentwex contribution <id>
+agentwex preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION \
+  --client CLIENT --client-version VERSION --environment ENV \
+  --auth-mode MODE --operation NAME
+agentwex alerts
 agentwex ledger
 agentwex routes
 agentwex doctor
 ```
+
+`credits` is the human-discoverable alias for the immutable `ledger` output.
+`contributions` returns the authenticated node's paginated minimized history,
+including pending, accepted, and collapsed records; `contribution <id>` returns
+one record. History contains public compatibility fields, status, verification
+reason, timestamps, receipt hash, and credits awarded. It never returns prompts,
+arguments, results, credentials, source code, private URLs, provenance roots,
+route fingerprints, or raw trace identifiers.
+
+Preflight is a free aggregate reliability check over the same minimized
+receipts. It reports the latest per-node success/failure rate, freshness,
+heuristic confidence, and possible regression/outage alerts. It never executes
+or authorizes a route. If a supported alternative exists, rerun with `--unlock`
+to deliberately spend one earned credit and receive the route with
+`gateRequired: true`.
+
+After the local policy gate tries an unlocked route, record bounded feedback:
+
+```sh
+agentwex feedback --result working-route:routeq_ID --outcome succeeded \
+  --attempts-avoided 2 --estimated-tokens-avoided 4000 \
+  --estimated-latency-ms-avoided 15000
+```
+
+Feedback has no free-text field and is accepted only for a release owned by the
+authenticated node. Savings counters are self-reported estimates, not billing
+or credit inputs.
 
 Rotate both the API credential and local Ed25519 identity with `agentwex rotate-keys`. Remove the background service, exact Agent WEX runtime settings, local config, and remote pseudonymous account with `agentwex uninstall --yes`. Add `--keep-account` or `--keep-local` only when you deliberately want those retained. Runtime-setting backups are kept locally.
 

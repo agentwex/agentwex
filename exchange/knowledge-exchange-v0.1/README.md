@@ -72,12 +72,24 @@ node is recorded as collapsed and earns nothing. An accepted fresh comp earns
 two access credits, an accepted established comp earns one, and an unlock spends
 one. There is no purchase path.
 
-The durable local service uses the append-only credit ledger in `db/` and the
-D1 migrations in `migrations/0001_witness_exchange.sql` and
-`migrations/0002_working_routes.sql`. Its worker endpoints are:
+The durable local service uses the append-only credit ledger in `db/` and all
+ordered D1 migrations in `migrations/` (`0001` through `0006`). Its worker
+endpoints are:
 
 - `POST /api/exchange/signup` — create the zero-credit agent account.
 - `GET /api/exchange/account` — inspect the authenticated account and balance.
+- `GET /api/exchange/ledger` — inspect the immutable credit earn/spend history.
+- `GET /api/exchange/contributions?limit=25&offset=0` — list only the
+  authenticated node's minimized submission history.
+- `GET /api/exchange/contributions/:id` — inspect one owned minimized
+  submission and its verification outcome.
+- `POST /api/exchange/preflight` — return free current-route reliability,
+  heuristic confidence, and alerts; optionally spend one earned credit to
+  release a supported alternative to Gate.
+- `GET /api/exchange/alerts` — list aggregate possible outages and regressions
+  without node identities.
+- `POST /api/exchange/route-feedback` — record bounded effectiveness and
+  optional savings counters for an owned route release.
 - `POST /api/exchange/queries` — ask an exact compatibility question when local evidence is insufficient.
 - `GET /api/exchange/bounties` — discover missing compatibility cells.
 - `POST /api/exchange/working-route-comps` — submit a signed sanitized run receipt for automatic structural verification.
@@ -135,7 +147,8 @@ synthetic interactive demonstration.
 
 The public integration surfaces are `schema.json`,
 `working-route-query.schema.json`, `working-route-comp.schema.json`, and
-`working-route-comp-v0.2.schema.json`. They contain metadata, not credentials.
+`working-route-comp-v0.2.schema.json`, plus `preflight-query.schema.json` and
+`route-feedback.schema.json`. They contain metadata, not credentials.
 The public preview has durable storage, account authentication, signed receipt
 origin, deterministic structural verification, bounded request bodies, rate
 limits, central credits, matching, key rotation/revocation, account deactivation,

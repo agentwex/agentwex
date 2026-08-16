@@ -10,8 +10,8 @@ network so a signed receipt is not confused with independent verification.
 | GitHub organization | `agentwex` | Reserved |
 | GitHub repository | `agentwex/agentwex` | Public |
 | npm organization | `@agentwex` | Reserved |
-| npm package | `agentwex` | `0.0.1` namespace release published; `0.6.0` preview proposed |
-| PyPI project | `agentwex` | Release prepared; account 2FA pending |
+| npm package | `agentwex` | `0.6.0` is the canonical Node.js public-preview release |
+| PyPI project | `agentwex` | Namespace placeholder only; not the Agent WEX node |
 | Primary shell command | `agentwex` | Canonical |
 | Convenience shell aliases | `awe`, `awe-node` | Included in the `0.6.0` preview |
 
@@ -21,7 +21,8 @@ package name or the only identifier in automation.
 
 ## Release trust
 
-The repository contains manual GitHub Actions workflows for npm and PyPI.
-They use OpenID Connect trusted publishing and do not require long-lived
-registry tokens. Registry-side trusted-publisher configuration must match the
-repository, workflow filename, and GitHub environment before a workflow is run.
+The Node.js package on npm is the only canonical public-preview distribution.
+The repository's npm workflow uses OpenID Connect trusted publishing and does
+not require a long-lived registry token. Registry-side trusted-publisher
+configuration must match the repository, workflow filename, and GitHub
+environment before the workflow is run.
