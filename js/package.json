@@ -6,7 +6,7 @@
   "homepage": "https://agentwex.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Silentpartnercoding/agentwex.git"
+    "url": "git+https://github.com/agentwex/agentwex.git"
   },
   "type": "module",
   "bin": {

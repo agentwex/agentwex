@@ -8,8 +8,9 @@ providing a small, real interface that downstream Minority Prophet components ca
 detect and integrate with.
 
 ```bash
-agentwex --version
-awe --version
+npm install --global agentwex
+agentwex --version  # canonical
+awe --version       # convenience alias
 ```
 
 `agentwex` is the canonical command. `awe` is a convenience alias.
@@ -19,6 +20,14 @@ awe --version
 Version `0.0.1` establishes the namespace and CLI contract. Receipt creation,
 verification, and Witness Exchange transports will follow without breaking the
 command names.
+
+The npm package is public. The equivalent PyPI release is built and tested but
+remains pending until the publisher account finishes its required 2FA setup.
+Future releases use GitHub trusted publishing so registry credentials are not
+stored in the repository or on developer machines.
+
+See [the namespace record](docs/NAMESPACE.md) for the canonical names and
+current reservation status.
 
 ## License
 

@@ -20,7 +20,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://agentwex.com"
-Repository = "https://github.com/Silentpartnercoding/agentwex"
+Repository = "https://github.com/agentwex/agentwex"
 
 [project.scripts]
 agentwex = "agentwex.cli:main"
