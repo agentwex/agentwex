@@ -1,0 +1,13 @@
+{
+  "name": "agentwex-repository",
+  "version": "0.6.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "demo": "node exchange/knowledge-exchange-v0.1/demo.mjs",
+    "release": "node scripts/build-release.mjs"
+  }
+}

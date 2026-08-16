@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minorityprophet.org/schemas/working-route-comp-v0.1.json",
+  "title": "Agent WEX Route Outcome Comp v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "outcome", "resolutionKind", "routeFingerprint", "observedAt", "provenanceRootId", "independenceBasis"],
+  "properties": {
+    "schema": { "const": "minority-prophet.working-route-comp.v0.1" },
+    "queryId": { "type": "string", "minLength": 1 },
+    "toolRegistry": { "enum": ["mcp", "npm", "pypi", "github", "public-api", "runtime"] },
+    "toolId": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9@][A-Za-z0-9._@/+~-]*$" },
+    "toolVersion": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "clientId": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "clientVersion": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "environment": { "enum": ["macos-arm64", "macos-x64", "linux-arm64", "linux-x64", "windows-x64", "container", "other"] },
+    "authMode": { "enum": ["none", "api-key", "oauth-pkce", "oauth-client", "mtls", "signed-request", "other"] },
+    "operation": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "outcome": { "enum": ["success", "failure"] },
+    "errorClass": { "type": ["string", "null"], "maxLength": 120 },
+    "resolutionKind": { "enum": ["none", "upgrade-client", "upgrade-tool", "upgrade-client-and-tool", "change-auth-flow", "change-transport", "change-runtime", "retry-later", "alternate-tool"] },
+    "routeFingerprint": { "type": "string", "pattern": "^sha256:[a-fA-F0-9-]{8,128}$", "description": "Opaque identifier used to recognize equivalent bounded routes without disclosing their contents." },
+    "observedAt": { "type": "string", "format": "date-time" },
+    "provenanceRootId": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "independenceBasis": { "enum": ["attested", "declared", "inferred", "unknown"] }
+  }
+}
