@@ -1,0 +1,132 @@
+{
+  "format": "awe.machine-discovery.v1",
+  "name": "Agent WEX",
+  "shortName": "Agent WEX",
+  "description": "Shared reliability for agent tools: free exact-cell preflight, failed-call credits, warnings, and gate-bound recovery routes.",
+  "homepage": "https://agentwex.xyz",
+  "documentation": {
+    "llms": "https://agentwex.xyz/llms.txt",
+    "skill": "https://agentwex.xyz/exchange/skill.md",
+    "canonicalSkill": "https://github.com/agentwex/agentwex/blob/main/docs/INSTALL.md",
+    "protocol": "https://github.com/agentwex/agentwex/tree/main/exchange/knowledge-exchange-v0.1",
+    "source": "https://github.com/agentwex/agentwex"
+  },
+  "distribution": {
+    "sourceAvailable": true,
+    "publicNpmPackageReleased": false,
+    "directPackageReleased": true,
+    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.0.tgz",
+    "directPackageSha256": "fc718d3e65e6547debe8cdc2bc16e19d3165a0bdbcb0279d3ed946fbc2a8bb93",
+    "checksumUrl": "https://agentwex.xyz/exchange/SHA256SUMS",
+    "hostedExchangeReleased": true,
+    "hostedExchangeStage": "public-preview",
+    "productionSecurityCertified": false,
+    "minimumNodeVersion": "22.13.0"
+  },
+  "capabilities": [
+    "minimized_outcome_capture",
+    "provenance_aware_route_matching",
+    "distinct_signed_node_counting",
+    "background_contribution",
+    "credit_accounting",
+    "gate_bound_route_return",
+    "signed_receipt_origin",
+    "distinct_node_support_collapse",
+    "free_aggregate_preflight",
+    "regression_and_outage_alerts",
+    "failure_to_credit_bootstrap",
+    "contribution_history",
+    "bounded_route_feedback"
+  ],
+  "economics": {
+    "signupCredits": 0,
+    "freshAcceptedContributionCredits": 2,
+    "establishedAcceptedContributionCredits": 1,
+    "supportedRouteUnlockCredits": 1,
+    "noRouteCreditSpend": 0,
+    "purchasePath": false,
+    "creditsAreMoney": false,
+    "duplicateRetriesEarnCredits": false
+  },
+  "preflight": {
+    "automaticInterception": false,
+    "aggregateAssessmentCostCredits": 0,
+    "latestOutcomePerSignedNode": true,
+    "confidenceIsHeuristic": true,
+    "possibleAlerts": ["REGRESSION", "POSSIBLE_OUTAGE"],
+    "currentRoutingScope": "tool and client version plus resolution kind within one exact compatibility cell",
+    "unrestrictedCrossToolProviderAuthRuntimeRoutingClaimed": false
+  },
+  "impactMeasurement": {
+    "feedbackFields": ["outcome", "failureClass", "attemptsAvoided", "estimatedTokensAvoided", "estimatedLatencyMsAvoided"],
+    "freeTextAccepted": false,
+    "selfReportedEstimates": true,
+    "verifiedSavingsClaimed": false,
+    "billingOrCreditInput": false
+  },
+  "runtimeAdapters": {
+    "claudeCode": {
+      "status": "alpha",
+      "transport": "otlp_http_json_logs",
+      "configurationCommand": "agentwex adapter claude-code --tool <tool-name> --tool-registry <registry> --tool-version <version> --auth-mode <mode>",
+      "automaticConnection": true,
+      "preciseMappingOptional": true,
+      "runtimeDerivedUnknownsRemainExplicit": true,
+      "exportsToolDetails": false
+    },
+    "codex": {
+      "status": "alpha",
+      "transport": "otlp_http_json_logs",
+      "configurationCommand": "agentwex adapter codex --tool <tool-name> --tool-registry <registry> --tool-version <version> --auth-mode <mode>",
+      "automaticConnection": true,
+      "preciseMappingOptional": true,
+      "preservesExistingExporter": true,
+      "discardsArgumentsAndOutputLocally": true
+    },
+    "geminiCli": {
+      "status": "alpha",
+      "transport": "otlp_http_json_logs",
+      "configurationCommand": "agentwex adapter gemini-cli --tool <tool-name> --tool-registry <registry> --tool-version <version> --auth-mode <mode>",
+      "automaticConnection": true,
+      "preciseMappingOptional": true,
+      "promptLoggingEnabled": false,
+      "detailedTracesEnabled": false
+    },
+    "bernstein": {
+      "status": "alpha",
+      "optional": true,
+      "transport": "localhost_lifecycle_plugin",
+      "configurationCommand": "agentwex adapter bernstein --task-role <bernstein-role> --tool <bounded-route-name> --tool-registry <registry> --tool-version <version> --auth-mode <mode>",
+      "requiresExplicitCompatibilityMapping": true,
+      "requiresLocalRoleFilter": true,
+      "observes": ["task_completed", "task_failed"],
+      "forbiddenFields": ["task_title", "result_summary", "error_text", "prompt", "result", "diff", "source_code"]
+    }
+  },
+  "modelCompatibility": {
+    "principle": "Agent WEX instruments the runtime that executes a tool, not the model brand.",
+    "runtimeDependent": [
+      "Google Gemini models",
+      "Meta Muse and Llama models",
+      "xAI Grok models",
+      "DeepSeek models",
+      "other models hosted by a supported runtime"
+    ],
+    "directModelAdapterClaimed": false
+  },
+  "authorityBoundary": {
+    "grantsAuthority": false,
+    "returnedRoutesRequireLocalPolicy": true,
+    "controllerIndependenceVerified": false,
+    "executionTruthVerified": false,
+    "forbiddenOutboundFields": [
+      "raw_prompts",
+      "tool_arguments",
+      "tool_results",
+      "credentials",
+      "customer_content",
+      "source_code",
+      "proprietary_methods"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "package": "agentwex",
+  "version": "0.6.0",
+  "filename": "agentwex-0.6.0.tgz",
+  "sha256": "fc718d3e65e6547debe8cdc2bc16e19d3165a0bdbcb0279d3ed946fbc2a8bb93",
+  "size": 28087,
+  "node": ">=22.13.0",
+  "dependencies": 0,
+  "lifecycleScripts": false,
+  "source": "https://github.com/agentwex/agentwex"
+}

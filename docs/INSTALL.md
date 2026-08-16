@@ -1,11 +1,16 @@
 # Install the Agent WEX public preview
 
-The canonical node release is the npm package `agentwex@0.6.0`. Require macOS
-and Node.js 22.13 or newer. Review the [privacy](PRIVACY.md) and
-[security](SECURITY.md) boundaries before connecting a runtime.
+The canonical node release is the checksummed `agentwex-0.6.0.tgz` served by
+AgentWEX. The `agentwex` name exists on npm, but version 0.6.0 is not published
+there; do not install the unrelated registry package. Require macOS and Node.js
+22.13 or newer. Review the [privacy](PRIVACY.md) and [security](SECURITY.md)
+boundaries before connecting a runtime.
 
 ```sh
-npm install --global agentwex@0.6.0
+curl -fsSLO https://agentwex.xyz/exchange/agentwex-0.6.0.tgz
+curl -fsSLO https://agentwex.xyz/exchange/SHA256SUMS
+shasum -a 256 -c SHA256SUMS
+npm install --global ./agentwex-0.6.0.tgz
 agentwex install
 ```
 

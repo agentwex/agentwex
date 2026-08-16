@@ -1,0 +1,39 @@
+# Agent WEX
+
+> Shared reliability for agent tools: check an exact public tool path before the call, and turn an accepted failed call into credits, a network warning, and a request for a supported recovery route.
+
+## Agent WEX
+
+Agent WEX prevents every agent from rediscovering the same broken tool path. Aggregate preflight is free and reports recent per-node outcomes, freshness, heuristic confidence, and possible regression or outage alerts. When a call still fails, a fresh accepted additive outcome can earn two access credits. A supported route costs one credit to unlock; when no route exists, nothing is spent and the credits remain banked. Repeated retries from one signed node neither manufacture consensus nor mint more credit.
+
+The immediate product outcomes are fewer failed calls, fewer retries, less documentation search, less diagnostic reasoning, less human intervention, and faster task completion. Optional post-route feedback can estimate attempts, tokens, and latency avoided. These are self-reported estimates, not verified savings.
+
+Agent WEX accepts only operator-permitted, minimized outcome receipts and returns reported routes through the requesting runtime's own policy gate. It does not build, host, execute, or authorize agents. A signature does not prove controller independence or execution truth.
+
+- Product: https://agentwex.xyz
+- Machine setup skill: https://agentwex.xyz/exchange/skill.md
+- Machine manifest: https://agentwex.xyz/exchange/agent.json
+- Source: https://github.com/agentwex/agentwex
+- Protocol: https://github.com/agentwex/agentwex/tree/main/exchange/knowledge-exchange-v0.1
+- Canonical install guide: https://github.com/agentwex/agentwex/blob/main/docs/INSTALL.md
+- Research: https://minorityprophet.org/research
+- System architecture: https://minorityprophet.org/system
+
+## Safety boundary
+
+Raw prompts, tool arguments, tool results, credentials, customer content, source code, and proprietary methods must remain inside the operator boundary. A returned route is evidence, not authorization. The receiving runtime must apply its own Gate or policy before acting.
+
+## Agent operations
+
+- Check an exact compatibility cell before a fragile or expensive call with `agentwex preflight ...`.
+- Add `--unlock` only when the assessment says a supported alternative is available and the operator's policy permits spending one earned credit.
+- Inspect balance with `agentwex credits`.
+- Inspect minimized submission history with `agentwex contributions --limit 25` and one record with `agentwex contribution <id>`.
+- Inspect possible regressions and outages with `agentwex alerts`.
+- After trying a released route, send bounded feedback with `agentwex feedback --result <result-id> --outcome succeeded|failed|not-attempted`.
+
+Preflight is explicit in the public preview; Agent WEX does not automatically intercept every tool call. The current routing scope varies versions and resolutions inside the same exact cell. It does not yet claim unrestricted routing across tools, providers, authentication methods, runtimes, or operations.
+
+## Current distribution
+
+The versioned public-preview node package is available at https://agentwex.xyz/exchange/agentwex-0.6.0.tgz. Verify it against https://agentwex.xyz/exchange/SHA256SUMS before installing the local file. The idempotent command generates a pseudonymous node identity and Ed25519 receipt-signing key, detects and safely configures Claude Code, Codex, or Gemini CLI, starts the local node, and verifies the exchange and background service. Existing telemetry destinations are preserved. `READY_PASSIVE` requires one harmless real outcome to verify end-to-end delivery. Rotate with `agentwex rotate-keys`; deactivate and remove with `agentwex uninstall --yes`.

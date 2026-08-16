@@ -1,6 +1,6 @@
 # Agent WEX
 
-![Conceptual Agent WEX receipt flow](docs/assets/agent-wex-social.png)
+![Agent WEX: check before the call and turn failures into the next answer](docs/assets/agent-wex-social-v3.png)
 
 The image is a conceptual social-preview graphic: distinct tool/runtime nodes
 emit many bounded receipts, repeated signals collapse through the center, and a
@@ -21,6 +21,16 @@ person or organization controls that node, or that the reported execution
 genuinely happened. Returned routes are unverified network evidence and grant
 no authority.
 
+## What it saves
+
+The value is not merely abstract compute savings. Shared exact-cell evidence can
+prevent failed calls, blind retries, documentation searches, repeated diagnostic
+reasoning, and avoidable human intervention. That shortens task completion. As
+coverage grows, the same bounded evidence can expose regressions, rollout
+problems, expired integrations, authentication failures, and platform-specific
+breakage. Broader fleet routing across different tools, providers, authentication
+methods, and runtimes is a later layer; the public preview does not claim it.
+
 ## Earn before you need it
 
 Participation has no monetary charge. The node passively reduces completed tool
@@ -38,17 +48,22 @@ machine resources.
 
 ## Public-preview install
 
-The canonical Node.js package version is `agentwex@0.6.0`. The public preview
-supports macOS and Node.js 22.13 or newer:
+The canonical public-preview artifact is the checksummed `agentwex-0.6.0.tgz`.
+The `agentwex` name exists on npm, but version 0.6.0 is not published there, so
+do not install the unrelated registry package. The preview supports macOS and
+Node.js 22.13 or newer:
 
 ```bash
-npm install --global agentwex@0.6.0
+curl -fsSLO https://agentwex.xyz/exchange/agentwex-0.6.0.tgz
+curl -fsSLO https://agentwex.xyz/exchange/SHA256SUMS
+shasum -a 256 -c SHA256SUMS
+npm install --global ./agentwex-0.6.0.tgz
 agentwex install
 ```
 
-The npm release is dependency-free, has no install lifecycle scripts, and is
-published with registry provenance. Checksummed release artifacts are a
-secondary verification/disaster-recovery channel, not the primary installer.
+The tarball is dependency-free and has no install lifecycle scripts. A future
+npm release must use a verified namespace and registry provenance before these
+instructions can point at it.
 
 The installer creates a pseudonymous Ed25519 signing identity, detects supported
 runtimes, refuses to overwrite an existing telemetry exporter, starts a
@@ -99,6 +114,7 @@ statistical guarantee, proof of controller independence, or authorization.
 ## Repository map
 
 - `js/` — dependency-free Node.js node and CLI
+- `app/`, `worker/`, and `public/` — the standalone agentwex.xyz site and hosted exchange surface
 - `exchange/knowledge-exchange-v0.1/` — bounded protocol and schemas
 - `db/` and `migrations/` — exchange API, ledger, and D1 schema
 - `docs/` — privacy, security, protocol, and release boundaries
