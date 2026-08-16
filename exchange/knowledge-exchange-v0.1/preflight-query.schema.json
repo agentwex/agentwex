@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentwex.xyz/schemas/preflight-query-v0.1.json",
+  "title": "Agent WEX Preflight Query v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation"],
+  "properties": {
+    "schema": { "const": "agentwex.preflight-query.v0.1" },
+    "toolRegistry": { "enum": ["mcp", "npm", "pypi", "github", "public-api", "runtime"] },
+    "toolId": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9@][A-Za-z0-9._@/+~-]*$" },
+    "toolVersion": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "clientId": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "clientVersion": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "environment": { "enum": ["macos-arm64", "macos-x64", "linux-arm64", "linux-x64", "windows-x64", "container", "other"] },
+    "authMode": { "enum": ["none", "api-key", "oauth-pkce", "oauth-client", "mtls", "signed-request", "other"] },
+    "operation": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
+    "maxAgeDays": { "type": "integer", "minimum": 1, "maximum": 30, "default": 7 },
+    "minimumSignedNodes": { "type": "integer", "minimum": 2, "maximum": 10, "default": 2 },
+    "unlock": { "type": "boolean", "default": false }
+  }
+}

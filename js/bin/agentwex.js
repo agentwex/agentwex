@@ -6,7 +6,7 @@ import { arch, platform } from "node:os";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
-import { deactivateAccount, signup, getAccount, getContribution, getLedger, listContributions, registerSigningKey, revokeSigningKey, rotateApiKey } from "../lib/client.mjs";
+import { deactivateAccount, signup, getAccount, getContribution, getLedger, getReliabilityAlerts, listContributions, preflight, registerSigningKey, revokeSigningKey, rotateApiKey, submitFeedback } from "../lib/client.mjs";
 import { defaultConfigPath, readConfig, validateBaseUrl, writePrivateJson, writePrivateText } from "../lib/config.mjs";
 import { runDaemon } from "../lib/daemon.mjs";
 import { installBackgroundService, uninstallBackgroundService } from "../lib/service.mjs";
@@ -26,14 +26,14 @@ function parseArgs(argv) {
     const value = rest[index];
     if (!value.startsWith("--")) { positional.push(value); continue; }
     const [rawKey, inline] = value.slice(2).split("=", 2);
-    if (["no-service", "yes", "keep-account", "keep-local"].includes(rawKey)) options[rawKey] = true;
+    if (["no-service", "yes", "keep-account", "keep-local", "unlock"].includes(rawKey)) options[rawKey] = true;
     else options[rawKey] = inline ?? rest[++index];
   }
   return { command, options, positional };
 }
 
 function printHelp() {
-  process.stdout.write(`Agent WEX node v0.6.0\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  routes [--config PATH]\n  doctor [--config PATH]\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
+  process.stdout.write(`Agent WEX node v0.6.0\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-signed-nodes 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  doctor [--config PATH]\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
 }
 
 function environmentClass() {
@@ -341,6 +341,51 @@ async function contribution(configPath, contributionId) {
   process.stdout.write(`${JSON.stringify(await getContribution(config, contributionId), null, 2)}\n`);
 }
 
+function requiredPreflightOptions(options) {
+  for (const required of ["tool", "tool-registry", "tool-version", "client", "client-version", "environment", "auth-mode", "operation"]) {
+    if (!options[required]) throw new Error(`Preflight requires --${required}`);
+  }
+}
+
+async function preflightCommand(configPath, options) {
+  requiredPreflightOptions(options);
+  const config = await readConfig(configPath);
+  const assessment = await preflight(config, {
+    schema: "agentwex.preflight-query.v0.1",
+    toolRegistry: options["tool-registry"],
+    toolId: options.tool,
+    toolVersion: options["tool-version"],
+    clientId: options.client,
+    clientVersion: options["client-version"],
+    environment: options.environment,
+    authMode: options["auth-mode"],
+    operation: options.operation,
+    maxAgeDays: Number(options["max-age-days"] ?? 7),
+    minimumSignedNodes: Number(options["minimum-signed-nodes"] ?? 2),
+    unlock: options.unlock === true,
+  });
+  process.stdout.write(`${JSON.stringify(assessment, null, 2)}\n`);
+}
+
+async function alerts(configPath, options) {
+  const config = await readConfig(configPath);
+  process.stdout.write(`${JSON.stringify(await getReliabilityAlerts(config, options.limit ?? 50), null, 2)}\n`);
+}
+
+async function feedback(configPath, options) {
+  if (!options.result || !options.outcome) throw new Error("Feedback requires --result and --outcome");
+  const config = await readConfig(configPath);
+  process.stdout.write(`${JSON.stringify(await submitFeedback(config, {
+    schema: "agentwex.route-feedback.v0.1",
+    resultId: options.result,
+    outcome: options.outcome,
+    failureClass: options["failure-class"] ?? null,
+    attemptsAvoided: Number(options["attempts-avoided"] ?? 0),
+    estimatedTokensAvoided: Number(options["estimated-tokens-avoided"] ?? 0),
+    estimatedLatencyMsAvoided: Number(options["estimated-latency-ms-avoided"] ?? 0),
+  }), null, 2)}\n`);
+}
+
 async function doctor(configPath) {
   const config = await readConfig(configPath);
   const checks = [];
@@ -375,6 +420,9 @@ async function main() {
   if (command === "ledger" || command === "credits") return ledger(configPath);
   if (command === "contributions") return contributions(configPath, options);
   if (command === "contribution") return contribution(configPath, positional[0]);
+  if (command === "preflight") return preflightCommand(configPath, options);
+  if (command === "alerts") return alerts(configPath, options);
+  if (command === "feedback") return feedback(configPath, options);
   if (command === "routes") return routes(configPath);
   if (command === "doctor") return doctor(configPath);
   throw new Error(`Unknown command: ${command}`);

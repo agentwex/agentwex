@@ -10,9 +10,13 @@ import {
   listAgentContributions,
   listOpenRouteBounties,
   reserveResultAccess,
+  runPreflight,
   signupAgent,
   submitContribution,
+  submitRouteFeedback,
   submitWorkingRouteComp,
+  validatePreflight,
+  validateRouteFeedback,
   validateRouteQuery,
   validateSignup,
   validateWorkingRouteComp,
@@ -159,6 +163,133 @@ test("working-route validation rejects private tool content", () => {
   assert.equal(validateWorkingRouteComp({ ...routeComp, toolArguments: { repository: "private" } }), null);
   assert.equal(validateWorkingRouteComp({ ...routeComp, credentials: "secret" }), null);
   assert.equal(validateWorkingRouteComp({ ...routeComp, schema: "wrong.schema" }), null);
+  assert.equal(validatePreflight({
+    toolRegistry: routeComp.toolRegistry,
+    toolId: routeComp.toolId,
+    toolVersion: routeComp.toolVersion,
+    clientId: routeComp.clientId,
+    clientVersion: routeComp.clientVersion,
+    environment: routeComp.environment,
+    authMode: routeComp.authMode,
+    operation: routeComp.operation,
+  })?.minimumSignedNodes, 2);
+  assert.equal(validateRouteFeedback({ resultId: "working-route:routeq_abc123", outcome: "succeeded" })?.attemptsAvoided, 0);
+  assert.equal(validateRouteFeedback({ resultId: "working-route:routeq_abc123", outcome: "failed" }), null);
+  assert.equal(validateRouteFeedback({ resultId: "working-route:routeq_abc123", outcome: "failed", failureClass: "one-off-private-detail" }), null);
+  assert.equal(validateRouteFeedback({ resultId: "working-route:routeq_abc123", outcome: "failed", failureClass: "compatibility" })?.failureClass, "compatibility");
+});
+
+test("preflight seals a supported alternative, spends one earned credit on unlock, and records bounded impact feedback", async () => {
+  const db = d1TestDatabase();
+  await ensureExchangeSchema(db);
+  const requester = await signupAgent(db, {
+    ...signupBody,
+    agent: { ...signupBody.agent, name: "Preflight Requester", externalSubject: "preflight-requester" },
+  });
+  const firstContributor = await signupAgent(db, {
+    ...signupBody,
+    agent: { ...signupBody.agent, name: "Preflight Route A", externalSubject: "preflight-route-a" },
+  });
+  const secondContributor = await signupAgent(db, {
+    ...signupBody,
+    agent: { ...signupBody.agent, name: "Preflight Route B", externalSubject: "preflight-route-b" },
+  });
+  const creditSource = await submitContribution(db, requester.account.agentId, {
+    recordKind: "tool-result",
+    topic: "public-preflight-participation",
+    provenanceRootId: "preflight-requester-credit-root",
+    independenceBasis: "attested",
+    freshnessDays: 0,
+  });
+  await acceptContribution(db, {
+    contributionId: creditSource.contribution.contributionId,
+    verifierReceiptId: "preflight-requester-credit-receipt",
+    independentlyAdditive: true,
+  });
+
+  const first = await submitWorkingRouteComp(db, firstContributor.account.agentId, {
+    ...routeComp,
+    queryId: undefined,
+    provenanceRootId: "preflight-supported-route-a",
+  });
+  await acceptContribution(db, {
+    contributionId: first.contribution.contributionId,
+    verifierReceiptId: "preflight-supported-receipt-a",
+    independentlyAdditive: true,
+  });
+  const second = await submitWorkingRouteComp(db, secondContributor.account.agentId, {
+    ...routeComp,
+    queryId: undefined,
+    provenanceRootId: "preflight-supported-route-b",
+  });
+  await acceptContribution(db, {
+    contributionId: second.contribution.contributionId,
+    verifierReceiptId: "preflight-supported-receipt-b",
+    independentlyAdditive: true,
+  });
+
+  const preflightBody = {
+    schema: "agentwex.preflight-query.v0.1",
+    toolRegistry: routeComp.toolRegistry,
+    toolId: routeComp.toolId,
+    toolVersion: "3.1.0",
+    clientId: routeComp.clientId,
+    clientVersion: "1.7.0",
+    environment: routeComp.environment,
+    authMode: routeComp.authMode,
+    operation: routeComp.operation,
+    maxAgeDays: 7,
+    minimumSignedNodes: 2,
+    unlock: false,
+  };
+  const sealed = await runPreflight(db, requester.account.agentId, preflightBody);
+  assert.equal(sealed.status, 200);
+  assert.equal(sealed.assessment.recommendation.action, "UNLOCK_SUPPORTED_ROUTE");
+  assert.equal(sealed.assessment.recommendation.routeDetailsSealed, true);
+  assert.equal(sealed.assessment.routeQuery.status, "RESULT_AVAILABLE");
+  assert.equal("routeAccess" in sealed.assessment, false);
+
+  const unlocked = await runPreflight(db, requester.account.agentId, { ...preflightBody, unlock: true });
+  assert.equal(unlocked.assessment.recommendation.routeDetailsSealed, false);
+  assert.equal(unlocked.assessment.routeAccess.creditsSpent, 1);
+  assert.equal(unlocked.assessment.routeAccess.routeReceipt.workingRoute.toolVersion, routeComp.toolVersion);
+  assert.equal(unlocked.assessment.routeAccess.routeReceipt.gateRequired, true);
+  assert.equal((await getAgentAccount(db, requester.account.agentId)).creditBalance, 1);
+
+  const feedback = await submitRouteFeedback(db, requester.account.agentId, {
+    schema: "agentwex.route-feedback.v0.1",
+    resultId: unlocked.assessment.routeAccess.resultId,
+    outcome: "succeeded",
+    attemptsAvoided: 2,
+    estimatedTokensAvoided: 4000,
+    estimatedLatencyMsAvoided: 15000,
+  });
+  assert.equal(feedback.status, 201);
+  assert.equal(feedback.feedback.attemptsAvoided, 2);
+  const replay = await submitRouteFeedback(db, requester.account.agentId, {
+    resultId: unlocked.assessment.routeAccess.resultId,
+    outcome: "succeeded",
+    attemptsAvoided: 2,
+    estimatedTokensAvoided: 4000,
+    estimatedLatencyMsAvoided: 15000,
+  });
+  assert.equal(replay.feedback.idempotentReplay, true);
+  const conflictingReplay = await submitRouteFeedback(db, requester.account.agentId, {
+    resultId: unlocked.assessment.routeAccess.resultId,
+    outcome: "not-attempted",
+  });
+  assert.deepEqual(conflictingReplay, { ok: false, status: 409, error: "route_feedback_already_recorded" });
+  const crossAccount = await submitRouteFeedback(db, firstContributor.account.agentId, {
+    resultId: unlocked.assessment.routeAccess.resultId,
+    outcome: "succeeded",
+  });
+  assert.equal(crossAccount.status, 404);
+
+  const repeated = await runPreflight(db, requester.account.agentId, { ...preflightBody, unlock: true });
+  assert.equal(repeated.assessment.routeAccess.alreadyUnlocked, true);
+  assert.equal(repeated.assessment.routeAccess.creditsSpent, 0);
+  assert.equal(repeated.assessment.candidateSummary.feedbackImpact.attemptsAvoided, 2);
+  assert.equal((await getAgentAccount(db, requester.account.agentId)).creditBalance, 1);
 });
 
 test("an empty query opens a bounty and two accepted independent comps complete it", async () => {

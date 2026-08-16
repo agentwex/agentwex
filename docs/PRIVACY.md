@@ -31,3 +31,10 @@ compatibility fields, status, timestamps, verification reason, receipt hash,
 and credits awarded. It excludes prompts, arguments, outputs, credentials,
 source code, private URLs, provenance roots, route fingerprints, and raw trace
 identifiers. Cross-account contribution lookup returns `404`.
+
+Preflight derives aggregate rates and alerts from the same minimized receipts;
+it does not collect another telemetry payload. Route feedback stores only an
+owned result ID, categorical outcome, optional fixed-vocabulary failure class,
+and bounded integer estimates for attempts, tokens, and latency avoided. It has
+no free-text field. Another node cannot submit feedback for a route it did not
+unlock.

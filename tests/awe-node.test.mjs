@@ -507,4 +507,24 @@ test("localhost collector authenticates intake and queues exchange work off the 
   const detail = JSON.parse(detailCommand.stdout);
   assert.equal(detail.contributionId, history.contributions[0].contributionId);
   assert.equal(detail.sensitivePayloadStored, false);
+
+  const preflightCommand = await execFileAsync(process.execPath, [
+    resolve("js/bin/agentwex.js"), "preflight",
+    "--tool", "io.github.example/github-mcp", "--tool-registry", "mcp", "--tool-version", "3.1.0",
+    "--client", "claude-code", "--client-version", "1.7.0", "--environment", "macos-arm64",
+    "--auth-mode", "oauth-pkce", "--operation", "repository-search", "--config", configPath,
+  ]);
+  const preflight = JSON.parse(preflightCommand.stdout);
+  assert.equal(preflight.schema, "agentwex.preflight-assessment.v0.1");
+  assert.equal(preflight.currentRoute.distinctSignedNodeCount, 1);
+  assert.equal(preflight.evidenceConfidence.level, "insufficient");
+  assert.equal(preflight.recommendation.gateRequired, true);
+  assert.equal(JSON.stringify(preflight).includes("routeFingerprint"), false);
+
+  const alertsCommand = await execFileAsync(process.execPath, [
+    resolve("js/bin/agentwex.js"), "alerts", "--limit", "10", "--config", configPath,
+  ]);
+  const alerts = JSON.parse(alertsCommand.stdout);
+  assert.ok(Array.isArray(alerts.alerts));
+  assert.equal(alerts.authorityGranted, false);
 });

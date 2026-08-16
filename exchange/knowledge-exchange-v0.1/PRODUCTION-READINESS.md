@@ -12,6 +12,7 @@ The local node receives an OTLP span, immediately reduces it to a bounded compat
 - immutable credit entries;
 - verification receipts and decisions;
 - failed-route queries and their status.
+- released-route snapshots and bounded categorical effectiveness feedback.
 
 It does not intentionally store prompts, tool arguments, tool results, credentials, URLs, raw trace IDs, raw spans, or arbitrary executable routes.
 
@@ -22,6 +23,12 @@ For one node and an early design-partner pilot, the existing D1 schema is suffic
 After one explicit install and runtime connection:
 
 ```text
+before a tool call (when invoked)
+  -> free aggregate preflight
+  -> current reliability + confidence + alerts
+  -> optional one-credit supported-route unlock
+  -> route returns to Gate
+
 tool completes
   -> localhost collector
   -> privacy minimizer
@@ -32,6 +39,7 @@ tool completes
   -> enough distinct signed-node reports produce a bounded route
   -> one credit unlocks it
   -> route returns to Gate
+  -> bounded outcome/savings feedback may be recorded
 ```
 
 The exchange never grants execution authority. A returned route is configuration-shaped evidence and is marked `gateRequired: true`.
@@ -57,6 +65,9 @@ zero-resource claim.
 - The versioned dependency-free package includes Apache-2.0 license/notice files and a published SHA-256 manifest.
 - `agentwex uninstall --yes` removes exact Agent WEX runtime settings, stops the macOS service, and deactivates the remote account while retaining local backups.
 - A node can unlock only a result for its own failed-route query.
+- Preflight aggregate statistics are free; actionable alternative details remain sealed until an explicit one-credit unlock.
+- Route feedback is accepted only for an owned release, is idempotent, and has no free-text field.
+- Outage and regression alerts require minimum signed-node evidence and grant no authority.
 - The collector binds to localhost and accepts OTLP/HTTP JSON only.
 - Uploads are size bounded.
 - Raw private telemetry fields are omitted from the receipt and covered by tests.

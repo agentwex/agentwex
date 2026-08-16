@@ -2,6 +2,7 @@ import { creditsForAcceptedContribution } from "./credits.mjs";
 import { exchangeSchemaStatements } from "./schema.mjs";
 import { evaluateWorkingRoute } from "../exchange/knowledge-exchange-v0.1/working-route.mjs";
 import { base64UrlToBytes, canonicalJson, receiptHash, receiptSigningBytes } from "../exchange/knowledge-exchange-v0.1/receipt-attestation.mjs";
+import { buildReliabilityAlerts, evaluatePreflight, publicPreflightAssessment } from "../exchange/knowledge-exchange-v0.1/reliability.mjs";
 
 const recordKinds = new Set(["observation", "measurement", "tool-result", "task-outcome", "transaction"]);
 const identityProviders = new Set(["moltbook", "agentmail", "custom"]);
@@ -10,8 +11,11 @@ const environments = new Set(["macos-arm64", "macos-x64", "linux-arm64", "linux-
 const authModes = new Set(["none", "api-key", "oauth-pkce", "oauth-client", "mtls", "signed-request", "other"]);
 const toolRegistries = new Set(["mcp", "npm", "pypi", "github", "public-api", "runtime"]);
 const resolutionKinds = new Set(["none", "upgrade-client", "upgrade-tool", "upgrade-client-and-tool", "change-auth-flow", "change-transport", "change-runtime", "retry-later", "alternate-tool"]);
+const feedbackFailureClasses = new Set(["authentication", "compatibility", "timeout", "rate-limit", "network", "unavailable", "policy", "other"]);
 const routeQueryFields = new Set(["schema", "toolRegistry", "toolId", "attemptedToolVersion", "clientId", "attemptedClientVersion", "environment", "authMode", "operation", "localEvidenceStatus", "localEvidenceReceiptHash", "maxAgeDays", "minimumIndependentRoots"]);
 const workingRouteCompFields = new Set(["schema", "queryId", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "outcome", "errorClass", "resolutionKind", "routeFingerprint", "observedAt", "provenanceRootId", "independenceBasis", "attestation"]);
+const preflightFields = new Set(["schema", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "maxAgeDays", "minimumSignedNodes", "unlock"]);
+const routeFeedbackFields = new Set(["schema", "resultId", "outcome", "failureClass", "attemptsAvoided", "estimatedTokensAvoided", "estimatedLatencyMsAvoided"]);
 
 const now = () => new Date().toISOString();
 const newId = (prefix) => `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`;
@@ -388,20 +392,30 @@ export async function reserveResultAccess(db, agentId, resultId) {
     return { ok: false, status: 403, error: "accepted_contribution_required" };
   }
 
-  const dayStart = `${now().slice(0, 10)}T00:00:00.000Z`;
+  const issuedAt = now();
+  const dayStart = `${issuedAt.slice(0, 10)}T00:00:00.000Z`;
   try {
-    const result = await db.prepare(`INSERT INTO exchange_credit_entries
-      (id, agent_id, result_id, entry_type, credits, created_at)
-      SELECT ?, id, ?, 'spend', -1, ?
-      FROM exchange_agents
-      WHERE id = ? AND status = 'active'
-        AND (SELECT COALESCE(SUM(credits), 0) FROM exchange_credit_entries WHERE agent_id = ?) >= 1
-        AND (daily_credit_spend_limit = 0 OR
-          (SELECT COUNT(*) FROM exchange_credit_entries
-           WHERE agent_id = ? AND entry_type = 'spend' AND created_at >= ?) < daily_credit_spend_limit)`)
-      .bind(newId("credit"), normalizedResultId, now(), agentId, agentId, agentId, dayStart)
-      .run();
-    if (Number(result?.meta?.changes ?? 0) !== 1) {
+    const results = await db.batch([
+      db.prepare(`INSERT INTO exchange_credit_entries
+        (id, agent_id, result_id, entry_type, credits, created_at)
+        SELECT ?, id, ?, 'spend', -1, ?
+        FROM exchange_agents
+        WHERE id = ? AND status = 'active'
+          AND (SELECT COALESCE(SUM(credits), 0) FROM exchange_credit_entries WHERE agent_id = ?) >= 1
+          AND (daily_credit_spend_limit = 0 OR
+            (SELECT COUNT(*) FROM exchange_credit_entries
+             WHERE agent_id = ? AND entry_type = 'spend' AND created_at >= ?) < daily_credit_spend_limit)`)
+        .bind(newId("credit"), normalizedResultId, issuedAt, agentId, agentId, agentId, dayStart),
+      db.prepare(`INSERT INTO exchange_route_releases
+        (result_id, agent_id, query_id, route_fingerprint, tool_version, client_version, resolution_kind, issued_at)
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?
+        WHERE EXISTS (SELECT 1 FROM exchange_credit_entries
+          WHERE agent_id = ? AND result_id = ? AND entry_type = 'spend')`)
+        .bind(normalizedResultId, agentId, queryId, assessment.workingRoute.routeFingerprint,
+          assessment.workingRoute.toolVersion, assessment.workingRoute.clientVersion,
+          assessment.workingRoute.resolutionKind, issuedAt, agentId, normalizedResultId),
+    ]);
+    if (Number(results?.[0]?.meta?.changes ?? 0) !== 1 || Number(results?.[1]?.meta?.changes ?? 0) !== 1) {
       return { ok: false, status: 429, error: "credit_or_daily_limit_unavailable" };
     }
   } catch (error) {
@@ -428,7 +442,7 @@ export async function reserveResultAccess(db, agentId, resultId) {
         queryId,
         workingRoute: assessment.workingRoute,
         evidence: assessment.evidence,
-        issuedAt: now(),
+        issuedAt,
         gateRequired: true,
         authorityGranted: false,
         controllerIndependenceVerified: false,
@@ -454,6 +468,36 @@ function safeProvenanceRoot(value) {
   if (!normalized) return null;
   if (/^sha256:[a-fA-F0-9]{64}$/.test(normalized)) return normalized;
   return /^[A-Za-z0-9][A-Za-z0-9._+~-]*$/.test(normalized) ? normalized : null;
+}
+
+export function validatePreflight(body) {
+  if (!body || Object.keys(body).some((key) => !preflightFields.has(key))) return null;
+  if (body.schema != null && body.schema !== "agentwex.preflight-query.v0.1") return null;
+  const toolId = safeIdentifier(body.toolId, 200, true);
+  const toolVersion = safeIdentifier(body.toolVersion, 80);
+  const clientId = safeIdentifier(body.clientId, 120);
+  const clientVersion = safeIdentifier(body.clientVersion, 80);
+  const operation = safeIdentifier(body.operation, 120);
+  const maxAgeDays = body.maxAgeDays ?? 7;
+  const minimumSignedNodes = body.minimumSignedNodes ?? 2;
+  if (!toolRegistries.has(body.toolRegistry) || !toolId || !toolVersion || !clientId || !clientVersion || !operation) return null;
+  if (!environments.has(body.environment) || !authModes.has(body.authMode)) return null;
+  if (!Number.isInteger(maxAgeDays) || maxAgeDays < 1 || maxAgeDays > 30) return null;
+  if (!Number.isInteger(minimumSignedNodes) || minimumSignedNodes < 2 || minimumSignedNodes > 10) return null;
+  if (body.unlock != null && typeof body.unlock !== "boolean") return null;
+  return {
+    toolRegistry: body.toolRegistry,
+    toolId,
+    toolVersion,
+    clientId,
+    clientVersion,
+    environment: body.environment,
+    authMode: body.authMode,
+    operation,
+    maxAgeDays,
+    minimumSignedNodes,
+    unlock: body.unlock === true,
+  };
 }
 
 export function validateRouteQuery(body) {
@@ -499,6 +543,24 @@ async function routeRecordsForQuery(db, query) {
     WHERE c.status = 'accepted' AND r.tool_registry = ? AND r.tool_id = ? AND r.client_id = ?
       AND r.environment = ? AND r.auth_mode = ? AND r.operation = ?`)
     .bind(query.toolRegistry, query.toolId, query.clientId, query.environment, query.authMode, query.operation).all();
+  return response?.results ?? [];
+}
+
+async function routeFeedbackForCell(db, input) {
+  const response = await db.prepare(`SELECT
+      r.route_fingerprint AS routeFingerprint,
+      f.outcome, f.failure_class AS failureClass,
+      f.attempts_avoided AS attemptsAvoided,
+      f.estimated_tokens_avoided AS estimatedTokensAvoided,
+      f.estimated_latency_ms_avoided AS estimatedLatencyMsAvoided,
+      f.created_at AS createdAt
+    FROM exchange_route_feedback f
+    JOIN exchange_route_releases r ON r.result_id = f.result_id
+    JOIN exchange_route_queries q ON q.id = r.query_id
+    WHERE q.tool_registry = ? AND q.tool_id = ? AND q.client_id = ?
+      AND q.environment = ? AND q.auth_mode = ? AND q.operation = ?
+    ORDER BY f.created_at DESC LIMIT 1000`)
+    .bind(input.toolRegistry, input.toolId, input.clientId, input.environment, input.authMode, input.operation).all();
   return response?.results ?? [];
 }
 
@@ -672,6 +734,170 @@ export async function createRouteQuery(db, agentId, body) {
       authorityGranted: false,
     },
   };
+}
+
+async function getReleasedRoute(db, agentId, resultId) {
+  return db.prepare(`SELECT result_id AS resultId, query_id AS queryId,
+      route_fingerprint AS routeFingerprint, tool_version AS toolVersion,
+      client_version AS clientVersion, resolution_kind AS resolutionKind,
+      issued_at AS issuedAt
+    FROM exchange_route_releases WHERE result_id = ? AND agent_id = ?`)
+    .bind(resultId, agentId).first();
+}
+
+export async function runPreflight(db, agentId, body) {
+  const input = validatePreflight(body);
+  if (!input) return { ok: false, status: 400, error: "invalid_preflight_query" };
+  const [records, feedback] = await Promise.all([
+    routeRecordsForQuery(db, input),
+    routeFeedbackForCell(db, input),
+  ]);
+  const evaluated = evaluatePreflight(records, feedback, input, now());
+  const assessment = publicPreflightAssessment(evaluated);
+  if (evaluated.recommendation.action !== "UNLOCK_SUPPORTED_ROUTE") {
+    return { ok: true, status: 200, assessment };
+  }
+
+  const evidenceHash = `sha256:${await sha256(canonicalJson({
+    purpose: "preflight",
+    agentId,
+    toolRegistry: input.toolRegistry,
+    toolId: input.toolId,
+    toolVersion: input.toolVersion,
+    clientId: input.clientId,
+    clientVersion: input.clientVersion,
+    environment: input.environment,
+    authMode: input.authMode,
+    operation: input.operation,
+    maxAgeDays: input.maxAgeDays,
+    minimumSignedNodes: input.minimumSignedNodes,
+  }))}`;
+  const routeQuery = await createRouteQuery(db, agentId, {
+    schema: "minority-prophet.working-route-query.v0.1",
+    toolRegistry: input.toolRegistry,
+    toolId: input.toolId,
+    attemptedToolVersion: input.toolVersion,
+    clientId: input.clientId,
+    attemptedClientVersion: input.clientVersion,
+    environment: input.environment,
+    authMode: input.authMode,
+    operation: input.operation,
+    localEvidenceStatus: "insufficient",
+    localEvidenceReceiptHash: evidenceHash,
+    maxAgeDays: input.maxAgeDays,
+    minimumIndependentRoots: input.minimumSignedNodes,
+  });
+  if (!routeQuery.ok) return routeQuery;
+  assessment.routeQuery = routeQuery.query;
+  if (!input.unlock || routeQuery.query.status !== "RESULT_AVAILABLE") {
+    return { ok: true, status: 200, assessment };
+  }
+
+  const access = await reserveResultAccess(db, agentId, routeQuery.query.resultId);
+  if (access.ok) {
+    assessment.routeAccess = access.access;
+    assessment.recommendation.routeDetailsSealed = false;
+    return { ok: true, status: 200, assessment };
+  }
+  if (access.error === "result_already_unlocked") {
+    const released = await getReleasedRoute(db, agentId, routeQuery.query.resultId);
+    if (released) {
+      assessment.routeAccess = {
+        resultId: released.resultId,
+        creditsSpent: 0,
+        alreadyUnlocked: true,
+        releaseStatus: "READY_FOR_BOUND_AUTHORIZATION",
+        routeReceipt: {
+          schema: "minority-prophet.working-route-release.v0.1",
+          queryId: released.queryId,
+          workingRoute: {
+            toolVersion: released.toolVersion,
+            clientVersion: released.clientVersion,
+            resolutionKind: released.resolutionKind,
+            routeFingerprint: released.routeFingerprint,
+          },
+          issuedAt: released.issuedAt,
+          gateRequired: true,
+          authorityGranted: false,
+        },
+        authorityGranted: false,
+      };
+      assessment.recommendation.routeDetailsSealed = false;
+      return { ok: true, status: 200, assessment };
+    }
+  }
+  assessment.unlock = { status: "UNAVAILABLE", error: access.error };
+  return { ok: true, status: 200, assessment };
+}
+
+export async function listReliabilityAlerts(db, limit = 50) {
+  const parsedLimit = Number(limit);
+  const boundedLimit = Number.isInteger(parsedLimit) ? Math.min(100, Math.max(1, parsedLimit)) : 50;
+  const cutoff = new Date(Date.now() - (8 * 86_400_000)).toISOString();
+  const response = await db.prepare(`SELECT
+      c.agent_id AS agentId, c.provenance_root_id AS provenanceRootId,
+      r.tool_registry AS toolRegistry, r.tool_id AS toolId, r.tool_version AS toolVersion,
+      r.client_id AS clientId, r.client_version AS clientVersion, r.environment,
+      r.auth_mode AS authMode, r.operation, r.outcome, r.error_class AS errorClass,
+      r.resolution_kind AS resolutionKind, r.route_fingerprint AS routeFingerprint,
+      r.observed_at AS observedAt
+    FROM exchange_working_route_comps r
+    JOIN exchange_contributions c ON c.id = r.contribution_id
+    WHERE c.status = 'accepted' AND r.observed_at >= ?
+    ORDER BY r.observed_at DESC LIMIT 5000`).bind(cutoff).all();
+  const alerts = buildReliabilityAlerts(response?.results ?? [], now()).slice(0, boundedLimit);
+  return { alerts, limit: boundedLimit, generatedAt: now(), authorityGranted: false };
+}
+
+function boundedCounter(value, maximum) {
+  const parsed = value ?? 0;
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= maximum ? parsed : null;
+}
+
+export function validateRouteFeedback(body) {
+  if (!body || Object.keys(body).some((key) => !routeFeedbackFields.has(key))) return null;
+  if (body.schema != null && body.schema !== "agentwex.route-feedback.v0.1") return null;
+  const resultId = shortText(body.resultId, 240);
+  const failureClass = body.failureClass == null ? null : safeIdentifier(body.failureClass, 120);
+  const attemptsAvoided = boundedCounter(body.attemptsAvoided, 100);
+  const estimatedTokensAvoided = boundedCounter(body.estimatedTokensAvoided, 1_000_000_000);
+  const estimatedLatencyMsAvoided = boundedCounter(body.estimatedLatencyMsAvoided, 86_400_000);
+  if (!/^working-route:routeq_[A-Za-z0-9]+$/.test(resultId ?? "")) return null;
+  if (!["succeeded", "failed", "not-attempted"].includes(body.outcome)) return null;
+  if (body.outcome === "failed" && !feedbackFailureClasses.has(failureClass)) return null;
+  if (body.outcome !== "failed" && failureClass != null) return null;
+  if ([attemptsAvoided, estimatedTokensAvoided, estimatedLatencyMsAvoided].includes(null)) return null;
+  return { resultId, outcome: body.outcome, failureClass, attemptsAvoided, estimatedTokensAvoided, estimatedLatencyMsAvoided };
+}
+
+export async function submitRouteFeedback(db, agentId, body) {
+  const input = validateRouteFeedback(body);
+  if (!input) return { ok: false, status: 400, error: "invalid_route_feedback" };
+  const release = await getReleasedRoute(db, agentId, input.resultId);
+  if (!release) return { ok: false, status: 404, error: "owned_route_release_not_found" };
+  const prior = await db.prepare(`SELECT id AS feedbackId, outcome, failure_class AS failureClass,
+      attempts_avoided AS attemptsAvoided, estimated_tokens_avoided AS estimatedTokensAvoided,
+      estimated_latency_ms_avoided AS estimatedLatencyMsAvoided, created_at AS createdAt
+    FROM exchange_route_feedback WHERE agent_id = ? AND result_id = ?`)
+    .bind(agentId, input.resultId).first();
+  if (prior) {
+    const sameFeedback = prior.outcome === input.outcome
+      && (prior.failureClass ?? null) === input.failureClass
+      && Number(prior.attemptsAvoided) === input.attemptsAvoided
+      && Number(prior.estimatedTokensAvoided) === input.estimatedTokensAvoided
+      && Number(prior.estimatedLatencyMsAvoided) === input.estimatedLatencyMsAvoided;
+    if (!sameFeedback) return { ok: false, status: 409, error: "route_feedback_already_recorded" };
+    return { ok: true, status: 200, feedback: { ...prior, resultId: input.resultId, idempotentReplay: true, authorityGranted: false } };
+  }
+  const feedbackId = newId("feedback");
+  const createdAt = now();
+  await db.prepare(`INSERT INTO exchange_route_feedback
+    (id, agent_id, result_id, outcome, failure_class, attempts_avoided,
+     estimated_tokens_avoided, estimated_latency_ms_avoided, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(feedbackId, agentId, input.resultId, input.outcome, input.failureClass,
+      input.attemptsAvoided, input.estimatedTokensAvoided, input.estimatedLatencyMsAvoided, createdAt).run();
+  return { ok: true, status: 201, feedback: { feedbackId, ...input, createdAt, idempotentReplay: false, authorityGranted: false } };
 }
 
 export function validateWorkingRouteComp(body) {

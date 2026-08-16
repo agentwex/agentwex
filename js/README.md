@@ -110,6 +110,10 @@ agentwex status
 agentwex credits
 agentwex contributions --limit 25
 agentwex contribution <id>
+agentwex preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION \
+  --client CLIENT --client-version VERSION --environment ENV \
+  --auth-mode MODE --operation NAME
+agentwex alerts
 agentwex ledger
 agentwex routes
 agentwex doctor
@@ -122,6 +126,25 @@ one record. History contains public compatibility fields, status, verification
 reason, timestamps, receipt hash, and credits awarded. It never returns prompts,
 arguments, results, credentials, source code, private URLs, provenance roots,
 route fingerprints, or raw trace identifiers.
+
+Preflight is a free aggregate reliability check over the same minimized
+receipts. It reports the latest per-node success/failure rate, freshness,
+heuristic confidence, and possible regression/outage alerts. It never executes
+or authorizes a route. If a supported alternative exists, rerun with `--unlock`
+to deliberately spend one earned credit and receive the route with
+`gateRequired: true`.
+
+After the local policy gate tries an unlocked route, record bounded feedback:
+
+```sh
+agentwex feedback --result working-route:routeq_ID --outcome succeeded \
+  --attempts-avoided 2 --estimated-tokens-avoided 4000 \
+  --estimated-latency-ms-avoided 15000
+```
+
+Feedback has no free-text field and is accepted only for a release owned by the
+authenticated node. Savings counters are self-reported estimates, not billing
+or credit inputs.
 
 Rotate both the API credential and local Ed25519 identity with `agentwex rotate-keys`. Remove the background service, exact Agent WEX runtime settings, local config, and remote pseudonymous account with `agentwex uninstall --yes`. Add `--keep-account` or `--keep-local` only when you deliberately want those retained. Runtime-setting backups are kept locally.
 

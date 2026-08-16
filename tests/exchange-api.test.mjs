@@ -184,6 +184,18 @@ test("public API bounds bodies, throttles signup fingerprints, rotates keys, and
     }
   }
 
+  const alerts = await handleExchangeApi(apiRequest("/api/exchange/alerts?limit=10", { token: account.apiKey }), db);
+  assert.equal(alerts.status, 200);
+  assert.deepEqual((await alerts.json()).alerts, []);
+  const invalidPreflight = await handleExchangeApi(apiRequest("/api/exchange/preflight", {
+    method: "POST", token: account.apiKey, body: { schema: "agentwex.preflight-query.v0.1" },
+  }), db);
+  assert.equal(invalidPreflight.status, 400);
+  const invalidFeedback = await handleExchangeApi(apiRequest("/api/exchange/route-feedback", {
+    method: "POST", token: account.apiKey, body: { outcome: "succeeded" },
+  }), db);
+  assert.equal(invalidFeedback.status, 400);
+
   const rotatedResponse = await handleExchangeApi(apiRequest("/api/exchange/api-keys/rotate", {
     method: "POST", token: account.apiKey,
   }), db);

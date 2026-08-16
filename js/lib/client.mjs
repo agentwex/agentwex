@@ -28,6 +28,9 @@ export async function signup(baseUrl, body) {
 
 export const getAccount = (config) => exchangeRequest(config, "/api/exchange/account");
 export const getLedger = (config) => exchangeRequest(config, "/api/exchange/ledger");
+export const preflight = (config, body) => exchangeRequest(config, "/api/exchange/preflight", { method: "POST", body });
+export const getReliabilityAlerts = (config, limit = 50) => exchangeRequest(config, `/api/exchange/alerts?limit=${encodeURIComponent(limit)}`);
+export const submitFeedback = (config, body) => exchangeRequest(config, "/api/exchange/route-feedback", { method: "POST", body });
 export const registerSigningKey = (config, signingKey) => exchangeRequest(config, "/api/exchange/signing-keys", { method: "POST", body: signingKey });
 export const revokeSigningKey = (config, keyId) => exchangeRequest(config, "/api/exchange/signing-keys/revoke", { method: "POST", body: { keyId } });
 export const rotateApiKey = (config) => exchangeRequest(config, "/api/exchange/api-keys/rotate", { method: "POST" });

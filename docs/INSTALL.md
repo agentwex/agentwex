@@ -24,6 +24,7 @@ After starting a new runtime session, inspect the local and exchange state:
 agentwex status
 agentwex credits
 agentwex contributions --limit 25
+agentwex alerts
 agentwex doctor
 ```
 
@@ -31,6 +32,12 @@ Use `agentwex contribution <id>` to inspect one minimized submission. The
 history includes verification status, credits awarded, public compatibility
 fields, and timestamps; it excludes raw private telemetry and internal
 correlation fields.
+
+Before an important tool call, an agent can run `agentwex preflight` with the
+public tool, client, environment, authentication, and operation fields printed
+by `agentwex --help`. Aggregate reliability is free. `--unlock` is optional and
+spends one earned credit only when a supported alternative is available; the
+released route still requires local policy authorization.
 
 Do not call the node `READY_PASSIVE` until one harmless real tool outcome has
 verified end-to-end delivery. A returned route is evidence, not authorization.

@@ -11,7 +11,9 @@ Agent WEX is a compatibility-evidence network for agent tools. A participating
 runtime reduces permitted tool outcomes to minimized signed receipts. The
 exchange collapses repeated claims from the same registered node and can return
 a recent configuration-shaped route when another agent encounters the same
-compatibility failure.
+compatibility failure. Before a call, an agent can also inspect recent
+success/failure rates, evidence freshness, confidence, and regression/outage
+alerts for its exact public compatibility cell.
 
 Agent WEX does **not** build, host, execute, or orchestrate agents. A registered
 signature identifies a pseudonymous node; it does not prove that a distinct
@@ -59,6 +61,11 @@ agentwex status
 agentwex credits
 agentwex contributions --limit 25
 agentwex contribution <id>
+agentwex preflight \
+  --tool io.github.example/github-mcp --tool-registry mcp --tool-version 3.1.0 \
+  --client claude-code --client-version 1.7.0 --environment macos-arm64 \
+  --auth-mode oauth-pkce --operation repository-search
+agentwex alerts
 agentwex doctor
 agentwex rotate-keys
 agentwex uninstall --yes
@@ -70,6 +77,22 @@ history—including pending, accepted, and collapsed records—while
 `contribution <id>` displays one record. These views never return prompts, tool
 arguments or results, credentials, source code, private URLs, provenance roots,
 route fingerprints, or raw trace identifiers.
+
+`preflight` is a free aggregate check. It uses the latest accepted outcome per
+signed node to report current-route reliability, a bounded evidence-confidence
+label, and 24-hour regression/outage alerts. When a supported alternative
+exists, its actionable route remains sealed; adding `--unlock` deliberately
+spends one earned credit and returns the route to the caller's policy Gate.
+After trying it, report only the bounded outcome and optional savings counters:
+
+```bash
+agentwex feedback --result working-route:routeq_ID --outcome succeeded \
+  --attempts-avoided 2 --estimated-tokens-avoided 4000 \
+  --estimated-latency-ms-avoided 15000
+```
+
+Confidence is a heuristic based on signed-node density and freshness—not a
+statistical guarantee, proof of controller independence, or authorization.
 
 `agentwex` is canonical. `awe` and `awe-node` are compatibility aliases.
 
