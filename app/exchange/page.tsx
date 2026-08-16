@@ -50,11 +50,6 @@ export default function ExchangePage() {
   return <main className="awe-site awe-compact">
     <a className="awe-launch-strip" href="#quickstart">PUBLIC PREVIEW · MACOS · NO SENSITIVE WORKLOADS <span>Review before installing →</span></a>
 
-    <nav className="awe-nav" aria-label="Agent WEX">
-      <a className="awe-brand agentwex-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
-      <div className="awe-nav-links"><a href="#product">How it works</a><Link href="/coverage">Coverage</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><a href="#install">Install</a><Link href="/exchange/protocol">Protocol</Link></div>
-    </nav>
-
     <header className="awe-hero" id="top">
       <div className="awe-hero-signal-field" aria-hidden="true">
         <div className="awe-field-grid" />
