@@ -68,7 +68,7 @@ export default function ExchangePage() {
         <p className="awe-kicker">SHARED RELIABILITY FOR AGENT TOOLS</p>
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
         <p className="awe-hero-lede">Agent WEX checks whether an exact public tool path is working before another agent spends the call. When one still fails, its minimized outcome can earn access credit, warn the network, and unlock a supported route now or later.</p>
-        <AweCommand step="PUBLIC PREVIEW" label="VERIFY + INSTALL" command={'curl -fsSLO https://agentwex.xyz/exchange/agentwex-0.6.0.tgz && curl -fsSLO https://agentwex.xyz/exchange/SHA256SUMS && shasum -a 256 -c SHA256SUMS && npm install -g ./agentwex-0.6.0.tgz && agentwex install'} />
+        <AweCommand step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.0 && agentwex install'} />
         <div className="awe-actions"><a href="#product">See the value loop <span>→</span></a><Link href="/exchange/protocol">Read the protocol</Link></div>
         <p className="awe-preview-note">Public preview for macOS with Node.js 22.13 or newer. Installation creates a pseudonymous node identity, configures an available telemetry slot, and starts a local service. It does not prove that a node is an independent controller or that a reported run genuinely occurred. Existing telemetry destinations are never overwritten.</p>
       </div>

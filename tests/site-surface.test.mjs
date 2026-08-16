@@ -12,6 +12,7 @@ test("the standalone site makes prevention, failure value, and scope explicit", 
   ]);
 
   assert.match(page, /Check before the call/);
+  assert.match(page, /npm install -g agentwex@0\.6\.0/);
   assert.match(page, /Aggregate preflight is free/);
   assert.match(page, /Failure pays back/i);
   assert.match(page, /Duplicate retries neither manufacture consensus nor mint more credits/);
@@ -33,7 +34,10 @@ test("machine discovery and the downloadable package are aligned", async () => {
   const digest = createHash("sha256").update(archive).digest("hex");
 
   assert.equal(manifest.documentation.source, "https://github.com/agentwex/agentwex");
-  assert.equal(manifest.distribution.publicNpmPackageReleased, false);
+  assert.equal(manifest.distribution.publicNpmPackageReleased, true);
+  assert.equal(manifest.distribution.npmPackage, "agentwex");
+  assert.equal(manifest.distribution.npmVersion, "0.6.0");
+  assert.match(manifest.distribution.npmInstallCommand, /npm install -g agentwex@0\.6\.0/);
   assert.equal(manifest.preflight.aggregateAssessmentCostCredits, 0);
   assert.equal(manifest.preflight.unrestrictedCrossToolProviderAuthRuntimeRoutingClaimed, false);
   assert.equal(digest, release.sha256);

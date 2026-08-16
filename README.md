@@ -48,22 +48,17 @@ machine resources.
 
 ## Public-preview install
 
-The canonical public-preview artifact is the checksummed `agentwex-0.6.0.tgz`.
-The `agentwex` name exists on npm, but version 0.6.0 is not published there, so
-do not install the unrelated registry package. The preview supports macOS and
-Node.js 22.13 or newer:
+The canonical public-preview package is `agentwex@0.6.0` on npm. The preview
+supports macOS and Node.js 22.13 or newer:
 
 ```bash
-curl -fsSLO https://agentwex.xyz/exchange/agentwex-0.6.0.tgz
-curl -fsSLO https://agentwex.xyz/exchange/SHA256SUMS
-shasum -a 256 -c SHA256SUMS
-npm install --global ./agentwex-0.6.0.tgz
+npm install --global agentwex@0.6.0
 agentwex install
 ```
 
-The tarball is dependency-free and has no install lifecycle scripts. A future
-npm release must use a verified namespace and registry provenance before these
-instructions can point at it.
+The package is dependency-free and has no install lifecycle scripts. The
+checksummed tarball on `agentwex.xyz` is the secondary verification and
+recovery channel for the same release.
 
 The installer creates a pseudonymous Ed25519 signing identity, detects supported
 runtimes, refuses to overwrite an existing telemetry exporter, starts a
