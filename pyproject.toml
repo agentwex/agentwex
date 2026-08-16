@@ -5,12 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "agentwex"
 version = "0.0.1"
-description = "Portable, verifiable witness receipts for AI-agent actions"
+description = "Reserved Python namespace for Agent WEX; install the Node.js package from npm"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [{ name = "AgentWex" }]
-keywords = ["agents", "provenance", "witness", "receipts"]
+keywords = ["agents", "compatibility", "evidence", "receipts"]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "License :: OSI Approved :: Apache Software License",
@@ -19,12 +19,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://agentwex.com"
+Homepage = "https://agentwex.xyz"
 Repository = "https://github.com/agentwex/agentwex"
-
-[project.scripts]
-agentwex = "agentwex.cli:main"
-awe = "agentwex.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agentwex"]

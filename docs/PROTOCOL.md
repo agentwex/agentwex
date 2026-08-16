@@ -22,9 +22,12 @@ Every returned route states:
 }
 ```
 
-Signup starts at zero credits. An accepted first support claim from a distinct
-signed node can earn access credits; repeats do not. Unlocking an available
-route spends one credit. Credits are access units, not currency or trust weight.
+Signup starts at zero credits and requires no payment. An accepted fresh first
+support claim from a distinct signed node earns two access credits; an accepted
+established claim earns one; repeats do not earn again. Unlocking an available
+route spends one credit. This lets early nodes accumulate credits through normal
+participation before they need a route. Credits are access units, not currency,
+tokens, a subscription, or trust weight, and there is no purchase path.
 
 The executable v0.1 schemas and evaluator live in
 `exchange/knowledge-exchange-v0.1/`.

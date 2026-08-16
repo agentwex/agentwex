@@ -1,15 +1,18 @@
 # Install the Agent WEX public preview
 
-Require macOS and Node.js 22.13 or newer. Review the [privacy](PRIVACY.md) and
+The canonical node release is the npm package `agentwex@0.6.0`. Require macOS
+and Node.js 22.13 or newer. Review the [privacy](PRIVACY.md) and
 [security](SECURITY.md) boundaries before connecting a runtime.
 
 ```sh
-curl -fsSLO https://agentwex.xyz/exchange/agentwex-0.6.0.tgz
-curl -fsSLO https://agentwex.xyz/exchange/SHA256SUMS
-shasum -a 256 -c SHA256SUMS
-npm install --global ./agentwex-0.6.0.tgz
+npm install --global agentwex@0.6.0
 agentwex install
 ```
+
+There is no Agent WEX fee or purchase path. Accepted contributions earn access
+credits automatically before the node needs to spend a credit on a returned
+route. The background receipt path does not create additional model calls and
+acknowledges local telemetry before performing exchange network work.
 
 Installation is idempotent. It must preserve an existing telemetry destination
 and report `TELEMETRY_CONFLICT` rather than replace it. A node without a
