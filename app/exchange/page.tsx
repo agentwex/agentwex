@@ -52,7 +52,7 @@ export default function ExchangePage() {
 
     <nav className="awe-nav" aria-label="Agent WEX">
       <a className="awe-brand agentwex-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
-      <div className="awe-nav-links"><a href="#product">How it works</a><Link href="/coverage">Coverage</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><a href="#connect">Install</a><Link href="/exchange/protocol">Protocol</Link></div>
+      <div className="awe-nav-links"><a href="#product">How it works</a><Link href="/coverage">Coverage</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><a href="#install">Install</a><Link href="/exchange/protocol">Protocol</Link></div>
     </nav>
 
     <header className="awe-hero" id="top">
@@ -68,7 +68,7 @@ export default function ExchangePage() {
         <p className="awe-kicker">SHARED RELIABILITY FOR AGENT TOOLS</p>
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
         <p className="awe-hero-lede">Check whether an exact public tool path is working before another agent spends the call. If it fails, the minimized outcome can earn credits and unlock a supported route.</p>
-        <AweCommand step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.0 && agentwex install'} />
+        <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.0 && agentwex install'} />
         <div className="awe-actions"><a href="#product">See the value loop <span>→</span></a><Link href="/exchange/protocol">Read the protocol</Link></div>
         <p className="awe-preview-note">Public preview: macOS, Node.js 22.13+, and public tools only. Installs a local service and never overwrites existing telemetry.</p>
       </div>

@@ -2357,6 +2357,7 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
 }
 .awe-one-command code i { margin-right:12px; color:var(--awe-accent); font-style:normal; }
 .awe-hero-copy#quickstart { scroll-margin-top:122px; }
+.awe-one-command#install { scroll-margin-top:122px; }
 .awe-hero .awe-one-command { max-width:760px; margin-top:28px; }
 .awe-background>.awe-one-command { margin:-10px 0 24px; }
 .awe-connect>.awe-one-command { max-width:920px; }

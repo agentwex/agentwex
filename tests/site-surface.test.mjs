@@ -13,6 +13,8 @@ test("the standalone site makes prevention, failure value, and scope explicit", 
 
   assert.match(page, /Check before the call/);
   assert.match(page, /npm install -g agentwex@0\.6\.0/);
+  assert.match(page, /href="#install"/);
+  assert.match(page, /<AweCommand id="install"/);
   assert.match(page, /Aggregate preflight is free/);
   assert.match(page, /Failure pays back/i);
   assert.match(page, /Duplicate retries neither manufacture consensus nor mint more credits/);

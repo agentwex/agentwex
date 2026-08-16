@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export function AweCommand({ step, label, command }: { step: string; label: string; command: string }) {
+export function AweCommand({ id, step, label, command }: { id?: string; step: string; label: string; command: string }) {
   const [copied, setCopied] = useState(false);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -21,7 +21,7 @@ export function AweCommand({ step, label, command }: { step: string; label: stri
     }
   }
 
-  return <div className="awe-one-command">
+  return <div className="awe-one-command" id={id}>
     <header>
       <span>{step}</span>
       <b>{label}</b>
