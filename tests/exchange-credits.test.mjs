@@ -163,6 +163,49 @@ test("working-route validation rejects private tool content", () => {
   assert.equal(validateWorkingRouteComp({ ...routeComp, toolArguments: { repository: "private" } }), null);
   assert.equal(validateWorkingRouteComp({ ...routeComp, credentials: "secret" }), null);
   assert.equal(validateWorkingRouteComp({ ...routeComp, schema: "wrong.schema" }), null);
+  assert.equal(validateRouteQuery({
+    ...routeQuery,
+    schema: "agentwex.working-route-query.v0.2",
+    capabilityId: "repository.search",
+    effectClass: "read",
+    alternativePolicy: "same-capability",
+  })?.alternativePolicy, "same-capability");
+  assert.equal(validateRouteQuery({
+    ...routeQuery,
+    schema: "agentwex.working-route-query.v0.2",
+    capabilityId: "repository.search",
+    alternativePolicy: "same-capability",
+  }), null);
+  assert.equal(validateRouteQuery({
+    ...routeQuery,
+    schema: "agentwex.working-route-query.v0.2",
+    capabilityId: "repository.search",
+    effectClass: "read",
+    alternativePolicy: "same-capability",
+    prompt: "private task",
+  }), null);
+  assert.equal(validateWorkingRouteComp({
+    ...routeComp,
+    schema: "agentwex.working-route-comp.v0.3",
+    capabilityId: "repository.search",
+    effectClass: "read",
+    attestation: {
+      algorithm: "Ed25519",
+      keyId: "wexkey_1234567890abcdef12345678",
+      signature: "a".repeat(64),
+    },
+  })?.capabilityId, "repository.search");
+  assert.equal(validateWorkingRouteComp({
+    ...routeComp,
+    schema: "agentwex.working-route-comp.v0.3",
+    capabilityId: "repository.search",
+    effectClass: "write",
+    attestation: {
+      algorithm: "Ed25519",
+      keyId: "wexkey_1234567890abcdef12345678",
+      signature: "a".repeat(64),
+    },
+  })?.effectClass, "write");
   assert.equal(validatePreflight({
     toolRegistry: routeComp.toolRegistry,
     toolId: routeComp.toolId,
@@ -370,4 +413,42 @@ test("an empty query opens a bounty and two accepted independent comps complete 
 
   const duplicate = await reserveResultAccess(db, firstContributor.account.agentId, creditedQuery.query.resultId);
   assert.deepEqual(duplicate, { ok: false, status: 409, error: "result_already_unlocked" });
+});
+
+test("navigator query retrieves a supported route from a different tool with the same capability and effect", async () => {
+  const db = d1TestDatabase();
+  await ensureExchangeSchema(db);
+  const requester = await signupAgent(db, {
+    ...signupBody,
+    agent: { ...signupBody.agent, name: "Navigator requester", externalSubject: "navigator-requester" },
+  });
+  const createdAt = new Date().toISOString();
+  for (const [agentId, suffix] of [["agent_nav_a", "a"], ["agent_nav_b", "b"]]) {
+    await db.prepare(`INSERT INTO exchange_agents
+      (id, name, identity_provider, external_subject, api_key_hash, heartbeat_minutes, delivery_channel, status, created_at)
+      VALUES (?, ?, 'custom', ?, ?, 15, 'nexus-api', 'active', ?)`)
+      .bind(agentId, `Navigator ${suffix}`, `navigator-${suffix}`, `hash-${suffix}`, createdAt).run();
+    await db.prepare(`INSERT INTO exchange_contributions
+      (id, agent_id, record_kind, topic, provenance_root_id, independence_basis, freshness_days, status, created_at, accepted_at)
+      VALUES (?, ?, 'working-route', 'repository.search', ?, 'attested', 0, 'accepted', ?, ?)`)
+      .bind(`comp_nav_${suffix}`, agentId, `root-nav-${suffix}`, createdAt, createdAt).run();
+    await db.prepare(`INSERT INTO exchange_working_route_comps
+      (contribution_id, tool_registry, tool_id, tool_version, client_id, client_version, environment,
+       auth_mode, operation, capability_id, effect_class, outcome, error_class, resolution_kind, route_fingerprint, observed_at)
+      VALUES (?, 'github', 'gh-cli', '2.80.0', 'shell', '1.0.0', 'macos-arm64',
+       'api-key', 'repo-search', 'repository.search', 'read', 'success', NULL, 'alternate-tool', 'sha256:navigator-route', ?)`)
+      .bind(`comp_nav_${suffix}`, createdAt).run();
+  }
+
+  const opened = await createRouteQuery(db, requester.account.agentId, {
+    ...routeQuery,
+    schema: "agentwex.working-route-query.v0.2",
+    capabilityId: "repository.search",
+    effectClass: "read",
+    alternativePolicy: "same-capability",
+    localEvidenceReceiptHash: "sha256:abcd5678",
+  });
+
+  assert.equal(opened.query.status, "RESULT_AVAILABLE");
+  assert.equal(opened.query.evidence.distinctSignedNodeSupport, 2);
 });

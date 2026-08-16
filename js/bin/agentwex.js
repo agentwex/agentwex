@@ -33,7 +33,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  process.stdout.write(`Agent WEX node v0.6.0\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-signed-nodes 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  doctor [--config PATH]\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
+  process.stdout.write(`Agent WEX node v0.6.0\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-signed-nodes 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  doctor [--config PATH]\n\nUse --capability and --effect together to let Navigator compare evidence-backed alternatives across tools without confusing a read route with a write or execution route. Similarity alone never counts as support.\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
 }
 
 function environmentClass() {
@@ -69,6 +69,12 @@ function requiredToolOptions(options, displayName) {
 
 function bindTool(config, adapterKey, clientVersion, options) {
   const tool = options.tool;
+  if ((options.capability == null) !== (options.effect == null)) {
+    throw new Error("--capability and --effect must be supplied together");
+  }
+  if (options.effect && !["read", "write", "execute", "communicate", "observe", "other"].includes(options.effect)) {
+    throw new Error("--effect must be read, write, execute, communicate, observe, or other");
+  }
   config.adapters ??= {};
   config.adapters[adapterKey] ??= { enabled: true, clientVersion, environment: environmentClass(), tools: {} };
   const adapter = config.adapters[adapterKey];
@@ -82,6 +88,7 @@ function bindTool(config, adapterKey, clientVersion, options) {
     toolVersion: options["tool-version"],
     authMode: options["auth-mode"],
     operation: options.operation ?? tool,
+    ...(options.capability ? { capabilityId: options.capability, effectClass: options.effect } : {}),
     resolutionKind: options.resolution ?? "none",
   };
 }
@@ -349,6 +356,9 @@ function requiredPreflightOptions(options) {
 
 async function preflightCommand(configPath, options) {
   requiredPreflightOptions(options);
+  if ((options.capability == null) !== (options.effect == null)) {
+    throw new Error("Preflight --capability and --effect must be supplied together");
+  }
   const config = await readConfig(configPath);
   const assessment = await preflight(config, {
     schema: "agentwex.preflight-query.v0.1",
@@ -360,6 +370,11 @@ async function preflightCommand(configPath, options) {
     environment: options.environment,
     authMode: options["auth-mode"],
     operation: options.operation,
+    ...(options.capability ? {
+      capabilityId: options.capability,
+      effectClass: options.effect,
+      alternativePolicy: "same-capability",
+    } : {}),
     maxAgeDays: Number(options["max-age-days"] ?? 7),
     minimumSignedNodes: Number(options["minimum-signed-nodes"] ?? 2),
     unlock: options.unlock === true,

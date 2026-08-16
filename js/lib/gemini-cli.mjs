@@ -60,6 +60,8 @@ export function spansFromGeminiCliLogs(payload, adapter = {}) {
         "awe.environment": adapter.environment,
         "awe.auth.mode": mapping.authMode,
         "awe.operation": mapping.operation ?? toolName,
+        "awe.capability.id": mapping.capabilityId,
+        "awe.effect.class": mapping.effectClass,
         "awe.resolution.kind": mapping.resolutionKind ?? "none",
         "error.type": success ? undefined : (record.attributes.error_type ?? "other"),
       },

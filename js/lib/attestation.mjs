@@ -27,7 +27,12 @@ export function signRouteReceipt(receipt, signing) {
   if (signing?.algorithm !== "Ed25519" || !signing.keyId || !signing.privateKeyPkcs8Pem) {
     throw new Error("Agent WEX signing identity is missing or invalid");
   }
-  const payload = { ...receipt, schema: "agentwex.working-route-comp.v0.2" };
+  const payload = {
+    ...receipt,
+    schema: receipt.capabilityId && receipt.effectClass
+      ? "agentwex.working-route-comp.v0.3"
+      : "agentwex.working-route-comp.v0.2",
+  };
   const signature = sign(null, receiptSigningBytes(payload), signing.privateKeyPkcs8Pem).toString("base64url");
   return {
     ...payload,

@@ -32,8 +32,9 @@ async function readJsonBody(request) {
 }
 
 function queryFromFailure(receipt) {
+  const navigatorEnabled = Boolean(receipt.capabilityId && receipt.effectClass && receipt.effectClass !== "other");
   return {
-    schema: "minority-prophet.working-route-query.v0.1",
+    schema: navigatorEnabled ? "agentwex.working-route-query.v0.2" : "minority-prophet.working-route-query.v0.1",
     toolRegistry: receipt.toolRegistry,
     toolId: receipt.toolId,
     attemptedToolVersion: receipt.toolVersion,
@@ -42,6 +43,11 @@ function queryFromFailure(receipt) {
     environment: receipt.environment,
     authMode: receipt.authMode,
     operation: receipt.operation,
+    ...(navigatorEnabled ? {
+      capabilityId: receipt.capabilityId,
+      effectClass: receipt.effectClass,
+      alternativePolicy: "same-capability",
+    } : {}),
     localEvidenceStatus: "insufficient",
     localEvidenceReceiptHash: receipt.provenanceRootId,
     maxAgeDays: 7,

@@ -9,6 +9,12 @@ The Agent WEX node is an install-once, localhost-only collector for minimized to
 5. opens a working-route query after a failure;
 6. returns a signed-node-supported route receipt to the local agent when one becomes available.
 
+When an adapter supplies a public capability and effect class, Navigator also
+compares evidence-backed routes across different tools. Configure both together,
+for example `--capability repository.search --effect read`. Exact, compatible,
+and alternative routes remain visibly distinct. A different tool is never
+treated as equivalent merely because its text looks similar.
+
 An accepted fresh contribution earns two credits under the current transparent schedule; an accepted established contribution earns one. Unlocking a completed working-route result spends one credit. Early participants therefore accumulate credits before they need a route. Duplicate retries and additional roots from the same signed node do not earn again. Credits live in one exchange-owned append-only ledger; `~/.awe/state.json` is only a local cache and cannot change the server balance. Participation has no monetary charge or purchase path: credits are access units, not money, tokens, a subscription, or trust weight.
 
 The node observes outcomes the agent already produces. It does not create paid jobs or additional model calls. The localhost collector acknowledges accepted telemetry before performing exchange network work, so receipt submission and credit accumulation stay off the agent's execution path. The background node still uses a small amount of CPU, memory, and network traffic.

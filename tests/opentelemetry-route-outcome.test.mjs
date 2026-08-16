@@ -66,3 +66,16 @@ test("successful tool spans become pending success receipts without inventing au
   assert.equal(result.receipt.errorClass, null);
   assert.equal(result.authorityGranted, false);
 });
+
+test("navigator metadata must declare capability and effect together", () => {
+  assert.throws(() => adaptOtelSpanToRouteOutcome({
+    ...span,
+    attributes: { ...span.attributes, "awe.capability.id": "repository.search" },
+  }, policy), /capability and effect/);
+  const result = adaptOtelSpanToRouteOutcome({
+    ...span,
+    attributes: { ...span.attributes, "awe.capability.id": "repository.search", "awe.effect.class": "read" },
+  }, policy);
+  assert.equal(result.receipt.capabilityId, "repository.search");
+  assert.equal(result.receipt.effectClass, "read");
+});

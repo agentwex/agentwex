@@ -1,20 +1,56 @@
 const routeKey = (record) => [
+  record.toolRegistry,
+  record.toolId,
   record.toolVersion,
+  record.clientId,
   record.clientVersion,
   record.environment,
   record.authMode,
+  record.operation,
   record.resolutionKind,
   record.routeFingerprint,
 ].join("|");
 
-const compatibleWith = (record, query) =>
-  record.status === "accepted"
-  && record.toolRegistry === query.toolRegistry
-  && record.toolId === query.toolId
-  && record.clientId === query.clientId
-  && record.environment === query.environment
-  && record.authMode === query.authMode
-  && record.operation === query.operation;
+const MATCH_PRIORITY = {
+  EXACT_MATCH: 0,
+  COMPATIBLE_ROUTE: 1,
+  ALTERNATIVE_ROUTE: 2,
+};
+
+export function classifyRouteMatch(record, query) {
+  if (record.status !== "accepted" || record.environment !== query.environment) return null;
+  const exactCell = record.toolRegistry === query.toolRegistry
+    && record.toolId === query.toolId
+    && record.clientId === query.clientId
+    && record.authMode === query.authMode
+    && record.operation === query.operation;
+  if (exactCell) {
+    return record.toolVersion === query.attemptedToolVersion
+      && record.clientVersion === query.attemptedClientVersion
+      ? "EXACT_MATCH"
+      : "COMPATIBLE_ROUTE";
+  }
+  const alternativesEnabled = query.alternativePolicy === "same-capability"
+    && query.capabilityId
+    && query.effectClass
+    && query.effectClass !== "other";
+  if (!alternativesEnabled) return null;
+  return record.capabilityId === query.capabilityId
+    && record.effectClass === query.effectClass
+    ? "ALTERNATIVE_ROUTE"
+    : null;
+}
+
+function changedDimensions(record, query) {
+  const dimensions = [];
+  if (record.toolRegistry !== query.toolRegistry || record.toolId !== query.toolId) dimensions.push("tool");
+  if (record.toolVersion !== query.attemptedToolVersion) dimensions.push("tool-version");
+  if (record.clientId !== query.clientId) dimensions.push("client");
+  if (record.clientVersion !== query.attemptedClientVersion) dimensions.push("client-version");
+  if (record.authMode !== query.authMode) dimensions.push("auth-mode");
+  if (record.operation !== query.operation) dimensions.push("operation");
+  return dimensions;
+}
 
 export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().toISOString()) {
   if (query.localEvidenceStatus !== "insufficient") {
@@ -27,7 +63,9 @@ export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().to
 
   const evaluated = Date.parse(evaluatedAt);
   const cutoff = evaluated - (query.maxAgeDays * 86_400_000);
-  const matching = records.filter((record) => compatibleWith(record, query));
+  const matching = records
+    .map((record) => ({ ...record, matchType: classifyRouteMatch(record, query) }))
+    .filter((record) => record.matchType != null);
   const compatible = matching
     .filter((record) => {
       const observed = Date.parse(record.observedAt);
@@ -44,7 +82,7 @@ export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().to
   const successfulRoutes = new Map();
   for (const record of successfulRootRecords) {
     const key = routeKey(record);
-    const route = successfulRoutes.get(key) ?? { records: [], agents: new Set(), key };
+    const route = successfulRoutes.get(key) ?? { records: [], agents: new Set(), key, matchType: record.matchType };
     const agentKey = record.agentId ?? `legacy-root:${record.provenanceRootId}`;
     if (route.agents.has(agentKey)) continue;
     route.agents.add(agentKey);
@@ -53,16 +91,31 @@ export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().to
   }
 
   const rankedRoutes = [...successfulRoutes.values()].sort((left, right) =>
-    right.records.length - left.records.length
+    Number(right.records.length >= query.minimumIndependentRoots) - Number(left.records.length >= query.minimumIndependentRoots)
+    || MATCH_PRIORITY[left.matchType] - MATCH_PRIORITY[right.matchType]
+    || right.records.length - left.records.length
     || right.records[0].observedAt.localeCompare(left.records[0].observedAt));
   const winner = rankedRoutes.find((route) => route.records.length >= query.minimumIndependentRoots);
   const candidateRoutes = rankedRoutes.map((candidate, index) => ({
     rank: index + 1,
+    matchType: candidate.matchType,
+    toolRegistry: candidate.records[0].toolRegistry,
+    toolId: candidate.records[0].toolId,
     toolVersion: candidate.records[0].toolVersion,
+    clientId: candidate.records[0].clientId,
     clientVersion: candidate.records[0].clientVersion,
     environment: candidate.records[0].environment,
     authMode: candidate.records[0].authMode,
     resolutionKind: candidate.records[0].resolutionKind,
+    operation: candidate.records[0].operation,
+    capabilityId: candidate.records[0].capabilityId ?? null,
+    effectClass: candidate.records[0].effectClass ?? null,
+    changedDimensions: changedDimensions(candidate.records[0], query),
+    substitutionRequired: candidate.matchType === "ALTERNATIVE_ROUTE",
+    navigationBasis: candidate.matchType === "ALTERNATIVE_ROUTE"
+      ? "declared-capability-and-effect"
+      : "exact-compatibility-cell",
+    capabilityEquivalenceVerified: false,
     routeFingerprint: candidate.records[0].routeFingerprint,
     distinctSignedNodeCount: candidate.records.length,
     controllerIndependenceVerified: false,
@@ -111,20 +164,37 @@ export function evaluateWorkingRoute(records, query, evaluatedAt = new Date().to
       executionTruthVerified: false,
     },
     selectionPolicy: {
-      compatibility: "exact tool, client, environment, auth mode, and operation cell",
+      compatibility: query.alternativePolicy === "same-capability"
+        ? "exact cell plus explicitly labeled same-capability and same-effect alternatives"
+        : "exact tool, client, environment, auth mode, and operation cell",
       supportUnit: "distinct-signed-node",
-      primaryRank: "distinct signed node count after provenance-root collapse",
+      primaryRank: "supported status, then match proximity, then distinct signed node count after provenance-root collapse",
       tieBreak: "latest signed successful observation",
       versionPreference: "none",
+      alternativePolicy: query.alternativePolicy ?? "exact-only",
+      semanticSimilarityGrantsSupport: false,
       evidenceWindowDays: query.maxAgeDays,
     },
     candidateRoutes,
     workingRoute: winner ? {
+      matchType: winner.matchType,
+      toolRegistry: winner.records[0].toolRegistry,
+      toolId: winner.records[0].toolId,
       toolVersion: winner.records[0].toolVersion,
+      clientId: winner.records[0].clientId,
       clientVersion: winner.records[0].clientVersion,
       environment: winner.records[0].environment,
       authMode: winner.records[0].authMode,
       resolutionKind: winner.records[0].resolutionKind,
+      operation: winner.records[0].operation,
+      capabilityId: winner.records[0].capabilityId ?? null,
+      effectClass: winner.records[0].effectClass ?? null,
+      changedDimensions: changedDimensions(winner.records[0], query),
+      substitutionRequired: winner.matchType === "ALTERNATIVE_ROUTE",
+      navigationBasis: winner.matchType === "ALTERNATIVE_ROUTE"
+        ? "declared-capability-and-effect"
+        : "exact-compatibility-cell",
+      capabilityEquivalenceVerified: false,
       routeFingerprint: winner.records[0].routeFingerprint,
       distinctSignedNodeCount: winner.records.length,
       controllerIndependenceVerified: false,
@@ -160,14 +230,17 @@ export const sampleRouteQuery = {
   environment: "macos-arm64",
   authMode: "oauth-pkce",
   operation: "repository-search",
+  capabilityId: "repository.search",
+  effectClass: "read",
+  alternativePolicy: "same-capability",
   localEvidenceStatus: "insufficient",
   maxAgeDays: 7,
   minimumIndependentRoots: 2,
 };
 
 export const sampleRouteRecords = [
-  { id: "route-1", status: "accepted", toolRegistry: sampleRouteQuery.toolRegistry, toolId: sampleRouteQuery.toolId, toolVersion: "3.2.0", clientId: sampleRouteQuery.clientId, clientVersion: "1.8.0", environment: sampleRouteQuery.environment, authMode: sampleRouteQuery.authMode, operation: sampleRouteQuery.operation, outcome: "success", errorClass: null, resolutionKind: "upgrade-client-and-tool", routeFingerprint: "sha256:a1b2c3d4", observedAt: "2026-08-15T18:42:00.000Z", provenanceRootId: "run-independent-a", independenceBasis: "attested" },
-  { id: "route-2", status: "accepted", toolRegistry: sampleRouteQuery.toolRegistry, toolId: sampleRouteQuery.toolId, toolVersion: "3.2.0", clientId: sampleRouteQuery.clientId, clientVersion: "1.8.0", environment: sampleRouteQuery.environment, authMode: sampleRouteQuery.authMode, operation: sampleRouteQuery.operation, outcome: "success", errorClass: null, resolutionKind: "upgrade-client-and-tool", routeFingerprint: "sha256:a1b2c3d4", observedAt: "2026-08-15T18:31:00.000Z", provenanceRootId: "run-independent-b", independenceBasis: "attested" },
-  { id: "route-3", status: "accepted", toolRegistry: sampleRouteQuery.toolRegistry, toolId: sampleRouteQuery.toolId, toolVersion: "3.2.0", clientId: sampleRouteQuery.clientId, clientVersion: "1.8.0", environment: sampleRouteQuery.environment, authMode: sampleRouteQuery.authMode, operation: sampleRouteQuery.operation, outcome: "success", errorClass: null, resolutionKind: "upgrade-client-and-tool", routeFingerprint: "sha256:a1b2c3d4", observedAt: "2026-08-15T18:25:00.000Z", provenanceRootId: "run-independent-a", independenceBasis: "declared" },
-  { id: "route-4", status: "accepted", toolRegistry: sampleRouteQuery.toolRegistry, toolId: sampleRouteQuery.toolId, toolVersion: "3.1.0", clientId: sampleRouteQuery.clientId, clientVersion: "1.7.0", environment: sampleRouteQuery.environment, authMode: sampleRouteQuery.authMode, operation: sampleRouteQuery.operation, outcome: "failure", errorClass: "oauth-callback-mismatch", resolutionKind: "none", routeFingerprint: "sha256:deadbeef", observedAt: "2026-08-15T18:20:00.000Z", provenanceRootId: "run-independent-c", independenceBasis: "attested" },
+  { id: "route-1", status: "accepted", toolRegistry: sampleRouteQuery.toolRegistry, toolId: sampleRouteQuery.toolId, toolVersion: "3.2.0", clientId: sampleRouteQuery.clientId, clientVersion: "1.8.0", environment: sampleRouteQuery.environment, authMode: sampleRouteQuery.authMode, operation: sampleRouteQuery.operation, capabilityId: sampleRouteQuery.capabilityId, effectClass: sampleRouteQuery.effectClass, outcome: "success", errorClass: null, resolutionKind: "upgrade-client-and-tool", routeFingerprint: "sha256:a1b2c3d4", observedAt: "2026-08-15T18:42:00.000Z", provenanceRootId: "run-independent-a", independenceBasis: "attested" },
+  { id: "route-2", status: "accepted", toolRegistry: sampleRouteQuery.toolRegistry, toolId: sampleRouteQuery.toolId, toolVersion: "3.2.0", clientId: sampleRouteQuery.clientId, clientVersion: "1.8.0", environment: sampleRouteQuery.environment, authMode: sampleRouteQuery.authMode, operation: sampleRouteQuery.operation, capabilityId: sampleRouteQuery.capabilityId, effectClass: sampleRouteQuery.effectClass, outcome: "success", errorClass: null, resolutionKind: "upgrade-client-and-tool", routeFingerprint: "sha256:a1b2c3d4", observedAt: "2026-08-15T18:31:00.000Z", provenanceRootId: "run-independent-b", independenceBasis: "attested" },
+  { id: "route-3", status: "accepted", toolRegistry: sampleRouteQuery.toolRegistry, toolId: sampleRouteQuery.toolId, toolVersion: "3.2.0", clientId: sampleRouteQuery.clientId, clientVersion: "1.8.0", environment: sampleRouteQuery.environment, authMode: sampleRouteQuery.authMode, operation: sampleRouteQuery.operation, capabilityId: sampleRouteQuery.capabilityId, effectClass: sampleRouteQuery.effectClass, outcome: "success", errorClass: null, resolutionKind: "upgrade-client-and-tool", routeFingerprint: "sha256:a1b2c3d4", observedAt: "2026-08-15T18:25:00.000Z", provenanceRootId: "run-independent-a", independenceBasis: "declared" },
+  { id: "route-4", status: "accepted", toolRegistry: sampleRouteQuery.toolRegistry, toolId: sampleRouteQuery.toolId, toolVersion: "3.1.0", clientId: sampleRouteQuery.clientId, clientVersion: "1.7.0", environment: sampleRouteQuery.environment, authMode: sampleRouteQuery.authMode, operation: sampleRouteQuery.operation, capabilityId: sampleRouteQuery.capabilityId, effectClass: sampleRouteQuery.effectClass, outcome: "failure", errorClass: "oauth-callback-mismatch", resolutionKind: "none", routeFingerprint: "sha256:deadbeef", observedAt: "2026-08-15T18:20:00.000Z", provenanceRootId: "run-independent-c", independenceBasis: "attested" },
 ];

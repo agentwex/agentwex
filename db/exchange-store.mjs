@@ -11,10 +11,12 @@ const environments = new Set(["macos-arm64", "macos-x64", "linux-arm64", "linux-
 const authModes = new Set(["none", "api-key", "oauth-pkce", "oauth-client", "mtls", "signed-request", "other"]);
 const toolRegistries = new Set(["mcp", "npm", "pypi", "github", "public-api", "runtime"]);
 const resolutionKinds = new Set(["none", "upgrade-client", "upgrade-tool", "upgrade-client-and-tool", "change-auth-flow", "change-transport", "change-runtime", "retry-later", "alternate-tool"]);
+const effectClasses = new Set(["read", "write", "execute", "communicate", "observe", "other"]);
+const alternativePolicies = new Set(["exact-only", "same-capability"]);
 const feedbackFailureClasses = new Set(["authentication", "compatibility", "timeout", "rate-limit", "network", "unavailable", "policy", "other"]);
-const routeQueryFields = new Set(["schema", "toolRegistry", "toolId", "attemptedToolVersion", "clientId", "attemptedClientVersion", "environment", "authMode", "operation", "localEvidenceStatus", "localEvidenceReceiptHash", "maxAgeDays", "minimumIndependentRoots"]);
-const workingRouteCompFields = new Set(["schema", "queryId", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "outcome", "errorClass", "resolutionKind", "routeFingerprint", "observedAt", "provenanceRootId", "independenceBasis", "attestation"]);
-const preflightFields = new Set(["schema", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "maxAgeDays", "minimumSignedNodes", "unlock"]);
+const routeQueryFields = new Set(["schema", "toolRegistry", "toolId", "attemptedToolVersion", "clientId", "attemptedClientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "localEvidenceStatus", "localEvidenceReceiptHash", "maxAgeDays", "minimumIndependentRoots"]);
+const workingRouteCompFields = new Set(["schema", "queryId", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "outcome", "errorClass", "resolutionKind", "routeFingerprint", "observedAt", "provenanceRootId", "independenceBasis", "attestation"]);
+const preflightFields = new Set(["schema", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "maxAgeDays", "minimumSignedNodes", "unlock"]);
 const routeFeedbackFields = new Set(["schema", "resultId", "outcome", "failureClass", "attemptsAvoided", "estimatedTokensAvoided", "estimatedLatencyMsAvoided"]);
 
 const now = () => new Date().toISOString();
@@ -407,13 +409,16 @@ export async function reserveResultAccess(db, agentId, resultId) {
              WHERE agent_id = ? AND entry_type = 'spend' AND created_at >= ?) < daily_credit_spend_limit)`)
         .bind(newId("credit"), normalizedResultId, issuedAt, agentId, agentId, agentId, dayStart),
       db.prepare(`INSERT INTO exchange_route_releases
-        (result_id, agent_id, query_id, route_fingerprint, tool_version, client_version, resolution_kind, issued_at)
-        SELECT ?, ?, ?, ?, ?, ?, ?, ?
+        (result_id, agent_id, query_id, route_fingerprint, match_type, tool_registry, tool_id, tool_version,
+         client_id, client_version, auth_mode, operation, capability_id, effect_class, resolution_kind, issued_at)
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         WHERE EXISTS (SELECT 1 FROM exchange_credit_entries
           WHERE agent_id = ? AND result_id = ? AND entry_type = 'spend')`)
         .bind(normalizedResultId, agentId, queryId, assessment.workingRoute.routeFingerprint,
-          assessment.workingRoute.toolVersion, assessment.workingRoute.clientVersion,
-          assessment.workingRoute.resolutionKind, issuedAt, agentId, normalizedResultId),
+          assessment.workingRoute.matchType, assessment.workingRoute.toolRegistry, assessment.workingRoute.toolId,
+          assessment.workingRoute.toolVersion, assessment.workingRoute.clientId, assessment.workingRoute.clientVersion,
+          assessment.workingRoute.authMode, assessment.workingRoute.operation, assessment.workingRoute.capabilityId,
+          assessment.workingRoute.effectClass, assessment.workingRoute.resolutionKind, issuedAt, agentId, normalizedResultId),
     ]);
     if (Number(results?.[0]?.meta?.changes ?? 0) !== 1 || Number(results?.[1]?.meta?.changes ?? 0) !== 1) {
       return { ok: false, status: 429, error: "credit_or_daily_limit_unavailable" };
@@ -478,6 +483,9 @@ export function validatePreflight(body) {
   const clientId = safeIdentifier(body.clientId, 120);
   const clientVersion = safeIdentifier(body.clientVersion, 80);
   const operation = safeIdentifier(body.operation, 120);
+  const capabilityId = body.capabilityId == null ? null : safeIdentifier(body.capabilityId, 160);
+  const effectClass = body.effectClass ?? null;
+  const alternativePolicy = body.alternativePolicy ?? "exact-only";
   const maxAgeDays = body.maxAgeDays ?? 7;
   const minimumSignedNodes = body.minimumSignedNodes ?? 2;
   if (!toolRegistries.has(body.toolRegistry) || !toolId || !toolVersion || !clientId || !clientVersion || !operation) return null;
@@ -485,6 +493,10 @@ export function validatePreflight(body) {
   if (!Number.isInteger(maxAgeDays) || maxAgeDays < 1 || maxAgeDays > 30) return null;
   if (!Number.isInteger(minimumSignedNodes) || minimumSignedNodes < 2 || minimumSignedNodes > 10) return null;
   if (body.unlock != null && typeof body.unlock !== "boolean") return null;
+  if (!alternativePolicies.has(alternativePolicy)) return null;
+  if ((capabilityId == null) !== (effectClass == null)) return null;
+  if (effectClass != null && !effectClasses.has(effectClass)) return null;
+  if (alternativePolicy === "same-capability" && (!capabilityId || !effectClass || effectClass === "other")) return null;
   return {
     toolRegistry: body.toolRegistry,
     toolId,
@@ -494,6 +506,9 @@ export function validatePreflight(body) {
     environment: body.environment,
     authMode: body.authMode,
     operation,
+    capabilityId,
+    effectClass,
+    alternativePolicy,
     maxAgeDays,
     minimumSignedNodes,
     unlock: body.unlock === true,
@@ -502,19 +517,26 @@ export function validatePreflight(body) {
 
 export function validateRouteQuery(body) {
   if (!body || Object.keys(body).some((key) => !routeQueryFields.has(key))) return null;
-  if (body.schema != null && body.schema !== "minority-prophet.working-route-query.v0.1") return null;
+  if (body.schema != null && !["minority-prophet.working-route-query.v0.1", "agentwex.working-route-query.v0.2"].includes(body.schema)) return null;
   const toolId = safeIdentifier(body?.toolId, 200, true);
   const attemptedToolVersion = safeIdentifier(body?.attemptedToolVersion, 80);
   const clientId = safeIdentifier(body?.clientId, 120);
   const attemptedClientVersion = safeIdentifier(body?.attemptedClientVersion, 80);
   const operation = safeIdentifier(body?.operation, 120);
+  const capabilityId = body.capabilityId == null ? null : safeIdentifier(body.capabilityId, 160);
+  const effectClass = body.effectClass ?? null;
+  const alternativePolicy = body.alternativePolicy ?? "exact-only";
   const localEvidenceReceiptHash = shortText(body?.localEvidenceReceiptHash, 160);
   if (!toolRegistries.has(body?.toolRegistry) || !toolId || !attemptedToolVersion || !clientId || !attemptedClientVersion || !operation) return null;
   if (!environments.has(body.environment) || !authModes.has(body.authMode)) return null;
   if (body.localEvidenceStatus !== "insufficient" || !/^sha256:[a-fA-F0-9-]{8,128}$/.test(localEvidenceReceiptHash ?? "")) return null;
   if (!Number.isInteger(body.maxAgeDays) || body.maxAgeDays < 1 || body.maxAgeDays > 30) return null;
   if (!Number.isInteger(body.minimumIndependentRoots) || body.minimumIndependentRoots < 2 || body.minimumIndependentRoots > 10) return null;
-  return { toolRegistry: body.toolRegistry, toolId, attemptedToolVersion, clientId, attemptedClientVersion, environment: body.environment, authMode: body.authMode, operation, localEvidenceStatus: body.localEvidenceStatus, localEvidenceReceiptHash, maxAgeDays: body.maxAgeDays, minimumIndependentRoots: body.minimumIndependentRoots };
+  if (!alternativePolicies.has(alternativePolicy)) return null;
+  if ((capabilityId == null) !== (effectClass == null)) return null;
+  if (effectClass != null && !effectClasses.has(effectClass)) return null;
+  if (alternativePolicy === "same-capability" && (!capabilityId || !effectClass || effectClass === "other")) return null;
+  return { schema: body.schema ?? "minority-prophet.working-route-query.v0.1", toolRegistry: body.toolRegistry, toolId, attemptedToolVersion, clientId, attemptedClientVersion, environment: body.environment, authMode: body.authMode, operation, capabilityId, effectClass, alternativePolicy, localEvidenceStatus: body.localEvidenceStatus, localEvidenceReceiptHash, maxAgeDays: body.maxAgeDays, minimumIndependentRoots: body.minimumIndependentRoots };
 }
 
 async function routeRecordsForQuery(db, query) {
@@ -531,6 +553,8 @@ async function routeRecordsForQuery(db, query) {
       r.environment AS environment,
       r.auth_mode AS authMode,
       r.operation AS operation,
+      r.capability_id AS capabilityId,
+      r.effect_class AS effectClass,
       r.outcome AS outcome,
       r.error_class AS errorClass,
       r.resolution_kind AS resolutionKind,
@@ -540,9 +564,12 @@ async function routeRecordsForQuery(db, query) {
     FROM exchange_working_route_comps r
     JOIN exchange_contributions c ON c.id = r.contribution_id
     LEFT JOIN exchange_working_route_attestations a ON a.contribution_id = c.id
-    WHERE c.status = 'accepted' AND r.tool_registry = ? AND r.tool_id = ? AND r.client_id = ?
-      AND r.environment = ? AND r.auth_mode = ? AND r.operation = ?`)
-    .bind(query.toolRegistry, query.toolId, query.clientId, query.environment, query.authMode, query.operation).all();
+    WHERE c.status = 'accepted' AND r.environment = ? AND (
+      (r.tool_registry = ? AND r.tool_id = ? AND r.client_id = ? AND r.auth_mode = ? AND r.operation = ?)
+      OR (? = 'same-capability' AND r.capability_id = ? AND r.effect_class = ?)
+    )`)
+    .bind(query.environment, query.toolRegistry, query.toolId, query.clientId, query.authMode, query.operation,
+      query.alternativePolicy ?? "exact-only", query.capabilityId ?? "", query.effectClass ?? "").all();
   return response?.results ?? [];
 }
 
@@ -598,6 +625,8 @@ async function routeSupportCandidateKey(input) {
     environment: input.environment,
     authMode: input.authMode,
     operation: input.operation,
+    capabilityId: input.capabilityId ?? null,
+    effectClass: input.effectClass ?? null,
     outcome: input.outcome,
     resolutionKind: input.resolutionKind,
     routeFingerprint: input.routeFingerprint,
@@ -650,7 +679,8 @@ async function acceptSignedRouteContribution(db, { contributionId, agentId, cand
 async function storedRouteQuery(db, queryId) {
   return db.prepare(`SELECT id AS queryId, agent_id AS agentId, tool_registry AS toolRegistry, tool_id AS toolId, attempted_tool_version AS attemptedToolVersion,
       client_id AS clientId, attempted_client_version AS attemptedClientVersion, environment,
-      auth_mode AS authMode, operation, local_evidence_status AS localEvidenceStatus,
+      auth_mode AS authMode, operation, capability_id AS capabilityId, effect_class AS effectClass,
+      alternative_policy AS alternativePolicy, local_evidence_status AS localEvidenceStatus,
       max_age_days AS maxAgeDays, minimum_independent_roots AS minimumIndependentRoots
     FROM exchange_route_queries WHERE id = ?`).bind(queryId).first();
 }
@@ -700,11 +730,12 @@ export async function createRouteQuery(db, agentId, body) {
   try {
     await db.prepare(`INSERT INTO exchange_route_queries
       (id, agent_id, tool_registry, tool_id, attempted_tool_version, client_id, attempted_client_version,
-       environment, auth_mode, operation, local_evidence_status, local_evidence_receipt_hash,
+       environment, auth_mode, operation, capability_id, effect_class, alternative_policy, local_evidence_status, local_evidence_receipt_hash,
        max_age_days, minimum_independent_roots, status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(queryId, agentId, input.toolRegistry, input.toolId, input.attemptedToolVersion, input.clientId, input.attemptedClientVersion,
-        input.environment, input.authMode, input.operation, input.localEvidenceStatus, input.localEvidenceReceiptHash,
+        input.environment, input.authMode, input.operation, input.capabilityId, input.effectClass, input.alternativePolicy,
+        input.localEvidenceStatus, input.localEvidenceReceiptHash,
         input.maxAgeDays, input.minimumIndependentRoots, assessment.status, now()).run();
   } catch (error) {
     if (String(error).toLowerCase().includes("unique")) {
@@ -738,8 +769,10 @@ export async function createRouteQuery(db, agentId, body) {
 
 async function getReleasedRoute(db, agentId, resultId) {
   return db.prepare(`SELECT result_id AS resultId, query_id AS queryId,
-      route_fingerprint AS routeFingerprint, tool_version AS toolVersion,
-      client_version AS clientVersion, resolution_kind AS resolutionKind,
+      route_fingerprint AS routeFingerprint, match_type AS matchType, tool_registry AS toolRegistry,
+      tool_id AS toolId, tool_version AS toolVersion, client_id AS clientId,
+      client_version AS clientVersion, auth_mode AS authMode, operation,
+      capability_id AS capabilityId, effect_class AS effectClass, resolution_kind AS resolutionKind,
       issued_at AS issuedAt
     FROM exchange_route_releases WHERE result_id = ? AND agent_id = ?`)
     .bind(resultId, agentId).first();
@@ -773,7 +806,9 @@ export async function runPreflight(db, agentId, body) {
     minimumSignedNodes: input.minimumSignedNodes,
   }))}`;
   const routeQuery = await createRouteQuery(db, agentId, {
-    schema: "minority-prophet.working-route-query.v0.1",
+    schema: input.alternativePolicy === "same-capability"
+      ? "agentwex.working-route-query.v0.2"
+      : "minority-prophet.working-route-query.v0.1",
     toolRegistry: input.toolRegistry,
     toolId: input.toolId,
     attemptedToolVersion: input.toolVersion,
@@ -782,6 +817,11 @@ export async function runPreflight(db, agentId, body) {
     environment: input.environment,
     authMode: input.authMode,
     operation: input.operation,
+    ...(input.alternativePolicy === "same-capability" ? {
+      capabilityId: input.capabilityId,
+      effectClass: input.effectClass,
+      alternativePolicy: input.alternativePolicy,
+    } : {}),
     localEvidenceStatus: "insufficient",
     localEvidenceReceiptHash: evidenceHash,
     maxAgeDays: input.maxAgeDays,
@@ -811,8 +851,16 @@ export async function runPreflight(db, agentId, body) {
           schema: "minority-prophet.working-route-release.v0.1",
           queryId: released.queryId,
           workingRoute: {
+            matchType: released.matchType,
+            toolRegistry: released.toolRegistry,
+            toolId: released.toolId,
             toolVersion: released.toolVersion,
+            clientId: released.clientId,
             clientVersion: released.clientVersion,
+            authMode: released.authMode,
+            operation: released.operation,
+            capabilityId: released.capabilityId,
+            effectClass: released.effectClass,
             resolutionKind: released.resolutionKind,
             routeFingerprint: released.routeFingerprint,
           },
@@ -902,12 +950,14 @@ export async function submitRouteFeedback(db, agentId, body) {
 
 export function validateWorkingRouteComp(body) {
   if (!body || Object.keys(body).some((key) => !workingRouteCompFields.has(key))) return null;
-  if (body.schema != null && !["minority-prophet.working-route-comp.v0.1", "agentwex.working-route-comp.v0.2"].includes(body.schema)) return null;
+  if (body.schema != null && !["minority-prophet.working-route-comp.v0.1", "agentwex.working-route-comp.v0.2", "agentwex.working-route-comp.v0.3"].includes(body.schema)) return null;
   const toolId = safeIdentifier(body.toolId, 200, true);
   const toolVersion = safeIdentifier(body.toolVersion, 80);
   const clientId = safeIdentifier(body.clientId, 120);
   const clientVersion = safeIdentifier(body.clientVersion, 80);
   const operation = safeIdentifier(body.operation, 120);
+  const capabilityId = body.capabilityId == null ? null : safeIdentifier(body.capabilityId, 160);
+  const effectClass = body.effectClass ?? null;
   const provenanceRootId = safeProvenanceRoot(body.provenanceRootId);
   const routeFingerprint = shortText(body.routeFingerprint, 160);
   const errorClass = body.errorClass == null ? null : safeIdentifier(body.errorClass, 120);
@@ -919,13 +969,16 @@ export function validateWorkingRouteComp(body) {
   const attestation = body.attestation == null ? null : validateAttestation(body.attestation);
   if (body.attestation != null && !attestation) return null;
   if (body.schema === "agentwex.working-route-comp.v0.2" && !attestation) return null;
-  return { schema: body.schema ?? "minority-prophet.working-route-comp.v0.1", queryId: safeIdentifier(body.queryId, 240), toolRegistry: body.toolRegistry, toolId, toolVersion, clientId, clientVersion, environment: body.environment, authMode: body.authMode, operation, outcome: body.outcome, errorClass, resolutionKind: body.resolutionKind, routeFingerprint, observedAt: new Date(body.observedAt).toISOString(), provenanceRootId, independenceBasis: body.independenceBasis, attestation };
+  if (body.schema === "agentwex.working-route-comp.v0.3" && (!attestation || !capabilityId || !effectClasses.has(effectClass))) return null;
+  if ((capabilityId == null) !== (effectClass == null)) return null;
+  if (effectClass != null && !effectClasses.has(effectClass)) return null;
+  return { schema: body.schema ?? "minority-prophet.working-route-comp.v0.1", queryId: safeIdentifier(body.queryId, 240), toolRegistry: body.toolRegistry, toolId, toolVersion, clientId, clientVersion, environment: body.environment, authMode: body.authMode, operation, capabilityId, effectClass, outcome: body.outcome, errorClass, resolutionKind: body.resolutionKind, routeFingerprint, observedAt: new Date(body.observedAt).toISOString(), provenanceRootId, independenceBasis: body.independenceBasis, attestation };
 }
 
 export async function submitWorkingRouteComp(db, agentId, body) {
   const input = validateWorkingRouteComp(body);
   if (!input) return { ok: false, status: 400, error: "invalid_or_sensitive_working_route_comp" };
-  const signedReceipt = input.schema === "agentwex.working-route-comp.v0.2";
+  const signedReceipt = ["agentwex.working-route-comp.v0.2", "agentwex.working-route-comp.v0.3"].includes(input.schema);
   const verified = signedReceipt ? await verifyWorkingRouteAttestation(db, agentId, body) : null;
   if (signedReceipt && !verified?.ok) return { ok: false, status: 401, error: verified?.error ?? "route_receipt_verification_failed" };
   if (body.queryId && !input.queryId) return { ok: false, status: 400, error: "invalid_query_id" };
@@ -950,10 +1003,10 @@ export async function submitWorkingRouteComp(db, agentId, body) {
         .bind(contributionId, agentId, topic, input.provenanceRootId, input.independenceBasis, freshnessDays, createdAt),
       db.prepare(`INSERT INTO exchange_working_route_comps
         (contribution_id, query_id, tool_registry, tool_id, tool_version, client_id, client_version, environment,
-         auth_mode, operation, outcome, error_class, resolution_kind, route_fingerprint, observed_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+         auth_mode, operation, capability_id, effect_class, outcome, error_class, resolution_kind, route_fingerprint, observed_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
         .bind(contributionId, input.queryId, input.toolRegistry, input.toolId, input.toolVersion, input.clientId, input.clientVersion,
-          input.environment, input.authMode, input.operation, input.outcome, input.errorClass,
+          input.environment, input.authMode, input.operation, input.capabilityId, input.effectClass, input.outcome, input.errorClass,
           input.resolutionKind, input.routeFingerprint, input.observedAt),
       db.prepare(`INSERT INTO exchange_submission_keys
         (agent_id, dedupe_key, contribution_id, created_at) VALUES (?, ?, ?, ?)`)
@@ -992,7 +1045,8 @@ export async function submitWorkingRouteComp(db, agentId, body) {
 export async function listOpenRouteBounties(db) {
   const response = await db.prepare(`SELECT id AS queryId, tool_registry AS toolRegistry, tool_id AS toolId, attempted_tool_version AS attemptedToolVersion,
       client_id AS clientId, attempted_client_version AS attemptedClientVersion, environment, auth_mode AS authMode,
-      operation, minimum_independent_roots AS minimumIndependentRoots, status, created_at AS createdAt
+      operation, capability_id AS capabilityId, effect_class AS effectClass, alternative_policy AS alternativePolicy,
+      minimum_independent_roots AS minimumIndependentRoots, status, created_at AS createdAt
     FROM exchange_route_queries WHERE status IN ('BOUNTY_OPEN', 'SEEK_MORE_INDEPENDENT_RUNS')
     ORDER BY created_at DESC LIMIT 50`).all();
   return (response?.results ?? []).map((query) => ({ ...query, arbitraryExecutionAuthorized: false }));
