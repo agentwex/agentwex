@@ -15,15 +15,23 @@
     "contribution-history",
     "distinct-node-retry-collapse"
   ],
+  "endpoints": {
+    "coverage": "https://agentwex.xyz/api/exchange/coverage",
+    "coveragePage": "https://agentwex.xyz/coverage"
+  },
+  "cli": {
+    "privacyPreview": "agentwex inspect",
+    "privacyPreviewContactsNetwork": false
+  },
   "distribution": {
     "stage": "public-preview",
     "package": "agentwex",
-    "version": "0.6.0",
-    "filename": "agentwex-0.6.0.tgz",
-    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.0.tgz",
+    "version": "0.6.1",
+    "filename": "agentwex-0.6.1.tgz",
+    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.1.tgz",
     "publicNpmPackageReleased": true,
-    "npmInstallCommand": "npm install -g agentwex@0.6.0 && agentwex install",
-    "sha256": "590627c28978dee19b7f116bc6081d0c985650482a12e9b5f3982b5c2fec8c60",
+    "npmInstallCommand": "npm install -g agentwex@0.6.1 && agentwex install",
+    "sha256": "5237c875e20a8636e2489744772b153ab819a898c8e09897aa9be532e8565417",
     "minimumNodeVersion": "22.13.0",
     "runtimeDependencies": 0,
     "lifecycleScripts": false,

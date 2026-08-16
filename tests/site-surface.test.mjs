@@ -13,7 +13,7 @@ test("the standalone site makes prevention, failure value, and scope explicit", 
   ]);
 
   assert.match(page, /Check before the call/);
-  assert.match(page, /npm install -g agentwex@0\.6\.0/);
+  assert.match(page, /npm install -g agentwex@0\.6\.1/);
   assert.doesNotMatch(page, /className="awe-nav"/);
   assert.match(page, /<AweCommand id="install"/);
   assert.match(page, /Aggregate preflight is free/);
@@ -34,7 +34,7 @@ test("machine discovery and the downloadable package are aligned", async () => {
   const [manifestSource, releaseSource, archive] = await Promise.all([
     readFile(new URL("../public/exchange/agent.json", import.meta.url), "utf8"),
     readFile(new URL("../public/exchange/release.json", import.meta.url), "utf8"),
-    readFile(new URL("../public/exchange/agentwex-0.6.0.tgz", import.meta.url)),
+    readFile(new URL("../public/exchange/agentwex-0.6.1.tgz", import.meta.url)),
   ]);
   const manifest = JSON.parse(manifestSource);
   const release = JSON.parse(releaseSource);
@@ -43,8 +43,8 @@ test("machine discovery and the downloadable package are aligned", async () => {
   assert.equal(manifest.documentation.source, "https://github.com/agentwex/agentwex");
   assert.equal(manifest.distribution.publicNpmPackageReleased, true);
   assert.equal(manifest.distribution.npmPackage, "agentwex");
-  assert.equal(manifest.distribution.npmVersion, "0.6.0");
-  assert.match(manifest.distribution.npmInstallCommand, /npm install -g agentwex@0\.6\.0/);
+  assert.equal(manifest.distribution.npmVersion, "0.6.1");
+  assert.match(manifest.distribution.npmInstallCommand, /npm install -g agentwex@0\.6\.1/);
   assert.equal(manifest.preflight.aggregateAssessmentCostCredits, 0);
   assert.equal(manifest.preflight.unrestrictedCrossToolProviderAuthRuntimeRoutingClaimed, false);
   assert.equal(digest, release.sha256);
@@ -60,6 +60,8 @@ test("Sites ownership lives in the AgentWEX repository", async () => {
   const hosting = JSON.parse(hostingSource);
   const packageJson = JSON.parse(packageSource);
 
+  assert.equal(hosting.project_id, "appgprj_6a821aace67c819196db13d04e3bf0d2");
+  assert.notEqual(hosting.project_id, "appgprj_6a70fd338b2481919a840dad4631fb78");
   assert.equal(hosting.d1, "DB");
   assert.equal(packageJson.name, "agentwex-repository");
   assert.equal(packageJson.scripts.build.includes("vinext build"), true);

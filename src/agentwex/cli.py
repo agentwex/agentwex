@@ -12,7 +12,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="agentwex",
         description=(
             "This is the reserved Python namespace, not the Agent WEX node. "
-            "Install the canonical node with: npm install --global agentwex@0.6.0"
+            "Install the canonical node with: npm install --global agentwex@0.6.1"
         ),
     )
     parser.add_argument("--version", action="version", version=f"agentwex {__version__}")

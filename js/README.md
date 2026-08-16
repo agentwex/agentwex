@@ -23,10 +23,10 @@ The route is advice, not authority. It must return through the caller's Gate or 
 
 ## Public-preview node install
 
-Install the canonical dependency-free Node.js package, version `0.6.0`:
+Install the canonical dependency-free Node.js package, version `0.6.1`:
 
 ```sh
-npm install --global agentwex@0.6.0
+npm install --global agentwex@0.6.1
 agentwex install
 ```
 
@@ -112,6 +112,7 @@ The private environment file contains the localhost collector credential and is 
 Then inspect the node:
 
 ```sh
+agentwex inspect
 agentwex status
 agentwex credits
 agentwex contributions --limit 25
@@ -124,6 +125,10 @@ agentwex ledger
 agentwex routes
 agentwex doctor
 ```
+
+`agentwex inspect` works before installation as well. It does not contact the
+exchange; it prints the outbound receipt and failure-query schemas, configured
+route mappings, and the fields that are explicitly excluded.
 
 `credits` is the human-discoverable alias for the immutable `ledger` output.
 `contributions` returns the authenticated node's paginated minimized history,

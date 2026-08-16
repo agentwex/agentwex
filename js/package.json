@@ -1,6 +1,6 @@
 {
   "name": "agentwex",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Privacy-minimizing compatibility-evidence node for Agent WEX",
   "type": "module",
   "license": "Apache-2.0",
@@ -20,6 +20,7 @@
     "./runtime-detection": "./lib/runtime-detection.mjs",
     "./runtime-bootstrap": "./lib/runtime-bootstrap.mjs",
     "./automatic-mapping": "./lib/automatic-mapping.mjs",
+    "./inspect": "./lib/inspect.mjs",
     "./attestation": "./lib/attestation.mjs"
   },
   "files": ["bin", "lib", "README.md", "LICENSE", "NOTICE"],

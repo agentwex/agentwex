@@ -14,6 +14,7 @@ import { bernsteinPluginSource } from "../lib/bernstein.mjs";
 import { detectRuntimes } from "../lib/runtime-detection.mjs";
 import { bootstrapDetectedRuntimes, removeAgentWexRuntimeConfig } from "../lib/runtime-bootstrap.mjs";
 import { generateSigningIdentity, publicSigningIdentity } from "../lib/attestation.mjs";
+import { buildPrivacyInspection } from "../lib/inspect.mjs";
 
 const ownPath = fileURLToPath(import.meta.url);
 const execFileAsync = promisify(execFile);
@@ -33,7 +34,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  process.stdout.write(`Agent WEX node v0.6.0\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-signed-nodes 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  doctor [--config PATH]\n\nUse --capability and --effect together to let Navigator compare evidence-backed alternatives across tools without confusing a read route with a write or execution route. Similarity alone never counts as support.\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
+  process.stdout.write(`Agent WEX node v0.6.1\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-signed-nodes 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  inspect [--config PATH]\n  doctor [--config PATH]\n\nUse --capability and --effect together to let Navigator compare evidence-backed alternatives across tools without confusing a read route with a write or execution route. Similarity alone never counts as support.\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Run inspect before or after installation to see the exact outbound schema without contacting the exchange. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
 }
 
 function environmentClass() {
@@ -417,11 +418,20 @@ async function doctor(configPath) {
   if (checks.some((entry) => entry.status === "failed")) process.exitCode = 1;
 }
 
+async function inspect(configPath) {
+  let config = null;
+  try { config = await readConfig(configPath); }
+  catch (error) {
+    if (error?.code !== "ENOENT" && !String(error?.message ?? "").includes("no such file")) throw error;
+  }
+  process.stdout.write(`${JSON.stringify(buildPrivacyInspection(config), null, 2)}\n`);
+}
+
 async function main() {
   const { command, options, positional } = parseArgs(process.argv.slice(2));
   const configPath = resolve(options.config ?? defaultConfigPath());
   if (command === "help" || command === "--help" || command === "-h") return printHelp();
-  if (command === "--version" || command === "-v" || command === "version") return process.stdout.write("agentwex 0.6.0\n");
+  if (command === "--version" || command === "-v" || command === "version") return process.stdout.write("agentwex 0.6.1\n");
   if (command === "install") return install(options);
   if (command === "uninstall") return uninstall(configPath, options);
   if (command === "rotate-keys") return rotateKeys(configPath);
@@ -439,6 +449,7 @@ async function main() {
   if (command === "alerts") return alerts(configPath, options);
   if (command === "feedback") return feedback(configPath, options);
   if (command === "routes") return routes(configPath);
+  if (command === "inspect") return inspect(configPath);
   if (command === "doctor") return doctor(configPath);
   throw new Error(`Unknown command: ${command}`);
 }

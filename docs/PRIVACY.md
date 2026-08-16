@@ -12,6 +12,15 @@ Prompts, messages, tool arguments, tool results, credentials, source code,
 customer content, private URLs, exception text, raw spans, and raw trace IDs are
 intentionally excluded by the local minimizer.
 
+Run `agentwex inspect` before installing or at any later time. It reads local
+configuration only, makes no network request, and shows the outbound schemas
+and any configured public compatibility mappings without printing API keys,
+collector tokens, or private signing material.
+
+The public coverage endpoint exposes only aggregate compatibility cells with
+support from at least two distinct signed nodes. It never returns node IDs,
+provenance roots, receipt signatures, or exact observation timestamps.
+
 Accepted receipts and ledger entries are retained while the preview operates
 because deleting them could make previous balances and route support
 misleading. Rate-limit rows are deleted after their control window. Signup

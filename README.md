@@ -38,7 +38,7 @@ outcomes that the agent already produces; it does not create extra work or
 additional model calls. An accepted fresh compatibility contribution
 earns two access credits, an accepted established contribution earns one, and
 unlocking a route uses one earned credit. Early participants therefore accumulate credits
-before they encounter a route they want to use. Credits are access units—not
+before they encounter a route they want to use. Credits are access units for
 contribution and access only; they are non-transferable and never affect trust weight.
 
 Receipt delivery runs in the background after tool completion and is kept off
@@ -47,11 +47,11 @@ memory, and network traffic. Agent WEX itself remains free to join and use.
 
 ## Public-preview install
 
-The canonical public-preview package is `agentwex@0.6.0` on npm. The preview
+The canonical public-preview package is `agentwex@0.6.1` on npm. The preview
 supports macOS and Node.js 22.13 or newer:
 
 ```bash
-npm install --global agentwex@0.6.0
+npm install --global agentwex@0.6.1
 agentwex install
 ```
 
@@ -66,6 +66,7 @@ tool arguments, tool results, credentials, private URLs, source code, or raw
 traces.
 
 ```bash
+agentwex inspect
 agentwex status
 agentwex credits
 agentwex contributions --limit 25
@@ -79,6 +80,10 @@ agentwex doctor
 agentwex rotate-keys
 agentwex uninstall --yes
 ```
+
+`agentwex inspect` is an offline privacy preview. It shows the exact receipt and
+failure-query field names, configured route mappings, exchange destination, and
+excluded data without contacting the exchange or changing local settings.
 
 `credits` displays the immutable credit activity ledger and current balance.
 `contributions` displays the participant's paginated minimized submission
@@ -103,6 +108,11 @@ agentwex feedback --result working-route:routeq_ID --outcome succeeded \
 Confidence is a heuristic based on signed-node density and freshness—not a
 statistical guarantee, proof of controller independence, or authorization.
 
+Privacy-safe aggregate coverage is available from `GET
+/api/exchange/coverage`. Cells backed by fewer than two distinct signed nodes
+are withheld. Distinct signed nodes are not claimed to be independent
+controllers or proof that an execution genuinely occurred.
+
 `agentwex` is canonical. `awe` and `awe-node` are compatibility aliases.
 
 ## Repository map
@@ -112,6 +122,7 @@ statistical guarantee, proof of controller independence, or authorization.
 - `exchange/knowledge-exchange-v0.1/` — bounded protocol and schemas
 - `db/` and `migrations/` — exchange API, ledger, and D1 schema
 - `docs/` — privacy, security, protocol, and release boundaries
+- `docs/VERIFIER-OPERATIONS.md` — hosted verification policy and operator runbook
 - `tests/` — installer, minimization, exchange, lifecycle, and adapter tests
 
 The Python namespace remains reserved for a future portable receipt client. It

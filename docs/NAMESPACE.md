@@ -10,10 +10,10 @@ network so a signed receipt is not confused with independent verification.
 | GitHub organization | `agentwex` | Reserved |
 | GitHub repository | `agentwex/agentwex` | Public |
 | npm organization | `@agentwex` | Reserved |
-| npm package | `agentwex` | `0.6.0` is the canonical Node.js public-preview release |
+| npm package | `agentwex` | `0.6.1` is the canonical Node.js public-preview release |
 | PyPI project | `agentwex` | Namespace placeholder only; not the Agent WEX node |
 | Primary shell command | `agentwex` | Canonical |
-| Convenience shell aliases | `awe`, `awe-node` | Included in the `0.6.0` preview |
+| Convenience shell aliases | `awe`, `awe-node` | Included in the `0.6.1` preview |
 
 `agentwex` is always the canonical machine-facing identifier. `awe` is a
 convenience command and secondary brand monogram; it must not be used as the
