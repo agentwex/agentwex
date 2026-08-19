@@ -16,7 +16,7 @@ const alternativePolicies = new Set(["exact-only", "same-capability"]);
 const feedbackFailureClasses = new Set(["authentication", "compatibility", "timeout", "rate-limit", "network", "unavailable", "policy", "other"]);
 const routeQueryFields = new Set(["schema", "toolRegistry", "toolId", "attemptedToolVersion", "clientId", "attemptedClientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "localEvidenceStatus", "localEvidenceReceiptHash", "maxAgeDays", "minimumIndependentRoots"]);
 const workingRouteCompFields = new Set(["schema", "queryId", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "outcome", "errorClass", "resolutionKind", "routeFingerprint", "observedAt", "provenanceRootId", "independenceBasis", "attestation"]);
-const preflightFields = new Set(["schema", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "maxAgeDays", "minimumSignedNodes", "unlock"]);
+const preflightFields = new Set(["schema", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "maxAgeDays", "minimumIndependentRoots", "minimumSignedNodes", "unlock"]);
 const routeFeedbackFields = new Set(["schema", "resultId", "outcome", "failureClass", "attemptsAvoided", "estimatedTokensAvoided", "estimatedLatencyMsAvoided"]);
 const labEnrollmentFields = new Set(["agentId", "controllerGroupId", "participantId"]);
 
@@ -647,11 +647,18 @@ export function validatePreflight(body) {
   const effectClass = body.effectClass ?? null;
   const alternativePolicy = body.alternativePolicy ?? "exact-only";
   const maxAgeDays = body.maxAgeDays ?? 7;
-  const minimumSignedNodes = body.minimumSignedNodes ?? 2;
+  // The bar is distinct controller groups, and always has been: it is compared
+  // against a list collapsed one-per-controller. `minimumSignedNodes` named it
+  // after signed nodes, which understated the guarantee and would mislead an
+  // independent implementer into building something weaker. Both names are
+  // accepted; they must not disagree.
+  if (body.minimumIndependentRoots != null && body.minimumSignedNodes != null
+      && body.minimumIndependentRoots !== body.minimumSignedNodes) return null;
+  const minimumIndependentRoots = body.minimumIndependentRoots ?? body.minimumSignedNodes ?? 2;
   if (!toolRegistries.has(body.toolRegistry) || !toolId || !toolVersion || !clientId || !clientVersion || !operation) return null;
   if (!environments.has(body.environment) || !authModes.has(body.authMode)) return null;
   if (!Number.isInteger(maxAgeDays) || maxAgeDays < 1 || maxAgeDays > 30) return null;
-  if (!Number.isInteger(minimumSignedNodes) || minimumSignedNodes < 2 || minimumSignedNodes > 10) return null;
+  if (!Number.isInteger(minimumIndependentRoots) || minimumIndependentRoots < 2 || minimumIndependentRoots > 10) return null;
   if (body.unlock != null && typeof body.unlock !== "boolean") return null;
   if (!alternativePolicies.has(alternativePolicy)) return null;
   if ((capabilityId == null) !== (effectClass == null)) return null;
@@ -670,7 +677,9 @@ export function validatePreflight(body) {
     effectClass,
     alternativePolicy,
     maxAgeDays,
-    minimumSignedNodes,
+    minimumIndependentRoots,
+    // Mirrored so existing readers keep working until the next schema version.
+    minimumSignedNodes: minimumIndependentRoots,
     unlock: body.unlock === true,
   };
 }
@@ -1016,7 +1025,11 @@ export async function runPreflight(db, agentId, body) {
     authMode: input.authMode,
     operation: input.operation,
     maxAgeDays: input.maxAgeDays,
-    minimumSignedNodes: input.minimumSignedNodes,
+    // Deliberately still keyed `minimumSignedNodes`. This object is hashed into
+    // localEvidenceReceiptHash; renaming the key would change every future
+    // digest and break comparison with hashes already issued. The name moves at
+    // the next schema version, where the digest is expected to change anyway.
+    minimumSignedNodes: input.minimumIndependentRoots,
   }))}`;
   const routeQuery = await createRouteQuery(db, agentId, {
     schema: input.alternativePolicy === "same-capability"
@@ -1038,7 +1051,7 @@ export async function runPreflight(db, agentId, body) {
     localEvidenceStatus: "insufficient",
     localEvidenceReceiptHash: evidenceHash,
     maxAgeDays: input.maxAgeDays,
-    minimumIndependentRoots: input.minimumSignedNodes,
+    minimumIndependentRoots: input.minimumIndependentRoots,
   });
   if (!routeQuery.ok) return routeQuery;
   assessment.routeQuery = routeQuery.query;

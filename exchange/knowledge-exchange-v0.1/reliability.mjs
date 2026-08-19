@@ -1,5 +1,14 @@
 import { classifyRouteMatch } from "./working-route.mjs";
 
+/**
+ * The independence bar, read under either name.
+ *
+ * It is compared against controller-group counts, never against signed-node
+ * counts, so `minimumIndependentRoots` states what it does.
+ * `minimumSignedNodes` is the historical alias and means the same thing.
+ */
+const independenceBar = (input) => input?.minimumIndependentRoots ?? input?.minimumSignedNodes ?? 2;
+
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 
@@ -81,7 +90,7 @@ function confidenceFor(summary) {
   };
 }
 
-function candidateRoutes(records, feedback, cutoff, evaluatedAt, minimumSignedNodes, input) {
+function candidateRoutes(records, feedback, cutoff, evaluatedAt, minimumIndependentRoots, input) {
   const evaluated = Date.parse(evaluatedAt);
   const routes = new Map();
   for (const record of records) {
@@ -153,8 +162,10 @@ function candidateRoutes(records, feedback, cutoff, evaluatedAt, minimumSignedNo
       distinctParticipantCount: participants.size,
       distinctControllerGroupCount: observations.length,
       firstPartyLabReplicated: labReplicated,
-      supportStatus: observations.length >= minimumSignedNodes ? "supported" : labReplicated ? "lab-observed" : "observed",
-      supported: observations.length >= minimumSignedNodes,
+      // `observations` is collapsed one-per-controller above, so this compares
+      // controller groups. That is the bar the name now states.
+      supportStatus: observations.length >= minimumIndependentRoots ? "supported" : labReplicated ? "lab-observed" : "observed",
+      supported: observations.length >= minimumIndependentRoots,
       lastObservedAt: first.observedAt,
       freshnessHours: Number(((Date.parse(evaluatedAt) - Date.parse(first.observedAt)) / HOUR_MS).toFixed(2)),
       feedback: {
@@ -188,15 +199,15 @@ export function evaluatePreflight(records, feedback, input, evaluatedAt = new Da
     ? Number((recent.successRate - baseline.successRate).toFixed(4))
     : null;
   const alerts = [];
-  if (recent.failedControllerGroupCount >= input.minimumSignedNodes && recent.successfulControllerGroupCount === 0) {
+  if (recent.failedControllerGroupCount >= independenceBar(input) && recent.successfulControllerGroupCount === 0) {
     alerts.push({
       type: "POSSIBLE_OUTAGE",
       severity: "high",
       message: "No recent signed-node successes and multiple recent failures were observed for the current route.",
     });
   }
-  if (recent.distinctControllerGroupCount >= input.minimumSignedNodes
-      && baseline.distinctControllerGroupCount >= input.minimumSignedNodes
+  if (recent.distinctControllerGroupCount >= independenceBar(input)
+      && baseline.distinctControllerGroupCount >= independenceBar(input)
       && successRateDrop <= -0.25) {
     alerts.push({
       type: "REGRESSION",
@@ -205,7 +216,7 @@ export function evaluatePreflight(records, feedback, input, evaluatedAt = new Da
       message: "Recent success is materially below the earlier evidence window for the current route.",
     });
   }
-  const candidates = candidateRoutes(records, feedback, cutoff, evaluatedAt, input.minimumSignedNodes, input);
+  const candidates = candidateRoutes(records, feedback, cutoff, evaluatedAt, independenceBar(input), input);
   const feedbackImpact = candidates.reduce((total, candidate) => ({
     succeeded: total.succeeded + candidate.feedback.succeeded,
     failed: total.failed + candidate.feedback.failed,
@@ -223,7 +234,7 @@ export function evaluatePreflight(records, feedback, input, evaluatedAt = new Da
   let action = "PROCEED_WITH_CAUTION";
   if (current.distinctControllerGroupCount === 0) action = alternative ? "UNLOCK_SUPPORTED_ROUTE" : labAlternative ? "UNLOCK_LAB_ROUTE" : "NO_RECENT_EVIDENCE";
   else if (alerts.length > 0 || (current.successRate ?? 0) < 0.5) action = alternative ? "UNLOCK_SUPPORTED_ROUTE" : labAlternative ? "UNLOCK_LAB_ROUTE" : "AVOID_CURRENT_ROUTE";
-  else if (current.successRate >= 0.8 && current.distinctControllerGroupCount >= input.minimumSignedNodes) action = "PROCEED";
+  else if (current.successRate >= 0.8 && current.distinctControllerGroupCount >= independenceBar(input)) action = "PROCEED";
 
   return {
     schema: "agentwex.preflight-assessment.v0.1",
@@ -288,7 +299,7 @@ export function buildReliabilityAlerts(records, evaluatedAt = new Date().toISOSt
       authMode: record.authMode,
       operation: record.operation,
       maxAgeDays: 7,
-      minimumSignedNodes: 2,
+      minimumIndependentRoots: 2,
     } };
     cell.records.push(record);
     cells.set(key, cell);
