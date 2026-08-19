@@ -302,11 +302,34 @@ async function uninstall(configPath, options) {
   process.stdout.write(`${JSON.stringify({ uninstalled: true, remote, service, runtimes, localConfigKept: Boolean(options["keep-local"]), backupsRetained: true }, null, 2)}\n`);
 }
 
+/**
+ * Runtime detection runs at install time and is never repeated: the background
+ * node has no detection code path at all. A runtime installed after the node
+ * therefore stays invisible indefinitely, and nothing says so — the node reports
+ * healthy while silently observing nothing from it.
+ *
+ * This re-runs detection on demand (status is already a user-initiated command)
+ * and reports any runtime that is present but unconfigured, so the gap is
+ * visible without the operator having to suspect it.
+ */
+async function unconfiguredRuntimes(config) {
+  const adapterKeys = { bernstein: "bernstein", "claude-code": "claudeCode", codex: "codex", "gemini-cli": "geminiCli" };
+  try {
+    const detected = await detectRuntimes();
+    return detected
+      .filter((runtime) => runtime.detected && config.adapters?.[adapterKeys[runtime.id]]?.enabled !== true)
+      .map((runtime) => ({ id: runtime.id, version: runtime.version, resolvedFrom: runtime.resolvedFrom ?? "path" }));
+  } catch {
+    return [];
+  }
+}
+
 async function status(configPath) {
   const config = await readConfig(configPath);
   let local = null;
   try { local = await localJson(config, "/awe/status"); } catch {}
   const account = await getAccount(config);
+  const unconfigured = await unconfiguredRuntimes(config);
   process.stdout.write(`${JSON.stringify({
     agentId: config.agentId,
     backgroundNode: local ? "running" : "not_reachable",
@@ -321,8 +344,14 @@ async function status(configPath) {
     pendingContributions: local?.pendingContributions?.length ?? null,
     openQueries: local?.queries?.filter((entry) => !entry.unlockedAt).length ?? null,
     availableRoutes: local?.routes?.length ?? null,
+    unconfiguredRuntimes: unconfigured,
+    runtimeDetectionScannedAt: config.runtimeDetection?.scannedAt ?? null,
     authorityGranted: false,
   }, null, 2)}\n`);
+  if (unconfigured.length > 0) {
+    const names = unconfigured.map((entry) => `${entry.id} ${entry.version}`).join(", ");
+    process.stderr.write(`Detected but not observed: ${names}. Run 'agentwex install' to wire them.\n`);
+  }
 }
 
 async function routes(configPath) {
