@@ -70,7 +70,14 @@ export function adaptOtelSpanToRouteOutcome(span, policy) {
   return {
     status: "READY_TO_SUBMIT",
     receipt: {
-      schema: "minority-prophet.working-route-comp.v0.1",
+      // Declare the version this receipt actually satisfies, rather than a
+      // fixed one. v0.3 requires capabilityId and effectClass, which are
+      // present only when an operator mapping supplies a capability; stamping
+      // it unconditionally would produce receipts invalid against the schema
+      // they name. v0.2 requires attestation, which signing always adds.
+      schema: capabilityId
+        ? "agentwex.working-route-comp.v0.3"
+        : "agentwex.working-route-comp.v0.2",
       toolRegistry,
       toolId,
       toolVersion,

@@ -45,7 +45,19 @@ test("OpenTelemetry adapter emits only the minimized AWE outcome receipt", () =>
   assert.equal(result.receipt.independenceBasis, "declared");
   assert.equal(result.review.acceptanceStatus, "pending");
   assert.equal(result.authorityGranted, false);
-  assert.equal(Buffer.byteLength(JSON.stringify(result.receipt)), 609);
+  // A tripwire against a field creeping in unnoticed. The count moved from 609
+  // to 601 when the schema identifier changed from
+  // "minority-prophet.working-route-comp.v0.1" to
+  // "agentwex.working-route-comp.v0.3" -- eight fewer characters, same content.
+  // The key set below states the intent directly, so a future benign shift in
+  // the number does not leave the guard meaningless.
+  assert.equal(Buffer.byteLength(JSON.stringify(result.receipt)), 601);
+  assert.deepEqual(Object.keys(result.receipt).sort(), [
+    "authMode", "clientId", "clientVersion", "environment", "errorClass",
+    "independenceBasis", "observedAt", "operation", "outcome",
+    "provenanceRootId", "resolutionKind", "routeFingerprint", "schema",
+    "toolId", "toolRegistry", "toolVersion",
+  ], "no field may join the receipt without this test being changed on purpose");
   const serialized = JSON.stringify(result);
   for (const forbidden of ["secret/customer-repo", "secret-token", "customer data", "private prompt", "host-secret-17", "span-9f", "trace-7a"]) {
     assert.doesNotMatch(serialized, new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
