@@ -344,10 +344,21 @@ async function status(configPath) {
     pendingContributions: local?.pendingContributions?.length ?? null,
     openQueries: local?.queries?.filter((entry) => !entry.unlockedAt).length ?? null,
     availableRoutes: local?.routes?.length ?? null,
+    observedEvents: local?.observation?.received ?? null,
+    contributedEvents: local?.observation?.contributed ?? null,
+    ignoredEvents: local?.observation?.ignored ?? null,
+    lastObservedAt: local?.observation?.lastObservedAt ?? null,
     unconfiguredRuntimes: unconfigured,
     runtimeDetectionScannedAt: config.runtimeDetection?.scannedAt ?? null,
     authorityGranted: false,
   }, null, 2)}\n`);
+  const observation = local?.observation;
+  if (observation && observation.received > 0 && observation.contributed === 0) {
+    process.stderr.write(
+      `Observed ${observation.received} tool outcome(s) and contributed none. ` +
+      `Runtime-internal tools are never contributed; map an externally routable tool with 'agentwex adapter <runtime> --tool ...'.\n`,
+    );
+  }
   if (unconfigured.length > 0) {
     const names = unconfigured.map((entry) => `${entry.id} ${entry.version}`).join(", ");
     process.stderr.write(`Detected but not observed: ${names}. Run 'agentwex install' to wire them.\n`);

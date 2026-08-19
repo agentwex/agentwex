@@ -61,6 +61,12 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
     schema: "minority-prophet.awe-node-state.v0.1",
     pendingContributions: [], queries: [], routes: [], creditBalance: 0,
   };
+  // Counts of what the runtime actually sent, independent of what was
+  // contributed. Without these an operator whose events are all ignored sees a
+  // node reporting healthy with nothing to show and no way to tell whether the
+  // runtime is silent or every event is being dropped. Older state files
+  // predate this, so it is filled in rather than assumed.
+  state.observation ??= { received: 0, contributed: 0, ignored: 0, lastObservedAt: null };
   let operation = Promise.resolve();
 
   async function persist() {
@@ -139,6 +145,12 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
         summary.rejected += 1;
         summary.lastError = error.message;
       }
+    }
+    if (summary.received > 0) {
+      state.observation.received += summary.received;
+      state.observation.contributed += summary.submitted;
+      state.observation.ignored += summary.ignored;
+      state.observation.lastObservedAt = new Date().toISOString();
     }
     if (summary.submitted > 0) {
       state.lastRuntimeOutcomeAt = new Date().toISOString();
