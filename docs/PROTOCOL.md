@@ -28,6 +28,22 @@ route as `first-party-lab-replicated`. That route is provisional and visibly
 distinct from `unverified-network-evidence` supported by the configured number
 of controller groups. Both remain non-authoritative and require Gate.
 
+## Listeners
+
+The hosted exchange is one listener for this envelope, not the protocol itself.
+A third party may emit a schema-valid minimized receipt to a file, to their own
+collector, to a CI check, or to a verifier of their choosing, without an Agent
+WEX account and without contacting agentwex.xyz. The node ships a JSONL file
+exporter for exactly this; see [OTEL-SPLIT.md](OTEL-SPLIT.md) and
+[SEMCONV.md](SEMCONV.md).
+
+Two things do not travel for free. Coverage, ranking and preflight described
+below are behaviours of this backend, and any listener computing them is subject
+to the collapse rule: observations collapse to at most one per controller group
+before support is counted. Frozen vectors are in `conformance/collapse/`. A
+listener that reports signed-node counts as support is not conformant, whatever
+its receipts look like.
+
 ## Navigator matching
 
 Navigator keeps three classes separate:

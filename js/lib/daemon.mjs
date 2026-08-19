@@ -6,7 +6,8 @@ import { spansFromCodexLogs } from "./codex.mjs";
 import { spansFromGeminiCliLogs } from "./gemini-cli.mjs";
 import { spansFromBernsteinEvents } from "./bernstein.mjs";
 import { signRouteReceipt } from "./attestation.mjs";
-import { createRouteQuery, getAccount, getContribution, getRouteQuery, submitRouteOutcome, unlockRoute } from "./client.mjs";
+import { createRouteQuery, getAccount, getContribution, getRouteQuery, unlockRoute } from "./client.mjs";
+import { createExporters, exportReceipt } from "./exporters.mjs";
 import { defaultConfigPath, readConfig, readState, writeState } from "./config.mjs";
 
 const MAX_BODY_BYTES = 1_048_576;
@@ -69,6 +70,8 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
   state.observation ??= { received: 0, contributed: 0, ignored: 0, lastObservedAt: null };
   let operation = Promise.resolve();
 
+  const exporters = createExporters(config);
+
   async function persist() {
     await writeState(configPath, state);
   }
@@ -117,7 +120,11 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
         });
         if (adapted.status !== "READY_TO_SUBMIT") { summary.ignored += 1; continue; }
         const signedReceipt = signRouteReceipt(adapted.receipt, config.signing);
-        const contribution = await submitRouteOutcome(config, signedReceipt);
+        // One emit, many listeners. The hosted exchange is the primary
+        // destination when configured; a file listener receives the identical
+        // signed object and needs no account.
+        const delivered = await exportReceipt(exporters, signedReceipt);
+        const contribution = delivered.primary ?? { status: "exported" };
         if (contribution.status === "pending" && !state.pendingContributions.some((entry) => entry.contributionId === contribution.contributionId)) {
           state.pendingContributions.push({
             contributionId: contribution.contributionId,

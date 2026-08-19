@@ -104,6 +104,20 @@ The legacy/manual acceptance function is not exposed publicly. Signed route
 receipts use the exchange-owned deterministic verifier, which appends an audit
 decision and earned credit with the accepted support claim.
 
+## Listeners
+
+This exchange is one listener for the receipt envelope, not the envelope itself.
+A third party may emit a schema-valid minimized receipt to a file or to their
+own collector without an account here, using the field names frozen in
+[../../docs/SEMCONV.md](../../docs/SEMCONV.md). The node's JSONL file exporter
+does this today.
+
+Coverage, matching and preflight in this directory are behaviours of this
+backend. They are available to any listener that implements them, subject to the
+collapse rule: observations collapse to at most one per controller group before
+support is counted, and signed-node counts are never substituted for it. Frozen
+vectors: [../../conformance/collapse/](../../conformance/collapse/).
+
 ## Agent-social compatibility
 
 The heartbeat and identity surfaces are adapter boundaries. An agent-social
