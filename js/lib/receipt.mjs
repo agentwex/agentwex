@@ -27,6 +27,18 @@ export function adaptOtelSpanToRouteOutcome(span, policy) {
     return { status: "IGNORED", reason: "outcome_not_explicit", authorityGranted: false };
   }
   const toolRegistry = requiredString(attrs["awe.tool.registry"], "awe.tool.registry");
+  // Credits are for evidence another operator can act on. A runtime's own
+  // built-in tool offers no alternative to route to: a reader already inside
+  // that runtime cannot choose a different one, so the cell answers no question
+  // they could ask before making a call. It is observed locally and never
+  // submitted, so it can neither earn credits nor pad public coverage.
+  //
+  // An operator who believes a tool is externally routable can map it
+  // explicitly under a real registry, which is a deliberate act rather than a
+  // default.
+  if (toolRegistry === "runtime") {
+    return { status: "IGNORED", reason: "runtime_internal_not_operator_actionable", authorityGranted: false };
+  }
   const environment = requiredString(attrs["awe.environment"], "awe.environment");
   const authMode = requiredString(attrs["awe.auth.mode"], "awe.auth.mode");
   const resolutionKind = attrs["awe.resolution.kind"] ?? "none";
