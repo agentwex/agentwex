@@ -13,6 +13,7 @@ import { installBackgroundService, uninstallBackgroundService } from "../lib/ser
 import { bernsteinPluginSource } from "../lib/bernstein.mjs";
 import { detectRuntimes } from "../lib/runtime-detection.mjs";
 import { bootstrapDetectedRuntimes, removeAgentWexRuntimeConfig } from "../lib/runtime-bootstrap.mjs";
+import { discoverMcpServers } from "../lib/mcp-discovery.mjs";
 import { generateSigningIdentity, publicSigningIdentity } from "../lib/attestation.mjs";
 import { buildPrivacyInspection } from "../lib/inspect.mjs";
 
@@ -223,6 +224,9 @@ async function install(options) {
   const detected = await detectRuntimes();
   const detectedRuntimes = detected.filter((runtime) => runtime.detected).map(({ id, version }) => ({ id, version }));
   config.runtimeDetection = { detected: detectedRuntimes, scannedAt: new Date().toISOString() };
+  // Declared MCP servers carry the version a tool name cannot. Parsed from
+  // config files only: nothing is executed and no network call is made.
+  const mcpServers = await discoverMcpServers({ projectDir: process.cwd() });
   config.configPath = configPath;
   const runtimeHome = options["runtime-home"] ? resolve(options["runtime-home"]) : config.runtimeHome;
   const runtimeBootstrap = options["no-service"] && !options["runtime-home"]
@@ -236,6 +240,13 @@ async function install(options) {
     });
   config.runtimeHome = runtimeHome;
   config.runtimeBootstrap = runtimeBootstrap;
+  // Attach the declared servers to every adapter that maps MCP tool names, so
+  // automatic mapping can state a version instead of recording "unknown".
+  // Re-running install refreshes this the same way it refreshes detection.
+  config.mcpServerDiscovery = { servers: mcpServers, scannedAt: new Date().toISOString() };
+  for (const adapter of Object.values(config.adapters ?? {})) {
+    if (adapter && typeof adapter === "object") adapter.mcpServers = mcpServers;
+  }
   delete config.configPath;
   await writePrivateJson(configPath, config);
   const environmentPath = resolve(configPath, "..", "otel.env");

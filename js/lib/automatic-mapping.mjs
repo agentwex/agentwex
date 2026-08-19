@@ -1,3 +1,5 @@
+import { mcpServerFromToolName } from "./mcp-discovery.mjs";
+
 const safe = (value, fallback) => {
   const normalized = String(value ?? "")
     .trim()
@@ -23,7 +25,14 @@ export function runtimeDerivedMapping(toolName, adapter = {}) {
   //
   // An MCP server's version genuinely is not knowable from a tool name, so it
   // stays explicitly unknown rather than being guessed.
-  const derivedVersion = mcp ? "unknown" : safe(adapter.clientVersion, "unknown");
+  // An MCP server's version is not in its tool name, but it is usually in the
+  // runtime's own declaration of that server. Read it when it is there; stay
+  // explicitly unknown when it is not, rather than borrowing the client's
+  // version, which would describe the wrong thing.
+  const declaredServer = mcp ? adapter.mcpServers?.[mcpServerFromToolName(toolName)] : null;
+  const derivedVersion = mcp
+    ? safe(declaredServer?.version, "unknown")
+    : safe(adapter.clientVersion, "unknown");
   return {
     toolRegistry: mcp ? "mcp" : "runtime",
     toolId: mcp ? normalized : `${safe(adapter.clientId, "runtime")}/${normalized}`,
@@ -32,6 +41,7 @@ export function runtimeDerivedMapping(toolName, adapter = {}) {
     operation: normalized,
     resolutionKind: "none",
     mappingBasis: "runtime-derived",
+    versionBasis: mcp ? (declaredServer ? "declared-mcp-server" : "unknown") : "runtime-client",
   };
 }
 
