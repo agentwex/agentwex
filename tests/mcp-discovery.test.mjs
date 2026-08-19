@@ -77,3 +77,43 @@ test("automatic mapping states a declared version and stays unknown otherwise", 
   assert.equal(internal.toolVersion, "2.1.223");
   assert.equal(internal.versionBasis, "runtime-client");
 });
+
+test("a tool name is transmitted only when its server resolves to a published package", async () => {
+  const { spansFromClaudeCodeLogs } = await import("../js/lib/claude-code.mjs");
+  const { adaptOtelSpanToRouteOutcome } = await import("../js/lib/receipt.mjs");
+  const policy = { enabled: true, shareToolOutcomes: true, agentId: "agent_x" };
+  const adapter = {
+    enabled: true, autoMap: true, clientId: "claude-code", clientVersion: "2.1.223", environment: "macos-arm64",
+    mcpServers: { github: { version: "1.2.3", packageId: "@modelcontextprotocol/server-github", packageRegistry: "npm" } },
+  };
+  const logs = (tool) => ({ resourceLogs: [{ resource: { attributes: [] }, scopeLogs: [{ logRecords: [{
+    timeUnixNano: "1755000000000000000",
+    attributes: [
+      { key: "event.name", value: { stringValue: "tool_result" } },
+      { key: "tool_name", value: { stringValue: tool } },
+      { key: "success", value: { boolValue: true } },
+      { key: "tool_use_id", value: { stringValue: "u1" } },
+    ] }] }] }] });
+
+  const publicSpan = spansFromClaudeCodeLogs(logs("mcp__github__search_issues"), adapter).spans[0];
+  const published = adaptOtelSpanToRouteOutcome(publicSpan, policy);
+  assert.equal(published.status, "READY_TO_SUBMIT");
+  assert.equal(published.receipt.toolId, "mcp__github__search_issues",
+    "a public server's tool name is the cell identity and must travel in the clear");
+
+  const privateSpan = spansFromClaudeCodeLogs(logs("mcp__acme_internal__billing_export"), adapter).spans[0];
+  const withheld = adaptOtelSpanToRouteOutcome(privateSpan, policy);
+  assert.equal(withheld.status, "IGNORED");
+  assert.equal(withheld.reason, "private_namespace_never_transmitted");
+  assert.equal(withheld.receipt, undefined, "no receipt is built, so the name cannot leak");
+
+  // An operator who maps a tool has declared it shareable, and chooses the id.
+  const declared = {
+    ...adapter,
+    tools: { mcp__acme_internal__billing_export: { toolRegistry: "mcp", toolId: "acme/billing", toolVersion: "4.0", authMode: "none", operation: "export" } },
+  };
+  const mappedSpan = spansFromClaudeCodeLogs(logs("mcp__acme_internal__billing_export"), declared).spans[0];
+  const mapped = adaptOtelSpanToRouteOutcome(mappedSpan, policy);
+  assert.equal(mapped.status, "READY_TO_SUBMIT");
+  assert.equal(mapped.receipt.toolId, "acme/billing", "the operator's chosen id is used, not the raw internal name");
+});
