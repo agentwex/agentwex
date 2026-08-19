@@ -4,23 +4,126 @@
   "title": "Agent WEX Navigator Query v0.2",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "toolRegistry", "toolId", "attemptedToolVersion", "clientId", "attemptedClientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "localEvidenceStatus", "localEvidenceReceiptHash", "maxAgeDays", "minimumIndependentRoots"],
+  "required": [
+    "schema",
+    "toolRegistry",
+    "toolId",
+    "attemptedToolVersion",
+    "clientId",
+    "attemptedClientVersion",
+    "environment",
+    "authMode",
+    "operation",
+    "capabilityId",
+    "effectClass",
+    "alternativePolicy",
+    "localEvidenceStatus",
+    "localEvidenceReceiptHash",
+    "maxAgeDays",
+    "minimumIndependentRoots"
+  ],
   "properties": {
-    "schema": { "const": "agentwex.working-route-query.v0.2" },
-    "toolRegistry": { "enum": ["mcp", "npm", "pypi", "github", "public-api", "runtime"] },
-    "toolId": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[A-Za-z0-9@][A-Za-z0-9._@/+~-]*$" },
-    "attemptedToolVersion": { "type": "string", "minLength": 1, "maxLength": 80 },
-    "clientId": { "type": "string", "minLength": 1, "maxLength": 120 },
-    "attemptedClientVersion": { "type": "string", "minLength": 1, "maxLength": 80 },
-    "environment": { "enum": ["macos-arm64", "macos-x64", "linux-arm64", "linux-x64", "windows-x64", "container", "other"] },
-    "authMode": { "enum": ["none", "api-key", "oauth-pkce", "oauth-client", "mtls", "signed-request", "other"] },
-    "operation": { "type": "string", "minLength": 1, "maxLength": 120 },
-    "capabilityId": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
-    "effectClass": { "enum": ["read", "write", "execute", "communicate", "observe", "other"] },
-    "alternativePolicy": { "enum": ["exact-only", "same-capability"] },
-    "localEvidenceStatus": { "const": "insufficient" },
-    "localEvidenceReceiptHash": { "type": "string", "pattern": "^sha256:[a-fA-F0-9-]{8,128}$" },
-    "maxAgeDays": { "type": "integer", "minimum": 1, "maximum": 30 },
-    "minimumIndependentRoots": { "type": "integer", "minimum": 2, "maximum": 10 }
+    "schema": {
+      "const": "agentwex.working-route-query.v0.2"
+    },
+    "toolRegistry": {
+      "enum": [
+        "mcp",
+        "npm",
+        "pypi",
+        "github",
+        "public-api",
+        "runtime"
+      ]
+    },
+    "toolId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9@][A-Za-z0-9._@/+~-]*$"
+    },
+    "attemptedToolVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "The tool version the caller attempted. Deliberately distinct from a receipt's toolVersion, which reports a version that was actually used: a query states what was tried, a receipt states what worked. Do not unify the two names."
+    },
+    "clientId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "attemptedClientVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "The client version the caller attempted. See attemptedToolVersion: a query describes an attempt, not an outcome."
+    },
+    "environment": {
+      "enum": [
+        "macos-arm64",
+        "macos-x64",
+        "linux-arm64",
+        "linux-x64",
+        "windows-x64",
+        "container",
+        "other"
+      ]
+    },
+    "authMode": {
+      "enum": [
+        "none",
+        "api-key",
+        "oauth-pkce",
+        "oauth-client",
+        "mtls",
+        "signed-request",
+        "other"
+      ]
+    },
+    "operation": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "capabilityId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$"
+    },
+    "effectClass": {
+      "enum": [
+        "read",
+        "write",
+        "execute",
+        "communicate",
+        "observe",
+        "other"
+      ]
+    },
+    "alternativePolicy": {
+      "enum": [
+        "exact-only",
+        "same-capability"
+      ]
+    },
+    "localEvidenceStatus": {
+      "const": "insufficient"
+    },
+    "localEvidenceReceiptHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-fA-F0-9-]{8,128}$"
+    },
+    "maxAgeDays": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 30
+    },
+    "minimumIndependentRoots": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 10
+    }
   }
 }

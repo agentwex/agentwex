@@ -112,7 +112,13 @@ Three schema files coexist: `working-route-comp.schema.json` (v0.1),
 `-v0.2`, `-v0.3`. The v0.3 file is referenced by no other file in the
 repository.
 
-**Open:** declare one canonical emit version and make the node say it.
+**Resolved.** The node now declares the version each receipt actually satisfies:
+`agentwex.working-route-comp.v0.3` when capability fields are present,
+`agentwex.working-route-comp.v0.2` otherwise. A fixed v0.3 was rejected because
+v0.3 makes `capabilityId` and `effectClass` **required**, and they are present
+only when an operator mapping supplies a capability — stamping it
+unconditionally would have produced receipts invalid against the schema they
+name. v0.1 remains accepted and is no longer emitted.
 
 ### Coverage documentation understates its own guarantee
 
@@ -128,7 +134,8 @@ documentation is wrong in the safe direction, and in the same direction as the
 old `minimumSignedNodes` name — a reader could implement the weaker rule and
 believe they matched us.
 
-**Open:** correct the wording in PRIVACY.md.
+**Resolved.** PRIVACY.md now says controller groups, and states that signed
+nodes under one controller cannot reach the threshold however many there are.
 
 ### Query vocabulary differs from receipt vocabulary
 
@@ -140,4 +147,7 @@ is not the same claim as the version a receipt reports having *used*. It is
 recorded here so an implementer is not surprised, and so the distinction is
 either affirmed or removed on purpose.
 
-**Open:** affirm the distinction in the schema descriptions, or unify.
+**Resolved: affirmed, not unified.** The distinction is real — a query states
+what was *attempted*, a receipt states what was *used* — and is now written into
+the `description` of both fields on the query schemas and of `toolVersion` on
+the receipt schemas, so an implementer meets it from either end.
