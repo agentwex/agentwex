@@ -1,0 +1,204 @@
+{
+  "schema": "agentwex.collapse-conformance.v0.1",
+  "statement": "A conformant listener collapses observations to at most one per controller group before computing support. Signed-node and participant counts may be reported and must not be substituted for the controller-group count.",
+  "reference": "https://github.com/Silentpartnercoding/minority-prophet",
+  "cases": [
+    {
+      "id": "single_observation",
+      "why": "Baseline. One observation is one root.",
+      "observations": [
+        {
+          "nodeId": "node-a",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-1",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:00:00Z"
+        }
+      ],
+      "expect": {
+        "signedNodes": 1,
+        "controllerGroups": 1,
+        "participants": 1,
+        "supportingControllerGroups": 1
+      }
+    },
+    {
+      "id": "many_nodes_one_controller",
+      "why": "The central case. Extra keys, runtimes, devices and VMs under one controller do not manufacture support.",
+      "observations": [
+        {
+          "nodeId": "node-a",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-1",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:00:00Z"
+        },
+        {
+          "nodeId": "node-b",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-1",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:01:00Z"
+        },
+        {
+          "nodeId": "node-c",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-1",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:02:00Z"
+        },
+        {
+          "nodeId": "node-d",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-1",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:03:00Z"
+        }
+      ],
+      "expect": {
+        "signedNodes": 4,
+        "controllerGroups": 1,
+        "participants": 1,
+        "supportingControllerGroups": 1
+      }
+    },
+    {
+      "id": "two_controllers",
+      "why": "Genuinely distinct controllers do add support.",
+      "observations": [
+        {
+          "nodeId": "node-a",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-1",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:00:00Z"
+        },
+        {
+          "nodeId": "node-b",
+          "controllerGroupId": "ctrl-2",
+          "participantId": "party-2",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:01:00Z"
+        }
+      ],
+      "expect": {
+        "signedNodes": 2,
+        "controllerGroups": 2,
+        "participants": 2,
+        "supportingControllerGroups": 2
+      }
+    },
+    {
+      "id": "repeats_refresh_recency_only",
+      "why": "A node repeating an observation updates freshness and adds no support.",
+      "observations": [
+        {
+          "nodeId": "node-a",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-1",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:00:00Z"
+        },
+        {
+          "nodeId": "node-a",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-1",
+          "outcome": "success",
+          "observedAt": "2026-08-19T06:00:00Z"
+        }
+      ],
+      "expect": {
+        "signedNodes": 1,
+        "controllerGroups": 1,
+        "participants": 1,
+        "supportingControllerGroups": 1,
+        "latestObservedAt": "2026-08-19T06:00:00Z"
+      }
+    },
+    {
+      "id": "unmapped_nodes_are_their_own_controller",
+      "why": "A node with no declared controller group is treated as its own. This is provisional, not proof of independence: controllerIndependenceVerified stays false.",
+      "observations": [
+        {
+          "nodeId": "node-a",
+          "controllerGroupId": null,
+          "participantId": null,
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:00:00Z"
+        },
+        {
+          "nodeId": "node-b",
+          "controllerGroupId": null,
+          "participantId": null,
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:01:00Z"
+        }
+      ],
+      "expect": {
+        "signedNodes": 2,
+        "controllerGroups": 2,
+        "participants": 2,
+        "supportingControllerGroups": 2
+      }
+    },
+    {
+      "id": "participants_do_not_substitute_for_controllers",
+      "why": "Two participants inside one controller group are still one root. Participant count is reportable and is not the support bar.",
+      "observations": [
+        {
+          "nodeId": "node-a",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-1",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:00:00Z"
+        },
+        {
+          "nodeId": "node-b",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-2",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:01:00Z"
+        }
+      ],
+      "expect": {
+        "signedNodes": 2,
+        "controllerGroups": 1,
+        "participants": 2,
+        "supportingControllerGroups": 1
+      }
+    },
+    {
+      "id": "failures_do_not_count_as_support",
+      "why": "Support is counted over controllers whose latest outcome succeeded. A failing controller is observed and reported, and is not a supporting root. Observed count and supporting count are different numbers and must not be conflated.",
+      "observations": [
+        {
+          "nodeId": "node-a",
+          "controllerGroupId": "ctrl-1",
+          "participantId": "party-1",
+          "outcome": "success",
+          "observedAt": "2026-08-19T00:00:00Z"
+        },
+        {
+          "nodeId": "node-b",
+          "controllerGroupId": "ctrl-2",
+          "participantId": "party-2",
+          "outcome": "failure",
+          "observedAt": "2026-08-19T00:01:00Z"
+        }
+      ],
+      "expect": {
+        "signedNodes": 2,
+        "controllerGroups": 2,
+        "participants": 2,
+        "supportingControllerGroups": 1
+      }
+    }
+  ],
+  "fieldNotes": {
+    "signedNodes": "distinct signing nodes observed in the window, whatever the outcome",
+    "controllerGroups": "distinct controller groups observed in the window",
+    "participants": "distinct participants observed in the window",
+    "supportingControllerGroups": "controller groups whose latest outcome in the window was success -- this is the number the independence bar is compared against",
+    "latestObservedAt": "freshness after collapse; a repeat refreshes this and adds no support"
+  }
+}
