@@ -36,6 +36,14 @@ export function adaptOtelSpanToRouteOutcome(span, policy) {
   // An operator who believes a tool is externally routable can map it
   // explicitly under a real registry, which is a deliberate act rather than a
   // default.
+  // An unresolvable namespace means the tool name is not known to be public.
+  // Transmitting it would publish a possibly-proprietary identifier, and the
+  // cell would be unusable to anyone else regardless, since they cannot reach
+  // that server. Explicit operator mappings do not set this flag and are
+  // unaffected: declaring a tool is a statement that it is shareable.
+  if (attrs["awe.tool.public_namespace"] === false && toolRegistry !== "runtime") {
+    return { status: "IGNORED", reason: "private_namespace_never_transmitted", authorityGranted: false };
+  }
   if (toolRegistry === "runtime") {
     return { status: "IGNORED", reason: "runtime_internal_not_operator_actionable", authorityGranted: false };
   }

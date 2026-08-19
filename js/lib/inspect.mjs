@@ -15,6 +15,7 @@ const NEVER_SHARED_FIELDS = Object.freeze([
   "raw prompts", "tool arguments", "tool results", "credentials or API keys",
   "local collector token", "private signing key", "customer content", "source code",
   "proprietary methods", "raw trace IDs", "URLs",
+  "tool names from MCP servers not resolvable to a published package",
 ]);
 
 function configuredMappings(config) {

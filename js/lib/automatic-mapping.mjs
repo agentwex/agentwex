@@ -42,6 +42,17 @@ export function runtimeDerivedMapping(toolName, adapter = {}) {
     resolutionKind: "none",
     mappingBasis: "runtime-derived",
     versionBasis: mcp ? (declaredServer ? "declared-mcp-server" : "unknown") : "runtime-client",
+    // toolId for an MCP tool is the tool's own name, and that name is published
+    // in coverage. For a public server that is the point: it is how another
+    // operator looks the cell up. For a private or internal server it is a
+    // proprietary string, and nobody else can call that server anyway, so the
+    // cell is unusable to them for the same reason a runtime-internal tool is.
+    //
+    // A namespace counts as public only when discovery resolved the server to a
+    // published package. Anything unresolved is treated as private: the name is
+    // never transmitted, and an operator who knows better can say so with an
+    // explicit mapping.
+    publicNamespace: mcp ? Boolean(declaredServer?.packageId) : false,
   };
 }
 
