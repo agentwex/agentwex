@@ -105,8 +105,17 @@ test("runtime-derived fallback is honest and manual mapping still wins", () => {
   const automatic = { enabled: true, autoMap: true, clientId: "claude-code", clientVersion: "1.2.3", environment: "macos-arm64", tools: {} };
   const claude = spansFromClaudeCodeLogs(payload("tool_result", "tool_name", "Bash", "tool_use_id"), automatic).spans[0];
   assert.equal(claude.attributes["awe.tool.registry"], "runtime");
-  assert.equal(claude.attributes["awe.tool.version"], "unknown");
+  // A built-in tool ships with its runtime, so the client version is the tool
+  // version. Reporting it is not a guess -- reporting "unknown" discarded a
+  // version already in hand and collapsed every release into one cell.
+  assert.equal(claude.attributes["awe.tool.version"], "1.2.3");
   assert.equal(claude.attributes["awe.auth.mode"], "other");
+
+  // An MCP server's version genuinely is not knowable from a tool name, so it
+  // stays explicitly unknown rather than borrowing the client's.
+  const mcp = spansFromClaudeCodeLogs(payload("tool_result", "tool_name", "mcp__server__do", "tool_use_id"), automatic).spans[0];
+  assert.equal(mcp.attributes["awe.tool.registry"], "mcp");
+  assert.equal(mcp.attributes["awe.tool.version"], "unknown");
 
   const codex = spansFromCodexLogs(payload("codex.tool_result", "tool_name", "exec_command", "call_id"), { ...automatic, clientId: "codex" }).spans[0];
   assert.equal(codex.attributes["gen_ai.tool.name"], "codex/exec_command");
