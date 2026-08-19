@@ -429,7 +429,7 @@ async function preflightCommand(configPath, options) {
       alternativePolicy: "same-capability",
     } : {}),
     maxAgeDays: Number(options["max-age-days"] ?? 7),
-    minimumIndependentRoots: Number(options["minimum-independent-roots"] ?? options["minimum-signed-nodes"] ?? 2),
+    minimumIndependentRoots: Number(options["minimum-independent-roots"] ?? 2),
     unlock: options.unlock === true,
   });
   process.stdout.write(`${JSON.stringify(assessment, null, 2)}\n`);

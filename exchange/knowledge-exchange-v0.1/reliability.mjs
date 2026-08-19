@@ -1,13 +1,11 @@
 import { classifyRouteMatch } from "./working-route.mjs";
 
 /**
- * The independence bar, read under either name.
- *
- * It is compared against controller-group counts, never against signed-node
- * counts, so `minimumIndependentRoots` states what it does.
- * `minimumSignedNodes` is the historical alias and means the same thing.
+ * The independence bar: how many distinct controller groups must support a
+ * route. Compared against controller-group counts, never against signed-node
+ * counts, which is what the name states.
  */
-const independenceBar = (input) => input?.minimumIndependentRoots ?? input?.minimumSignedNodes ?? 2;
+const independenceBar = (input) => input?.minimumIndependentRoots ?? 2;
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;

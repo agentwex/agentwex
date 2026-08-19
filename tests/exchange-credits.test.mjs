@@ -216,7 +216,7 @@ test("working-route validation rejects private tool content", () => {
     environment: routeComp.environment,
     authMode: routeComp.authMode,
     operation: routeComp.operation,
-  })?.minimumSignedNodes, 2);
+  })?.minimumIndependentRoots, 2);
   assert.equal(validateRouteFeedback({ resultId: "working-route:routeq_abc123", outcome: "succeeded" })?.attemptsAvoided, 0);
   assert.equal(validateRouteFeedback({ resultId: "working-route:routeq_abc123", outcome: "failed" }), null);
   assert.equal(validateRouteFeedback({ resultId: "working-route:routeq_abc123", outcome: "failed", failureClass: "one-off-private-detail" }), null);
@@ -285,7 +285,7 @@ test("two enrolled lab participants unlock only a visibly provisional first-part
     authMode: routeQuery.authMode,
     operation: routeQuery.operation,
     maxAgeDays: 7,
-    minimumSignedNodes: 2,
+    minimumIndependentRoots: 2,
     unlock: true,
   });
   assert.equal(preflight.assessment.recommendation.action, "UNLOCK_LAB_ROUTE");
@@ -355,7 +355,7 @@ test("preflight seals a supported alternative, spends one earned credit on unloc
     authMode: routeComp.authMode,
     operation: routeComp.operation,
     maxAgeDays: 7,
-    minimumSignedNodes: 2,
+    minimumIndependentRoots: 2,
     unlock: false,
   };
   const sealed = await runPreflight(db, requester.account.agentId, preflightBody);
