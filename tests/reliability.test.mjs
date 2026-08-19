@@ -12,7 +12,7 @@ const input = {
   authMode: "oauth-pkce",
   operation: "repository-search",
   maxAgeDays: 7,
-  minimumSignedNodes: 2,
+  minimumIndependentRoots: 2,
 };
 
 const base = {

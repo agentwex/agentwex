@@ -16,7 +16,7 @@ const alternativePolicies = new Set(["exact-only", "same-capability"]);
 const feedbackFailureClasses = new Set(["authentication", "compatibility", "timeout", "rate-limit", "network", "unavailable", "policy", "other"]);
 const routeQueryFields = new Set(["schema", "toolRegistry", "toolId", "attemptedToolVersion", "clientId", "attemptedClientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "localEvidenceStatus", "localEvidenceReceiptHash", "maxAgeDays", "minimumIndependentRoots"]);
 const workingRouteCompFields = new Set(["schema", "queryId", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "outcome", "errorClass", "resolutionKind", "routeFingerprint", "observedAt", "provenanceRootId", "independenceBasis", "attestation"]);
-const preflightFields = new Set(["schema", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "maxAgeDays", "minimumSignedNodes", "unlock"]);
+const preflightFields = new Set(["schema", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "maxAgeDays", "minimumIndependentRoots", "unlock"]);
 const routeFeedbackFields = new Set(["schema", "resultId", "outcome", "failureClass", "attemptsAvoided", "estimatedTokensAvoided", "estimatedLatencyMsAvoided"]);
 const labEnrollmentFields = new Set(["agentId", "controllerGroupId", "participantId"]);
 
@@ -647,11 +647,17 @@ export function validatePreflight(body) {
   const effectClass = body.effectClass ?? null;
   const alternativePolicy = body.alternativePolicy ?? "exact-only";
   const maxAgeDays = body.maxAgeDays ?? 7;
-  const minimumSignedNodes = body.minimumSignedNodes ?? 2;
+  // The bar is distinct controller groups, and always has been: it is compared
+  // against a list collapsed one-per-controller. The former name,
+  // minimumSignedNodes, understated that and would mislead an independent
+  // implementer into counting nodes and building something weaker. It is not
+  // accepted: an unknown field is rejected by the field-set check above, so a
+  // caller using the old name is told, rather than silently defaulted to 2.
+  const minimumIndependentRoots = body.minimumIndependentRoots ?? 2;
   if (!toolRegistries.has(body.toolRegistry) || !toolId || !toolVersion || !clientId || !clientVersion || !operation) return null;
   if (!environments.has(body.environment) || !authModes.has(body.authMode)) return null;
   if (!Number.isInteger(maxAgeDays) || maxAgeDays < 1 || maxAgeDays > 30) return null;
-  if (!Number.isInteger(minimumSignedNodes) || minimumSignedNodes < 2 || minimumSignedNodes > 10) return null;
+  if (!Number.isInteger(minimumIndependentRoots) || minimumIndependentRoots < 2 || minimumIndependentRoots > 10) return null;
   if (body.unlock != null && typeof body.unlock !== "boolean") return null;
   if (!alternativePolicies.has(alternativePolicy)) return null;
   if ((capabilityId == null) !== (effectClass == null)) return null;
@@ -670,7 +676,7 @@ export function validatePreflight(body) {
     effectClass,
     alternativePolicy,
     maxAgeDays,
-    minimumSignedNodes,
+    minimumIndependentRoots,
     unlock: body.unlock === true,
   };
 }
@@ -1016,7 +1022,11 @@ export async function runPreflight(db, agentId, body) {
     authMode: input.authMode,
     operation: input.operation,
     maxAgeDays: input.maxAgeDays,
-    minimumSignedNodes: input.minimumSignedNodes,
+    // This object is hashed into localEvidenceReceiptHash, so the key is part
+    // of the digest. Correcting it now changes every future hash, which is
+    // acceptable only because no issued hash is yet relied on. That window
+    // closes the moment a second implementation exists.
+    minimumIndependentRoots: input.minimumIndependentRoots,
   }))}`;
   const routeQuery = await createRouteQuery(db, agentId, {
     schema: input.alternativePolicy === "same-capability"
@@ -1038,7 +1048,7 @@ export async function runPreflight(db, agentId, body) {
     localEvidenceStatus: "insufficient",
     localEvidenceReceiptHash: evidenceHash,
     maxAgeDays: input.maxAgeDays,
-    minimumIndependentRoots: input.minimumSignedNodes,
+    minimumIndependentRoots: input.minimumIndependentRoots,
   });
   if (!routeQuery.ok) return routeQuery;
   assessment.routeQuery = routeQuery.query;
