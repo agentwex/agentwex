@@ -8,6 +8,8 @@ interface Env {
   DB: D1Database;
   AWE_VERIFIER_TOKEN?: string;
   AWE_ADMIN_TOKEN?: string;
+  AWE_OWNER_EMAIL?: string;
+  AWE_OWNER_NODE_ALIASES?: string;
   AWE_RATE_LIMIT_SALT?: string;
   IMAGES: {
     input(stream: ReadableStream): {
@@ -19,6 +21,17 @@ interface Env {
 }
 
 const aweHosts = new Set(["agentwex.xyz", "www.agentwex.xyz"]);
+
+function ownerAliases(value?: string): Record<string, string> {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return Object.fromEntries(Object.entries(parsed)
+      .filter(([key, label]) => typeof key === "string" && typeof label === "string")
+      .map(([key, label]) => [key.slice(0, 120), (label as string).slice(0, 80)]));
+  } catch { return {}; }
+}
 
 async function signupFingerprint(request: Request, salt?: string): Promise<string | null> {
   const address = request.headers.get("cf-connecting-ip");
@@ -42,12 +55,14 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
-    if (["/api/exchange/signup", "/api/exchange/account", "/api/exchange/ledger", "/api/exchange/preflight", "/api/exchange/alerts", "/api/exchange/route-feedback", "/api/exchange/signing-keys", "/api/exchange/signing-keys/revoke", "/api/exchange/api-keys/rotate", "/api/exchange/contributions", "/api/exchange/queries", "/api/exchange/working-route-comps", "/api/exchange/bounties", "/api/exchange/unlock", "/api/exchange/coverage", "/api/exchange/internal/accept", "/api/exchange/internal/lab-enroll", "/api/exchange/internal/stats"].includes(url.pathname)
+    if (["/api/exchange/signup", "/api/exchange/account", "/api/exchange/ledger", "/api/exchange/preflight", "/api/exchange/alerts", "/api/exchange/route-feedback", "/api/exchange/signing-keys", "/api/exchange/signing-keys/revoke", "/api/exchange/api-keys/rotate", "/api/exchange/contributions", "/api/exchange/queries", "/api/exchange/working-route-comps", "/api/exchange/bounties", "/api/exchange/unlock", "/api/exchange/coverage", "/api/exchange/internal/accept", "/api/exchange/internal/lab-enroll", "/api/exchange/internal/owner-snapshot", "/api/exchange/internal/stats"].includes(url.pathname)
       || url.pathname.startsWith("/api/exchange/contributions/")
       || url.pathname.startsWith("/api/exchange/queries/")) {
       return handleExchangeApi(request, env.DB, {
         verifierToken: env.AWE_VERIFIER_TOKEN,
         adminToken: env.AWE_ADMIN_TOKEN,
+        ownerEmail: env.AWE_OWNER_EMAIL,
+        ownerAliases: ownerAliases(env.AWE_OWNER_NODE_ALIASES),
         clientFingerprint: url.pathname === "/api/exchange/signup" ? await signupFingerprint(request, env.AWE_RATE_LIMIT_SALT) : null,
         requireClientFingerprint: true,
       });

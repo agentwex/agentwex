@@ -21,6 +21,13 @@ The public coverage endpoint exposes only aggregate compatibility cells with
 support from at least two distinct signed nodes. It never returns node IDs,
 provenance roots, receipt signatures, or exact observation timestamps.
 
+The private owner console requires platform sign-in plus a server-side owner
+allowlist. It may show pseudonymous Agent WEX IDs, participant/controller-group
+labels, genesis IDs and assurance, minimized receipt outcomes, query status, and
+categorical recovery feedback. It does not show prompts, messages, arguments,
+results, credentials, private URLs, raw provenance roots, or receipt signatures.
+The console is read-only.
+
 Accepted receipts and ledger entries are retained while the preview operates
 because deleting them could make previous balances and route support
 misleading. Rate-limit rows are deleted after their control window. Signup

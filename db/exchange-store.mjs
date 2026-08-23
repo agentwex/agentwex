@@ -32,6 +32,28 @@ async function contributionDedupeKey(agentId, kind, normalized) {
   return sha256(canonicalJson({ agentId, kind, normalized }));
 }
 
+function genesisIdFor(agentId) {
+  return `genesis_${agentId.replace(/^agent_/, "")}`;
+}
+
+async function genesisDigest(record) {
+  return `sha256:${await sha256(canonicalJson(record))}`;
+}
+
+async function genesisInsert(db, record) {
+  return db.prepare(`INSERT OR IGNORE INTO exchange_agent_genesis
+    (genesis_id, agent_id, schema_version, genesis_kind, genesis_at, recorded_at,
+      identity_provider, delivery_channel, derivation_type, parent_agent_id,
+      initial_signing_key_id, artifact_name, artifact_version, environment,
+      runtime_inventory_json, assurance_level, record_digest)
+    VALUES (?, ?, 'agentwex.agent-genesis.v0.1', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(record.genesisId, record.agentId, record.genesisKind, record.genesisAt,
+      record.recordedAt, record.identityProvider, record.deliveryChannel,
+      record.derivationType, record.parentAgentId, record.initialSigningKeyId,
+      record.artifactName, record.artifactVersion, record.environment,
+      JSON.stringify(record.runtimes ?? []), record.assuranceLevel, record.recordDigest);
+}
+
 function validateSigningKey(value) {
   if (!value || value.algorithm !== "Ed25519") return null;
   if (!/^wexkey_[a-f0-9]{24}$/.test(value.keyId ?? "")) return null;
@@ -193,6 +215,40 @@ export async function ensureExchangeSchema(db) {
     if (missing.length > 0) await db.batch(missing);
   }
 
+  const genesisBackfill = await db.prepare(`SELECT a.id AS agentId,
+      a.identity_provider AS identityProvider, a.delivery_channel AS deliveryChannel,
+      a.created_at AS genesisAt,
+      (SELECT k.key_id FROM exchange_agent_signing_keys k WHERE k.agent_id = a.id
+        ORDER BY k.created_at ASC LIMIT 1) AS initialSigningKeyId
+    FROM exchange_agents a
+    WHERE NOT EXISTS (SELECT 1 FROM exchange_agent_genesis g WHERE g.agent_id = a.id)`).all();
+  if ((genesisBackfill?.results ?? []).length > 0) {
+    const recordedAt = now();
+    const statements = [];
+    for (const agent of genesisBackfill.results) {
+      const record = {
+        genesisId: genesisIdFor(agent.agentId),
+        agentId: agent.agentId,
+        genesisKind: "legacy-backfill",
+        genesisAt: agent.genesisAt,
+        recordedAt,
+        identityProvider: agent.identityProvider,
+        deliveryChannel: agent.deliveryChannel,
+        derivationType: "unknown",
+        parentAgentId: null,
+        initialSigningKeyId: agent.initialSigningKeyId ?? null,
+        artifactName: null,
+        artifactVersion: null,
+        environment: null,
+        runtimes: [],
+        assuranceLevel: "exchange-backfill-v1",
+      };
+      record.recordDigest = await genesisDigest(record);
+      statements.push(await genesisInsert(db, record));
+    }
+    if (statements.length > 0) await db.batch(statements);
+  }
+
   await db.batch(indexStatements.map((statement) => db.prepare(statement)));
 }
 
@@ -278,6 +334,132 @@ export async function getPublicCoverage(db, at = Date.now()) {
   };
 }
 
+function ownerAlias(aliases, participantId, agentId) {
+  const candidate = aliases?.[participantId] ?? aliases?.[agentId];
+  return typeof candidate === "string" && candidate.trim() ? candidate.trim().slice(0, 80) : participantId;
+}
+
+export async function getOwnerSnapshot(db, aliases = {}, at = Date.now()) {
+  const [summary, nodeRows, activityRows, queryRows, feedbackRows, coverage] = await Promise.all([
+    db.prepare(`SELECT
+        (SELECT COUNT(*) FROM exchange_agents a WHERE a.status = 'active'
+          AND NOT EXISTS (SELECT 1 FROM exchange_agent_labels l WHERE l.agent_id = a.id AND l.label = 'test')) AS activeNodes,
+        (SELECT COUNT(*) FROM exchange_agent_genesis g JOIN exchange_agents a ON a.id = g.agent_id
+          WHERE a.status = 'active' AND NOT EXISTS (SELECT 1 FROM exchange_agent_labels l WHERE l.agent_id = a.id AND l.label = 'test')) AS genesisRecords,
+        (SELECT COUNT(DISTINCT controller_group_id) FROM exchange_agent_controller_groups WHERE evidence_scope = 'lab') AS controllerGroups,
+        (SELECT COUNT(DISTINCT participant_id) FROM exchange_agent_controller_groups WHERE evidence_scope = 'lab') AS participants,
+        (SELECT COUNT(*) FROM exchange_contributions c JOIN exchange_agents a ON a.id = c.agent_id
+          WHERE a.status = 'active' AND c.status = 'accepted') AS acceptedReceipts,
+        (SELECT COUNT(*) FROM exchange_contributions c JOIN exchange_agents a ON a.id = c.agent_id
+          WHERE a.status = 'active' AND c.status = 'collapsed') AS collapsedReceipts,
+        (SELECT COUNT(*) FROM exchange_route_feedback f JOIN exchange_agents a ON a.id = f.agent_id
+          WHERE a.status = 'active' AND f.outcome = 'succeeded') AS successfulRecoveries`).first(),
+    db.prepare(`SELECT a.id AS agentId, a.name, a.created_at AS identityCreatedAt,
+        COALESCE(cg.participant_id, a.id) AS participantId,
+        COALESCE(cg.controller_group_id, a.id) AS controllerGroupId,
+        COALESCE(cg.evidence_scope, 'community') AS evidenceScope,
+        g.genesis_id AS genesisId, g.genesis_kind AS genesisKind, g.genesis_at AS genesisAt,
+        g.derivation_type AS derivationType, g.parent_agent_id AS parentAgentId,
+        g.initial_signing_key_id AS initialSigningKeyId, g.artifact_name AS artifactName,
+        g.artifact_version AS artifactVersion, g.environment,
+        g.runtime_inventory_json AS runtimeInventoryJson, g.assurance_level AS genesisAssurance,
+        COUNT(c.id) AS totalReceipts,
+        SUM(CASE WHEN c.status = 'accepted' THEN 1 ELSE 0 END) AS acceptedReceipts,
+        SUM(CASE WHEN c.status = 'collapsed' THEN 1 ELSE 0 END) AS collapsedReceipts,
+        MAX(c.created_at) AS lastReceiptAt
+      FROM exchange_agents a
+      LEFT JOIN exchange_agent_controller_groups cg ON cg.agent_id = a.id
+      LEFT JOIN exchange_agent_genesis g ON g.agent_id = a.id
+      LEFT JOIN exchange_contributions c ON c.agent_id = a.id
+      WHERE a.status = 'active'
+        AND NOT EXISTS (SELECT 1 FROM exchange_agent_labels l WHERE l.agent_id = a.id AND l.label = 'test')
+      GROUP BY a.id, a.name, a.created_at, cg.participant_id, cg.controller_group_id, cg.evidence_scope,
+        g.genesis_id, g.genesis_kind, g.genesis_at, g.derivation_type, g.parent_agent_id,
+        g.initial_signing_key_id, g.artifact_name, g.artifact_version, g.environment,
+        g.runtime_inventory_json, g.assurance_level
+      ORDER BY COALESCE(cg.participant_id, a.id)`).all(),
+    db.prepare(`SELECT c.agent_id AS agentId,
+        COALESCE(cg.participant_id, c.agent_id) AS participantId,
+        COALESCE(cg.controller_group_id, c.agent_id) AS controllerGroupId,
+        r.tool_registry AS toolRegistry, r.tool_id AS toolId, r.tool_version AS toolVersion,
+        r.client_id AS clientId, r.client_version AS clientVersion, r.environment,
+        r.operation, r.outcome, r.error_class AS errorClass, r.resolution_kind AS resolutionKind,
+        r.observed_at AS observedAt, c.status,
+        COALESCE(v.reason, 'unrecorded') AS verificationReason
+      FROM exchange_working_route_comps r
+      JOIN exchange_contributions c ON c.id = r.contribution_id
+      JOIN exchange_agents a ON a.id = c.agent_id AND a.status = 'active'
+      LEFT JOIN exchange_agent_controller_groups cg ON cg.agent_id = c.agent_id
+      LEFT JOIN exchange_verification_records v ON v.contribution_id = c.id
+      WHERE NOT EXISTS (SELECT 1 FROM exchange_agent_labels l WHERE l.agent_id = c.agent_id AND l.label = 'test')
+      ORDER BY r.observed_at DESC LIMIT 60`).all(),
+    db.prepare(`SELECT q.agent_id AS agentId,
+        COALESCE(cg.participant_id, q.agent_id) AS participantId,
+        q.tool_registry AS toolRegistry, q.tool_id AS toolId, q.operation,
+        q.status, q.minimum_independent_roots AS minimumIndependentRoots,
+        q.created_at AS createdAt
+      FROM exchange_route_queries q
+      JOIN exchange_agents a ON a.id = q.agent_id AND a.status = 'active'
+      LEFT JOIN exchange_agent_controller_groups cg ON cg.agent_id = q.agent_id
+      ORDER BY q.created_at DESC LIMIT 25`).all(),
+    db.prepare(`SELECT f.agent_id AS agentId,
+        COALESCE(cg.participant_id, f.agent_id) AS participantId,
+        f.outcome, f.failure_class AS failureClass, f.attempts_avoided AS attemptsAvoided,
+        f.estimated_tokens_avoided AS estimatedTokensAvoided,
+        f.estimated_latency_ms_avoided AS estimatedLatencyMsAvoided,
+        f.created_at AS createdAt
+      FROM exchange_route_feedback f
+      JOIN exchange_agents a ON a.id = f.agent_id AND a.status = 'active'
+      LEFT JOIN exchange_agent_controller_groups cg ON cg.agent_id = f.agent_id
+      ORDER BY f.created_at DESC LIMIT 20`).all(),
+    getPublicCoverage(db, at),
+  ]);
+
+  const mapAlias = (row) => ({ ...row, ownerLabel: ownerAlias(aliases, row.participantId, row.agentId) });
+  return {
+    schema: "agentwex.owner-snapshot.v0.1",
+    asOf: new Date(at).toISOString(),
+    summary: {
+      activeNodes: Number(summary?.activeNodes ?? 0),
+      genesisRecords: Number(summary?.genesisRecords ?? 0),
+      participants: Number(summary?.participants ?? 0),
+      controllerGroups: Number(summary?.controllerGroups ?? 0),
+      acceptedReceipts: Number(summary?.acceptedReceipts ?? 0),
+      collapsedReceipts: Number(summary?.collapsedReceipts ?? 0),
+      successfulRecoveries: Number(summary?.successfulRecoveries ?? 0),
+    },
+    nodes: (nodeRows?.results ?? []).map((row) => mapAlias({
+      ...row,
+      totalReceipts: Number(row.totalReceipts ?? 0),
+      acceptedReceipts: Number(row.acceptedReceipts ?? 0),
+      collapsedReceipts: Number(row.collapsedReceipts ?? 0),
+      runtimes: JSON.parse(row.runtimeInventoryJson ?? "[]"),
+      runtimeInventoryJson: undefined,
+    })),
+    activity: (activityRows?.results ?? []).map(mapAlias),
+    queries: (queryRows?.results ?? []).map((row) => mapAlias({
+      ...row,
+      minimumIndependentRoots: Number(row.minimumIndependentRoots ?? 0),
+    })),
+    recoveries: (feedbackRows?.results ?? []).map((row) => mapAlias({
+      ...row,
+      attemptsAvoided: Number(row.attemptsAvoided ?? 0),
+      estimatedTokensAvoided: Number(row.estimatedTokensAvoided ?? 0),
+      estimatedLatencyMsAvoided: Number(row.estimatedLatencyMsAvoided ?? 0),
+    })),
+    evidence: coverage,
+    boundaries: {
+      privateOwnerView: true,
+      promptsStored: false,
+      toolArgumentsStored: false,
+      toolResultsStored: false,
+      genesisProvesConsciousness: false,
+      genesisProvesIndependentControl: false,
+      authorityGranted: false,
+    },
+  };
+}
+
 export function validateSignup(body) {
   const agent = body?.agent;
   const participation = body?.participation;
@@ -306,8 +488,26 @@ export async function signupAgent(db, body) {
   const agentId = newId("agent");
   const apiKey = `wex_${crypto.randomUUID().replaceAll("-", "")}${crypto.randomUUID().replaceAll("-", "")}`;
   const apiKeyHash = await sha256(apiKey);
+  const createdAt = now();
+  const genesisRecord = {
+    genesisId: genesisIdFor(agentId),
+    agentId,
+    genesisKind: "exchange-registration",
+    genesisAt: createdAt,
+    recordedAt: createdAt,
+    identityProvider: input.identityProvider,
+    deliveryChannel: input.deliveryChannel,
+    derivationType: "unreported",
+    parentAgentId: null,
+    initialSigningKeyId: input.signingKey?.keyId ?? null,
+    artifactName: null,
+    artifactVersion: null,
+    environment: null,
+    runtimes: [],
+    assuranceLevel: input.signingKey ? "exchange-issued-key-bound-v1" : "exchange-issued-v1",
+  };
+  genesisRecord.recordDigest = await genesisDigest(genesisRecord);
   try {
-    const createdAt = now();
     const statements = [db.prepare(`INSERT INTO exchange_agents
       (id, name, identity_provider, external_subject, api_key_hash, heartbeat_minutes, delivery_channel, daily_credit_spend_limit, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -318,6 +518,7 @@ export async function signupAgent(db, body) {
         VALUES (?, ?, ?, ?, 'active', ?)`)
         .bind(input.signingKey.keyId, agentId, input.signingKey.algorithm, input.signingKey.publicKeySpki, createdAt));
     }
+    statements.push(await genesisInsert(db, genesisRecord));
     await db.batch(statements);
   } catch (error) {
     if (String(error).toLowerCase().includes("unique")) return { ok: false, status: 409, error: "identity_already_registered" };
@@ -337,6 +538,8 @@ export async function signupAgent(db, body) {
       apiKey,
       apiKeyShownOnce: true,
       signingKeyId: input.signingKey?.keyId ?? null,
+      genesisId: genesisRecord.genesisId,
+      genesisAssurance: genesisRecord.assuranceLevel,
       receiptVerification: input.signingKey ? "distinct-signed-node-v1" : "manual-verification-required",
       authorityGranted: false,
     },

@@ -1,4 +1,4 @@
-import { acceptContribution, authenticateAgent, consumeRateLimit, createRouteQuery, deactivateAgent, enrollLabParticipant, ensureExchangeSchema, getAgentAccount, getContributionStatus, getCreditLedger, getPublicCoverage, getRouteQueryStatus, listAgentContributions, listOpenRouteBounties, listReliabilityAlerts, registerAgentSigningKey, reserveResultAccess, revokeAgentSigningKey, rotateAgentApiKey, runPreflight, signupAgent, submitContribution, submitRouteFeedback, submitWorkingRouteComp } from "./exchange-store.mjs";
+import { acceptContribution, authenticateAgent, consumeRateLimit, createRouteQuery, deactivateAgent, enrollLabParticipant, ensureExchangeSchema, getAgentAccount, getContributionStatus, getCreditLedger, getOwnerSnapshot, getPublicCoverage, getRouteQueryStatus, listAgentContributions, listOpenRouteBounties, listReliabilityAlerts, registerAgentSigningKey, reserveResultAccess, revokeAgentSigningKey, rotateAgentApiKey, runPreflight, signupAgent, submitContribution, submitRouteFeedback, submitWorkingRouteComp } from "./exchange-store.mjs";
 
 const json = (body, status = 200, headers = {}) => Response.json(body, { status, headers: { "cache-control": "no-store", ...headers } });
 const maximumJsonBytes = 65_536;
@@ -97,6 +97,15 @@ export async function handleExchangeApi(request, db, options = {}) {
     if (body instanceof Response) return body;
     const result = await enrollLabParticipant(db, body);
     return json(result.ok ? result.enrollment : { error: result.error }, result.status);
+  }
+
+  if (url.pathname === "/api/exchange/internal/owner-snapshot" && request.method === "GET") {
+    if (!options.ownerEmail) return json({ error: "owner_console_unconfigured" }, 503);
+    const callerEmail = request.headers.get("oai-authenticated-user-email")?.trim().toLowerCase() ?? "";
+    if (!(await secureTokenEqual(callerEmail, options.ownerEmail.trim().toLowerCase()))) {
+      return json({ error: "owner_console_forbidden" }, 403);
+    }
+    return json(await getOwnerSnapshot(db, options.ownerAliases ?? {}));
   }
 
   const agent = await authenticateAgent(db, request.headers.get("authorization"));

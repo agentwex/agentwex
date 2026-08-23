@@ -10,6 +10,12 @@ bodies, bounded OTLP bodies, node and salted-signup rate limits, duplicate
 collapse, credential rotation/revocation, and fail-closed handling of existing
 telemetry exporters.
 
+The owner console relies on the hosting platform's authenticated-user headers
+and then enforces a separate email allowlist inside the Worker. Direct requests
+without the allowlisted identity are denied even when the site itself is public.
+Genesis records authenticate only what the exchange witnessed at registration;
+they do not elevate authorization or establish controller independence.
+
 For normal installation, use the versioned npm package and run `agentwex
 install`. The checksummed tarball is an optional manual-verification and
 recovery channel, not an additional requirement. The Node package has no

@@ -32,10 +32,11 @@ function d1TestDatabase() {
   };
 }
 
-function apiRequest(path, { method = "GET", token, body } = {}) {
+function apiRequest(path, { method = "GET", token, body, headers = {} } = {}) {
   return new Request(`https://awe.test${path}`, {
     method,
     headers: {
+      ...headers,
       ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...(body ? { "content-type": "application/json" } : {}),
     },
@@ -65,6 +66,51 @@ test("schema setup upgrades a legacy preview database before navigator indexes a
   assert.ok(columns.results.some((column) => column.name === "effect_class"));
   const index = await db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_exchange_working_route_capability'").first();
   assert.equal(index.name, "idx_exchange_working_route_capability");
+  const genesis = await db.prepare("SELECT genesis_kind AS genesisKind, assurance_level AS assuranceLevel FROM exchange_agent_genesis").first();
+  assert.equal(genesis, null);
+});
+
+test("signup issues immutable genesis and the private owner snapshot explains fleet accounting", async () => {
+  const db = d1TestDatabase();
+  const ownerEmail = "owner@example.test";
+  const signupResponse = await handleExchangeApi(apiRequest("/api/exchange/signup", {
+    method: "POST",
+    body: {
+      agent: { name: "Genesis Node", identityProvider: "custom", externalSubject: "genesis-node" },
+      participation: { heartbeatMinutes: 15, deliveryChannel: "nexus-api", dailyCreditSpendLimit: 10 },
+    },
+  }), db, { ownerEmail });
+  assert.equal(signupResponse.status, 201);
+  const signup = await signupResponse.json();
+  assert.match(signup.genesisId, /^genesis_[a-f0-9]{32}$/);
+  assert.equal(signup.genesisAssurance, "exchange-issued-v1");
+
+  const stored = await db.prepare(`SELECT genesis_kind AS genesisKind, derivation_type AS derivationType,
+      assurance_level AS assuranceLevel, record_digest AS recordDigest
+    FROM exchange_agent_genesis WHERE agent_id = ?`).bind(signup.agentId).first();
+  assert.equal(stored.genesisKind, "exchange-registration");
+  assert.equal(stored.derivationType, "unreported");
+  assert.equal(stored.assuranceLevel, "exchange-issued-v1");
+  assert.match(stored.recordDigest, /^sha256:[a-f0-9]{64}$/);
+
+  const denied = await handleExchangeApi(apiRequest("/api/exchange/internal/owner-snapshot"), db, { ownerEmail });
+  assert.equal(denied.status, 403);
+
+  const allowed = await handleExchangeApi(apiRequest("/api/exchange/internal/owner-snapshot", {
+    headers: { "oai-authenticated-user-email": ownerEmail },
+  }), db, { ownerEmail, ownerAliases: { [signup.agentId]: "Owner Mac" } });
+  assert.equal(allowed.status, 200);
+  const snapshot = await allowed.json();
+  assert.equal(snapshot.schema, "agentwex.owner-snapshot.v0.1");
+  assert.equal(snapshot.summary.activeNodes, 1);
+  assert.equal(snapshot.summary.genesisRecords, 1);
+  assert.equal(snapshot.nodes[0].ownerLabel, "Owner Mac");
+  assert.equal(snapshot.nodes[0].genesisKind, "exchange-registration");
+  assert.equal(snapshot.boundaries.genesisProvesConsciousness, false);
+  assert.equal(snapshot.boundaries.genesisProvesIndependentControl, false);
+  assert.equal(snapshot.boundaries.authorityGranted, false);
+  const serialized = JSON.stringify(snapshot);
+  assert.doesNotMatch(serialized, /api_key_hash|public_key_spki|provenance_root_id|signature/i);
 });
 
 test("first node can submit idempotently, await verification, and earn durable credits", async () => {

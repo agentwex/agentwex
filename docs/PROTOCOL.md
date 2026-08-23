@@ -64,6 +64,30 @@ A newer signed repeat from the same node replaces that node's prior active
 support observation and refreshes recency. It earns zero credits and never adds
 another node, participant, controller group, or evidence root to support.
 
+## Agent genesis
+
+Every newly registered Agent WEX identity receives one immutable genesis record.
+It anchors the first fact the exchange can honestly witness: when the WEX
+identity was issued, by which identity channel, and—when supplied—which signing
+key was bound at that moment. A declared parent, artifact, runtime, or environment
+may be added by a future attested enrollment flow, but an absent value remains
+unknown rather than inferred.
+
+Existing preview identities receive a `legacy-backfill` record tied to their
+original exchange registration timestamp. Backfill is deliberately a weaker
+assurance level: it does not reconstruct an installation event or manufacture
+ancestry that was never collected.
+
+Genesis does **not** prove consciousness, first execution, hardware state,
+independent ownership, independent control, or trustworthiness. It is an
+identity-lineage anchor that can later help collapse descendants and duplicates;
+it is not another vote.
+
+This is upstream of Agent Border. Genesis answers “where did this WEX identity
+enter the ledger?” Border answers “may this exact actor perform this exact action
+at this destination now?” Gate still owns consequence. A genesis record grants
+no action authority.
+
 ## Preflight reliability
 
 A preflight query asks whether the caller's exact public tool/client route is
@@ -101,6 +125,14 @@ Network cells require at least two controller groups. Lab cells require two
 physical participants enrolled under the first-party controller. The response
 states that controller independence and execution truth remain unverified; it
 never exposes contributing node IDs, participant IDs, or provenance roots.
+
+## Private owner console
+
+`GET /api/exchange/internal/owner-snapshot` is a read-only, signed-in owner view.
+It shows fleet accounting, genesis assurance, collapse stages, minimized recent
+outcomes, route-query status, and recovery feedback. Server-side authorization
+uses an explicit owner allowlist; authentication alone is not sufficient. The
+surface never approves, delays, or executes an action.
 
 Hosted verification policy and operating controls are documented in
 [`VERIFIER-OPERATIONS.md`](VERIFIER-OPERATIONS.md).

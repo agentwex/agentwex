@@ -69,3 +69,20 @@ test("Sites ownership lives in the AgentWEX repository", async () => {
   assert.equal(packageJson.scripts.build.includes("vinext build"), true);
   assert.match(rootSource, /\.\/exchange\/page/);
 });
+
+test("the owner console is signed-in, read-only, and explicit about genesis limits", async () => {
+  const [page, consoleSource, auth, css] = await Promise.all([
+    readFile(new URL("../app/owner/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/owner/owner-console.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/chatgpt-auth.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /requireChatGPTUser\("\/owner"\)/);
+  assert.match(auth, /oai-authenticated-user-email/);
+  assert.match(consoleSource, /Receipts are not votes/);
+  assert.match(consoleSource, /An identity origin—not consciousness/);
+  assert.match(consoleSource, /No action authority/);
+  assert.match(consoleSource, /AUTO-REFRESH 30S/);
+  assert.doesNotMatch(consoleSource, /localStorage|sessionStorage/);
+  assert.match(css, /owner-console-page/);
+});
