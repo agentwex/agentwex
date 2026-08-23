@@ -41,6 +41,7 @@ export function spansFromBernsteinEvents(payload, adapter = {}) {
         "gen_ai.operation.name": "execute_tool",
         "gen_ai.tool.name": mapping.toolId ?? toolName,
         "awe.tool.registry": mapping.toolRegistry,
+        "awe.tool.public_namespace": mapping.publicNamespace,
         "awe.tool.version": mapping.toolVersion,
         "awe.client.id": "bernstein",
         "awe.client.version": adapter.clientVersion,

@@ -537,3 +537,50 @@ test("localhost collector authenticates intake and queues exchange work off the 
   assert.ok(Array.isArray(alerts.alerts));
   assert.equal(alerts.authorityGranted, false);
 });
+
+test("observation counters distinguish a silent runtime from one whose events are all dropped", async (context) => {
+  // Before this, `lastRuntimeOutcomeAt` was only set when something was
+  // contributed, so an operator whose events were all ignored saw exactly what
+  // an operator with no runtime at all saw: null, and nothing else. The two
+  // situations need different actions, so the node has to tell them apart.
+  const exchange = await startExchange();
+  const directory = await mkdtemp(resolve(tmpdir(), "awe-observation-"));
+  context.after(async () => { await new Promise((resolveClose) => exchange.server.close(resolveClose)); await rm(directory, { recursive: true, force: true }); });
+
+  const { account, signing } = await signupSigned(exchange.baseUrl,
+    { name: "Observation node", identityProvider: "custom", externalSubject: "observation-node" });
+  const configPath = resolve(directory, "config.json");
+  await writePrivateJson(configPath, {
+    schema: "minority-prophet.awe-node-config.v0.1",
+    baseUrl: exchange.baseUrl,
+    agentId: account.agentId,
+    apiKey: account.apiKey,
+    signing,
+    policy: { shareToolOutcomes: true, shareRawTraces: false },
+    collector: { host: "127.0.0.1", port: 4318, token: "local-test-token" },
+    pollSeconds: 60,
+  });
+  const runtime = await createNodeRuntime(configPath);
+
+  // A runtime's own built-in tool: observed, never contributed.
+  const internal = toolSpan({ traceId: "internal-1", outcome: "success" });
+  internal.attributes["awe.tool.registry"] = "runtime";
+  internal.attributes["gen_ai.tool.name"] = "claude-code/StructuredOutput";
+  await runtime.ingest({ spans: [internal] });
+
+  let observation = runtime.getState().observation;
+  assert.equal(observation.received, 1);
+  assert.equal(observation.ignored, 1);
+  assert.equal(observation.contributed, 0);
+  assert.ok(observation.lastObservedAt, "arrival is recorded even when nothing is contributed");
+  assert.equal(runtime.getState().lastRuntimeOutcomeAt ?? null, null,
+    "contribution timestamp stays unset, so the two facts remain distinguishable");
+
+  // An externally routable tool: observed and contributed.
+  await runtime.ingest({ spans: [toolSpan({ traceId: "external-1", outcome: "success" })] });
+  observation = runtime.getState().observation;
+  assert.equal(observation.received, 2);
+  assert.equal(observation.ignored, 1);
+  assert.equal(observation.contributed, 1);
+  assert.ok(runtime.getState().lastRuntimeOutcomeAt);
+});

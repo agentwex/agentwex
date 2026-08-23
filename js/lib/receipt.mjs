@@ -27,6 +27,26 @@ export function adaptOtelSpanToRouteOutcome(span, policy) {
     return { status: "IGNORED", reason: "outcome_not_explicit", authorityGranted: false };
   }
   const toolRegistry = requiredString(attrs["awe.tool.registry"], "awe.tool.registry");
+  // Credits are for evidence another operator can act on. A runtime's own
+  // built-in tool offers no alternative to route to: a reader already inside
+  // that runtime cannot choose a different one, so the cell answers no question
+  // they could ask before making a call. It is observed locally and never
+  // submitted, so it can neither earn credits nor pad public coverage.
+  //
+  // An operator who believes a tool is externally routable can map it
+  // explicitly under a real registry, which is a deliberate act rather than a
+  // default.
+  // An unresolvable namespace means the tool name is not known to be public.
+  // Transmitting it would publish a possibly-proprietary identifier, and the
+  // cell would be unusable to anyone else regardless, since they cannot reach
+  // that server. Explicit operator mappings do not set this flag and are
+  // unaffected: declaring a tool is a statement that it is shareable.
+  if (attrs["awe.tool.public_namespace"] === false && toolRegistry !== "runtime") {
+    return { status: "IGNORED", reason: "private_namespace_never_transmitted", authorityGranted: false };
+  }
+  if (toolRegistry === "runtime") {
+    return { status: "IGNORED", reason: "runtime_internal_not_operator_actionable", authorityGranted: false };
+  }
   const environment = requiredString(attrs["awe.environment"], "awe.environment");
   const authMode = requiredString(attrs["awe.auth.mode"], "awe.auth.mode");
   const resolutionKind = attrs["awe.resolution.kind"] ?? "none";
@@ -50,7 +70,14 @@ export function adaptOtelSpanToRouteOutcome(span, policy) {
   return {
     status: "READY_TO_SUBMIT",
     receipt: {
-      schema: "minority-prophet.working-route-comp.v0.1",
+      // Declare the version this receipt actually satisfies, rather than a
+      // fixed one. v0.3 requires capabilityId and effectClass, which are
+      // present only when an operator mapping supplies a capability; stamping
+      // it unconditionally would produce receipts invalid against the schema
+      // they name. v0.2 requires attestation, which signing always adds.
+      schema: capabilityId
+        ? "agentwex.working-route-comp.v0.3"
+        : "agentwex.working-route-comp.v0.2",
       toolRegistry,
       toolId,
       toolVersion,

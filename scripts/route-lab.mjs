@@ -208,7 +208,7 @@ async function runRoundTrip(config, participantId) {
     environment: environmentName(),
     alternativePolicy: "same-capability",
     maxAgeDays: 7,
-    minimumSignedNodes: 2,
+    minimumIndependentRoots: 2,
     unlock: true,
   });
   const access = assessment.routeAccess;

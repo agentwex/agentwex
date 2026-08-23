@@ -13,6 +13,7 @@ import { installBackgroundService, uninstallBackgroundService } from "../lib/ser
 import { bernsteinPluginSource } from "../lib/bernstein.mjs";
 import { detectRuntimes } from "../lib/runtime-detection.mjs";
 import { bootstrapDetectedRuntimes, removeAgentWexRuntimeConfig } from "../lib/runtime-bootstrap.mjs";
+import { discoverMcpServers } from "../lib/mcp-discovery.mjs";
 import { generateSigningIdentity, publicSigningIdentity } from "../lib/attestation.mjs";
 import { buildPrivacyInspection } from "../lib/inspect.mjs";
 
@@ -34,7 +35,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  process.stdout.write(`Agent WEX node v0.6.1\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-signed-nodes 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  inspect [--config PATH]\n  doctor [--config PATH]\n\nUse --capability and --effect together to let Navigator compare evidence-backed alternatives across tools without confusing a read route with a write or execution route. Similarity alone never counts as support.\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Run inspect before or after installation to see the exact outbound schema without contacting the exchange. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
+  process.stdout.write(`Agent WEX node v0.6.1\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-independent-roots 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  inspect [--config PATH]\n  doctor [--config PATH]\n\nUse --capability and --effect together to let Navigator compare evidence-backed alternatives across tools without confusing a read route with a write or execution route. Similarity alone never counts as support.\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Run inspect before or after installation to see the exact outbound schema without contacting the exchange. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
 }
 
 function environmentClass() {
@@ -223,6 +224,9 @@ async function install(options) {
   const detected = await detectRuntimes();
   const detectedRuntimes = detected.filter((runtime) => runtime.detected).map(({ id, version }) => ({ id, version }));
   config.runtimeDetection = { detected: detectedRuntimes, scannedAt: new Date().toISOString() };
+  // Declared MCP servers carry the version a tool name cannot. Parsed from
+  // config files only: nothing is executed and no network call is made.
+  const mcpServers = await discoverMcpServers({ projectDir: process.cwd() });
   config.configPath = configPath;
   const runtimeHome = options["runtime-home"] ? resolve(options["runtime-home"]) : config.runtimeHome;
   const runtimeBootstrap = options["no-service"] && !options["runtime-home"]
@@ -236,6 +240,13 @@ async function install(options) {
     });
   config.runtimeHome = runtimeHome;
   config.runtimeBootstrap = runtimeBootstrap;
+  // Attach the declared servers to every adapter that maps MCP tool names, so
+  // automatic mapping can state a version instead of recording "unknown".
+  // Re-running install refreshes this the same way it refreshes detection.
+  config.mcpServerDiscovery = { servers: mcpServers, scannedAt: new Date().toISOString() };
+  for (const adapter of Object.values(config.adapters ?? {})) {
+    if (adapter && typeof adapter === "object") adapter.mcpServers = mcpServers;
+  }
   delete config.configPath;
   await writePrivateJson(configPath, config);
   const environmentPath = resolve(configPath, "..", "otel.env");
@@ -302,11 +313,34 @@ async function uninstall(configPath, options) {
   process.stdout.write(`${JSON.stringify({ uninstalled: true, remote, service, runtimes, localConfigKept: Boolean(options["keep-local"]), backupsRetained: true }, null, 2)}\n`);
 }
 
+/**
+ * Runtime detection runs at install time and is never repeated: the background
+ * node has no detection code path at all. A runtime installed after the node
+ * therefore stays invisible indefinitely, and nothing says so — the node reports
+ * healthy while silently observing nothing from it.
+ *
+ * This re-runs detection on demand (status is already a user-initiated command)
+ * and reports any runtime that is present but unconfigured, so the gap is
+ * visible without the operator having to suspect it.
+ */
+async function unconfiguredRuntimes(config) {
+  const adapterKeys = { bernstein: "bernstein", "claude-code": "claudeCode", codex: "codex", "gemini-cli": "geminiCli" };
+  try {
+    const detected = await detectRuntimes();
+    return detected
+      .filter((runtime) => runtime.detected && config.adapters?.[adapterKeys[runtime.id]]?.enabled !== true)
+      .map((runtime) => ({ id: runtime.id, version: runtime.version, resolvedFrom: runtime.resolvedFrom ?? "path" }));
+  } catch {
+    return [];
+  }
+}
+
 async function status(configPath) {
   const config = await readConfig(configPath);
   let local = null;
   try { local = await localJson(config, "/awe/status"); } catch {}
   const account = await getAccount(config);
+  const unconfigured = await unconfiguredRuntimes(config);
   process.stdout.write(`${JSON.stringify({
     agentId: config.agentId,
     backgroundNode: local ? "running" : "not_reachable",
@@ -321,8 +355,25 @@ async function status(configPath) {
     pendingContributions: local?.pendingContributions?.length ?? null,
     openQueries: local?.queries?.filter((entry) => !entry.unlockedAt).length ?? null,
     availableRoutes: local?.routes?.length ?? null,
+    observedEvents: local?.observation?.received ?? null,
+    contributedEvents: local?.observation?.contributed ?? null,
+    ignoredEvents: local?.observation?.ignored ?? null,
+    lastObservedAt: local?.observation?.lastObservedAt ?? null,
+    unconfiguredRuntimes: unconfigured,
+    runtimeDetectionScannedAt: config.runtimeDetection?.scannedAt ?? null,
     authorityGranted: false,
   }, null, 2)}\n`);
+  const observation = local?.observation;
+  if (observation && observation.received > 0 && observation.contributed === 0) {
+    process.stderr.write(
+      `Observed ${observation.received} tool outcome(s) and contributed none. ` +
+      `Runtime-internal tools are never contributed; map an externally routable tool with 'agentwex adapter <runtime> --tool ...'.\n`,
+    );
+  }
+  if (unconfigured.length > 0) {
+    const names = unconfigured.map((entry) => `${entry.id} ${entry.version}`).join(", ");
+    process.stderr.write(`Detected but not observed: ${names}. Run 'agentwex install' to wire them.\n`);
+  }
 }
 
 async function routes(configPath) {
@@ -378,7 +429,7 @@ async function preflightCommand(configPath, options) {
       alternativePolicy: "same-capability",
     } : {}),
     maxAgeDays: Number(options["max-age-days"] ?? 7),
-    minimumSignedNodes: Number(options["minimum-signed-nodes"] ?? 2),
+    minimumIndependentRoots: Number(options["minimum-independent-roots"] ?? 2),
     unlock: options.unlock === true,
   });
   process.stdout.write(`${JSON.stringify(assessment, null, 2)}\n`);

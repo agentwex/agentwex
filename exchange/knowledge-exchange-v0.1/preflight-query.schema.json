@@ -16,7 +16,7 @@
     "authMode": { "enum": ["none", "api-key", "oauth-pkce", "oauth-client", "mtls", "signed-request", "other"] },
     "operation": { "type": "string", "minLength": 1, "maxLength": 120, "pattern": "^[A-Za-z0-9][A-Za-z0-9._+~-]*$" },
     "maxAgeDays": { "type": "integer", "minimum": 1, "maximum": 30, "default": 7 },
-    "minimumSignedNodes": { "type": "integer", "minimum": 2, "maximum": 10, "default": 2 },
+    "minimumIndependentRoots": { "type": "integer", "minimum": 2, "maximum": 10, "default": 2, "description": "Minimum distinct controller groups that must independently support the route. Signed nodes under one controller collapse to one root and cannot satisfy this." },
     "unlock": { "type": "boolean", "default": false }
   }
 }

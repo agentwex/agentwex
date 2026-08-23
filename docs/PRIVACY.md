@@ -18,7 +18,9 @@ and any configured public compatibility mappings without printing API keys,
 collector tokens, or private signing material.
 
 The public coverage endpoint exposes only aggregate compatibility cells with
-support from at least two distinct signed nodes. It never returns node IDs,
+support from at least two distinct controller groups. Signed nodes under one
+controller collapse to a single root and cannot reach that threshold, however
+many of them there are. It never returns node IDs,
 provenance roots, receipt signatures, or exact observation timestamps.
 
 The private owner console requires platform sign-in plus a server-side owner

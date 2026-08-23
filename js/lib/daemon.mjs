@@ -6,7 +6,8 @@ import { spansFromCodexLogs } from "./codex.mjs";
 import { spansFromGeminiCliLogs } from "./gemini-cli.mjs";
 import { spansFromBernsteinEvents } from "./bernstein.mjs";
 import { signRouteReceipt } from "./attestation.mjs";
-import { createRouteQuery, getAccount, getContribution, getRouteQuery, submitRouteOutcome, unlockRoute } from "./client.mjs";
+import { createRouteQuery, getAccount, getContribution, getRouteQuery, unlockRoute } from "./client.mjs";
+import { createExporters, exportReceipt } from "./exporters.mjs";
 import { defaultConfigPath, readConfig, readState, writeState } from "./config.mjs";
 
 const MAX_BODY_BYTES = 1_048_576;
@@ -61,7 +62,15 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
     schema: "minority-prophet.awe-node-state.v0.1",
     pendingContributions: [], queries: [], routes: [], creditBalance: 0,
   };
+  // Counts of what the runtime actually sent, independent of what was
+  // contributed. Without these an operator whose events are all ignored sees a
+  // node reporting healthy with nothing to show and no way to tell whether the
+  // runtime is silent or every event is being dropped. Older state files
+  // predate this, so it is filled in rather than assumed.
+  state.observation ??= { received: 0, contributed: 0, ignored: 0, lastObservedAt: null };
   let operation = Promise.resolve();
+
+  const exporters = createExporters(config);
 
   async function persist() {
     await writeState(configPath, state);
@@ -111,7 +120,11 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
         });
         if (adapted.status !== "READY_TO_SUBMIT") { summary.ignored += 1; continue; }
         const signedReceipt = signRouteReceipt(adapted.receipt, config.signing);
-        const contribution = await submitRouteOutcome(config, signedReceipt);
+        // One emit, many listeners. The hosted exchange is the primary
+        // destination when configured; a file listener receives the identical
+        // signed object and needs no account.
+        const delivered = await exportReceipt(exporters, signedReceipt);
+        const contribution = delivered.primary ?? { status: "exported" };
         if (contribution.status === "pending" && !state.pendingContributions.some((entry) => entry.contributionId === contribution.contributionId)) {
           state.pendingContributions.push({
             contributionId: contribution.contributionId,
@@ -139,6 +152,12 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
         summary.rejected += 1;
         summary.lastError = error.message;
       }
+    }
+    if (summary.received > 0) {
+      state.observation.received += summary.received;
+      state.observation.contributed += summary.submitted;
+      state.observation.ignored += summary.ignored;
+      state.observation.lastObservedAt = new Date().toISOString();
     }
     if (summary.submitted > 0) {
       state.lastRuntimeOutcomeAt = new Date().toISOString();
