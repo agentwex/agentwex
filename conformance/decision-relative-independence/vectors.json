@@ -1,0 +1,38 @@
+{
+  "schema": "agentwex.decision-relative-independence.v0.1",
+  "status": "constructed-conformance-vectors",
+  "statement": "A conformant implementation preserves all recorded lineage resolutions and applies only an explicitly declared independence cut. Changing the cut must not mutate or erase the underlying observations.",
+  "cases": [
+    {
+      "id": "three-machines-one-controller",
+      "observations": [
+        {"nodeId": "node-m1", "participantId": "machine-m1", "controllerGroupId": "owner-j", "provenanceRootId": "execution-m1", "outcome": "success", "observedAt": "2026-08-23T00:00:00Z"},
+        {"nodeId": "node-m4", "participantId": "machine-m4", "controllerGroupId": "owner-j", "provenanceRootId": "execution-m4", "outcome": "success", "observedAt": "2026-08-23T00:01:00Z"},
+        {"nodeId": "node-osmo", "participantId": "machine-osmo", "controllerGroupId": "owner-j", "provenanceRootId": "execution-osmo", "outcome": "success", "observedAt": "2026-08-23T00:02:00Z"}
+      ],
+      "policy": {"decisionId": "machine-compatibility", "failureDomain": "machine-specific-runtime-failure", "independenceCut": "participant", "cutSelectionBasis": "preregistered", "minimumSupportingRoots": 3, "candidateCuts": ["controller_group"]},
+      "expect": {"selectedSupport": 3, "supportSatisfied": true, "materialAlternativeCuts": ["controller_group"], "alternativeSupport": {"controller_group": 1}}
+    },
+    {
+      "id": "five-nodes-two-evidence-origins",
+      "observations": [
+        {"nodeId": "node-a", "participantId": "p-a", "controllerGroupId": "c-a", "provenanceRootId": "shared-openrouter-answer", "outcome": "success", "observedAt": "2026-08-23T00:00:00Z"},
+        {"nodeId": "node-b", "participantId": "p-b", "controllerGroupId": "c-b", "provenanceRootId": "shared-openrouter-answer", "outcome": "success", "observedAt": "2026-08-23T00:01:00Z"},
+        {"nodeId": "node-c", "participantId": "p-c", "controllerGroupId": "c-c", "provenanceRootId": "shared-openrouter-answer", "outcome": "success", "observedAt": "2026-08-23T00:02:00Z"},
+        {"nodeId": "node-d", "participantId": "p-d", "controllerGroupId": "c-d", "provenanceRootId": "shared-openrouter-answer", "outcome": "success", "observedAt": "2026-08-23T00:03:00Z"},
+        {"nodeId": "node-e", "participantId": "p-e", "controllerGroupId": "c-e", "provenanceRootId": "independent-observation", "outcome": "success", "observedAt": "2026-08-23T00:04:00Z"}
+      ],
+      "policy": {"decisionId": "source-diversity", "failureDomain": "source-copying", "independenceCut": "provenance_root", "cutSelectionBasis": "preregistered", "minimumSupportingRoots": 4, "candidateCuts": ["signed_node"]},
+      "expect": {"selectedSupport": 2, "supportSatisfied": false, "materialAlternativeCuts": ["signed_node"], "alternativeSupport": {"signed_node": 5}}
+    },
+    {
+      "id": "missing-controller-stays-unknown",
+      "observations": [
+        {"nodeId": "node-a", "participantId": "p-a", "controllerGroupId": "c-a", "provenanceRootId": "r-a", "outcome": "success", "observedAt": "2026-08-23T00:00:00Z"},
+        {"nodeId": "node-b", "participantId": "p-b", "controllerGroupId": null, "provenanceRootId": "r-b", "outcome": "success", "observedAt": "2026-08-23T00:01:00Z"}
+      ],
+      "policy": {"decisionId": "controller-consensus", "failureDomain": "shared-control", "independenceCut": "controller_group", "cutSelectionBasis": "preregistered", "minimumSupportingRoots": 2, "candidateCuts": ["signed_node"]},
+      "expect": {"selectedSupport": 1, "supportSatisfied": false, "unknownObservationCount": 1, "materialAlternativeCuts": ["signed_node"], "alternativeSupport": {"signed_node": 2}}
+    }
+  ]
+}

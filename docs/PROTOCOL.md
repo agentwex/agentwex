@@ -11,6 +11,14 @@ controller groups; this is still not proof of independent ownership. First-party
 lab machines are explicitly enrolled under one controller group, so extra keys,
 runtimes, and devices cannot manufacture network support.
 
+These are multiple causal resolutions, not competing universal definitions of
+independence. For the public Working Route and preflight decisions, Agent WEX
+uses `controller_group` as the declared independence cut because shared operator
+control is material to that support claim. The deterministic adapter and frozen
+fixtures in `docs/DECISION-RELATIVE-INDEPENDENCE.md` expose other cuts only when
+a caller explicitly supplies a different decision and failure domain. They do
+not change this public support rule or grant action authority.
+
 Every returned route states:
 
 ```json

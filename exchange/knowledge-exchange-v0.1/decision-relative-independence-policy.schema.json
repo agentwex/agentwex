@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentwex.xyz/schemas/decision-relative-independence-policy-v0.1.json",
+  "title": "Agent WEX declared independence accounting policy v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decisionId", "failureDomain", "independenceCut", "cutSelectionBasis", "minimumSupportingRoots"],
+  "properties": {
+    "decisionId": {"type": "string", "minLength": 1, "maxLength": 240},
+    "failureDomain": {"type": "string", "minLength": 1, "maxLength": 240},
+    "independenceCut": {
+      "enum": ["provenance_root", "signed_node", "participant", "controller_group"]
+    },
+    "cutSelectionBasis": {
+      "enum": ["preregistered", "rules-engine", "model-selected", "human-reviewed", "declared", "unknown"]
+    },
+    "minimumSupportingRoots": {"type": "integer", "minimum": 1},
+    "candidateCuts": {
+      "type": "array",
+      "items": {"enum": ["provenance_root", "signed_node", "participant", "controller_group"]},
+      "uniqueItems": true
+    }
+  }
+}

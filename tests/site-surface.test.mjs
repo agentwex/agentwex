@@ -27,6 +27,9 @@ test("the standalone site makes prevention, failure value, and scope explicit", 
   assert.match(page, /unrestricted cross-provider optimization/);
   assert.doesNotMatch(page, /awe contribute|awe ask|awe route apply/);
   assert.match(protocol, /Broader fleet routing/);
+  assert.match(protocol, /Independence depends on the question/);
+  assert.match(protocol, /controller_group/);
+  assert.match(protocol, /relevant failure domain/);
   assert.match(llms, /fewer failed calls/i);
   assert.match(skill, /agentwex contributions --limit 25/);
   assert.match(css, /background-image:radial-gradient\(circle,#7cf0bd38/);

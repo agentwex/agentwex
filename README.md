@@ -93,7 +93,7 @@ arguments or results, credentials, source code, private URLs, provenance roots,
 route fingerprints, or raw trace identifiers.
 
 `preflight` is a free aggregate check. It uses the latest accepted outcome per
-signed node to report current-route reliability, a bounded evidence-confidence
+controller group to report current-route reliability, a bounded evidence-confidence
 label, and 24-hour regression/outage alerts. When a supported alternative
 exists, its actionable route remains sealed; adding `--unlock` deliberately
 uses one earned credit and returns the route to the caller's policy Gate.
@@ -122,6 +122,7 @@ controllers or proof that an execution genuinely occurred.
 - `exchange/knowledge-exchange-v0.1/` — bounded protocol and schemas
 - `db/` and `migrations/` — exchange API, ledger, and D1 schema
 - `docs/` — privacy, security, protocol, and release boundaries
+- `docs/DECISION-RELATIVE-INDEPENDENCE.md` — explicit proximal-root cuts, material sensitivity, and the unchanged public controller-group policy
 - `docs/VERIFIER-OPERATIONS.md` — hosted verification policy and operator runbook
 - `tests/` — installer, minimization, exchange, lifecycle, and adapter tests
 
