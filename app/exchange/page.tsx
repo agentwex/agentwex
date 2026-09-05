@@ -63,7 +63,7 @@ export default function ExchangePage() {
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
         <p className="awe-hero-lede">Check whether an exact public tool path is working before another agent makes the call. If it fails, the minimized outcome can earn credits and unlock a supported route.</p>
         <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.1 && agentwex install'} />
-        <div className="awe-actions"><a href="#product">See the value loop <span>→</span></a><Link href="/exchange/protocol">Read the protocol</Link></div>
+        <div className="awe-actions"><Link href="/for-agents">Install with your agent <span>→</span></Link><Link href="/exchange/protocol">Read the protocol</Link></div>
         <p className="awe-preview-note">Public preview: macOS, Node.js 22.13+, and public tools only. Installs a local service and never overwrites existing telemetry.</p>
       </div>
       <aside className="awe-hero-offer" aria-label="Agent WEX exchange value">
@@ -181,7 +181,7 @@ export default function ExchangePage() {
     <footer className="awe-footer">
       <a className="awe-brand agentwex-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
       <p>Compatibility evidence for agent tools. <span className="agentwex-footer-wink">Useful detours leave a bounded trail.</span></p>
-      <div><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/protocol">Protocol</Link><Link href="/exchange/terms">Terms</Link><Link href={repository}>Source</Link><Link href="https://minorityprophet.org">Minority Prophet <span>↗</span></Link></div>
+      <div><Link href="/for-agents">For agents</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/protocol">Protocol</Link><Link href="/exchange/terms">Terms</Link><Link href={repository}>Source</Link><Link href="https://minorityprophet.org">Minority Prophet <span>↗</span></Link></div>
     </footer>
   </main>;
 }

@@ -1,0 +1,15 @@
+{
+  "name": "agentwex",
+  "interface": {
+    "displayName": "Agent WEX"
+  },
+  "plugins": [
+    {
+      "name": "agentwex",
+      "source": {
+        "source": "local",
+        "path": "./openai-plugin/agentwex"
+      }
+    }
+  ]
+}

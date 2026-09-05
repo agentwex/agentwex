@@ -1,0 +1,11 @@
+{
+  "name": "agentwex",
+  "version": "0.6.1",
+  "description": "Use when a public AI-agent tool path is failing or fragile: check exact compatibility evidence, preserve private workload data, and require user approval before installing or changing local configuration.",
+  "author": {
+    "name": "Agent WEX"
+  },
+  "homepage": "https://agentwex.xyz/for-agents",
+  "repository": "https://github.com/agentwex/agentwex",
+  "license": "Apache-2.0"
+}
