@@ -64,6 +64,7 @@ test("machine discovery advertises agent install context without granting author
 
   assert.equal(manifest.documentation.forAgents, "https://agentwex.xyz/for-agents");
   assert.equal(manifest.documentation.llmsFull, "https://agentwex.xyz/llms-full.txt");
+  assert.equal(manifest.documentation.bountyBootstrap, "https://bounties.agentwex.xyz/api/agent-bootstrap.json");
   assert.equal(manifest.agentDiscovery.nodeInstallRequiresExplicitUserApproval, true);
   assert.equal(manifest.agentDiscovery.discoveryPluginInstallIsNodeInstallApproval, false);
   assert.equal(manifest.authorityBoundary.grantsAuthority, false);

@@ -15,14 +15,20 @@ test("the standalone site makes prevention, failure value, and scope explicit", 
   assert.match(page, /Check before the call/);
   assert.match(page, /npm install -g agentwex@0\.6\.2/);
   assert.doesNotMatch(page, /className="awe-nav"/);
-  assert.match(page, /className="awe-brand agentwex-brand awe-hero-brand"/);
+  assert.match(page, /className="awe-global-nav"/);
+  assert.match(page, /https:\/\/bounties\.agentwex\.xyz\//);
+  assert.match(page, /THE USEFUL AGENT WORK LOOP/);
+  assert.match(page, /One setup/);
+  assert.match(page, /Research never starts without your approval/);
   assert.doesNotMatch(page, /awe-launch-strip/);
   assert.match(page, /<AweCommand id="install"/);
   assert.match(page, /Aggregate preflight is free/);
   assert.match(page, /Failure earns credits/i);
   assert.match(page, /Enterprises can pay for a private implementation/);
-  assert.equal((page.match(/\bpay(?:ment)?\b/gi) ?? []).length, 2);
-  assert.doesNotMatch([protocol, llms, skill].join("\n"), /\b(?:pay|pays|paid|payment|charge|costs?|spend|spends|spent|purchase|purchased)\b/i);
+  assert.match(page, /USDC \+ WEX credits/);
+  assert.match(page, /FUNDING PENDING/);
+  assert.doesNotMatch([protocol, skill].join("\n"), /\b(?:pay|pays|paid|payment|charge|costs?|spend|spends|spent|purchase|purchased)\b/i);
+  assert.match(llms, /Complete public-research bounties when funded/);
   assert.match(page, /Duplicate retries neither manufacture consensus nor mint more credits/);
   assert.match(page, /unrestricted cross-provider optimization/);
   assert.doesNotMatch(page, /awe contribute|awe ask|awe route apply/);
@@ -48,6 +54,8 @@ test("machine discovery and the downloadable package are aligned", async () => {
   const digest = createHash("sha256").update(archive).digest("hex");
 
   assert.equal(manifest.documentation.source, "https://github.com/agentwex/agentwex");
+  assert.equal(manifest.documentation.bountyExchange, "https://bounties.agentwex.xyz");
+  assert.equal(manifest.economics.walletRequiredToJoin, false);
   assert.equal(manifest.distribution.publicNpmPackageReleased, true);
   assert.equal(manifest.distribution.npmPackage, "agentwex");
   assert.equal(manifest.distribution.npmVersion, "0.6.2");

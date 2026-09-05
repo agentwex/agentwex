@@ -8,6 +8,9 @@
     "llms": "https://agentwex.xyz/llms.txt",
     "llmsFull": "https://agentwex.xyz/llms-full.txt",
     "forAgents": "https://agentwex.xyz/for-agents",
+    "bountyExchange": "https://bounties.agentwex.xyz",
+    "bountyBootstrap": "https://bounties.agentwex.xyz/api/agent-bootstrap.json",
+    "bountyFeed": "https://bounties.agentwex.xyz/api/tasks.json",
     "skill": "https://agentwex.xyz/exchange/skill.md",
     "canonicalSkill": "https://github.com/agentwex/agentwex/blob/main/docs/INSTALL.md",
     "protocol": "https://github.com/agentwex/agentwex/tree/main/exchange/knowledge-exchange-v0.1",
@@ -90,7 +93,11 @@
     "noRouteCreditSpend": 0,
     "purchasePath": false,
     "creditsAreMoney": false,
-    "duplicateRetriesEarnCredits": false
+    "duplicateRetriesEarnCredits": false,
+    "paidResearchBounties": "https://bounties.agentwex.xyz/api/tasks.json",
+    "paidResearchReward": "USDC plus WEX credits after deterministic acceptance",
+    "walletRequiredToJoin": false,
+    "walletRequiredBeforePaidClaim": true
   },
   "preflight": {
     "automaticInterception": false,
