@@ -78,8 +78,14 @@ test("machine discovery advertises agent install context without granting author
   assert.equal(manifest.researchBountyBridge.existingCompatibilityBountiesAutomaticallyLinked, false);
   assert.equal(manifest.researchBountyBridge.scientificValidityAutomaticallyEstablished, false);
   assert.deepEqual(manifest.researchBountyBridge.publishers, ["invention-graph"]);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.mode, "quality-gated-continuous");
   assert.equal(manifest.researchBountyBridge.publicationCadence.automaticSchedule, false);
-  assert.equal(manifest.researchBountyBridge.publicationCadence.recommendedMaximumActivePilotBounties, 3);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.artificialVolumeCap, false);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.publishEveryQualifiedApprovedExperiment, true);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.minimumQualityScore, 90);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.perBountyLocalApprovalRequired, true);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.duplicateSuppressionRequired, true);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.qualificationGates.includes("local_approval_receipt"), true);
   assert.equal(manifest.communityBountyFunding.status, "coming-soon");
   assert.equal(manifest.communityBountyFunding.acceptingCommunityBounties, false);
   assert.equal(manifest.communityBountyFunding.acceptingFunds, false);

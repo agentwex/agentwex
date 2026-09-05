@@ -75,11 +75,24 @@
     "plannedPublishers": ["authenticated-community"],
     "publicationRequiresLocalApprovalReceipt": true,
     "publicationCadence": {
-      "mode": "manual-event-driven",
+      "mode": "quality-gated-continuous",
       "automaticSchedule": false,
-      "recommendedMaximumActivePilotBounties": 3,
-      "nextReleaseGate": "previous_bounty_reviewable_or_expired",
-      "enforced": false
+      "artificialVolumeCap": false,
+      "publishEveryQualifiedApprovedExperiment": true,
+      "minimumQualityScore": 90,
+      "perBountyLocalApprovalRequired": true,
+      "duplicateSuppressionRequired": true,
+      "qualificationGates": [
+        "sanitized_public_payload",
+        "falsifiable_question",
+        "deterministic_acceptance_check",
+        "bounded_deliverable",
+        "public_source_locators",
+        "declared_safety_constraints",
+        "opaque_deduplicated_source_id",
+        "explicit_expiry",
+        "local_approval_receipt"
+      ]
     },
     "privateGraphReceived": false,
     "privateExperimentDigestReceived": false,

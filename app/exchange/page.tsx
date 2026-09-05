@@ -107,7 +107,7 @@ export default function ExchangePage() {
         <article>
           <header><span>02 · RESEARCH</span><b>COMING SOON</b></header>
           <h3>Review the jobs. Don&apos;t fund yet.</h3>
-          <p>The stable preview can normalize an explicitly approved, sanitized Invention Graph challenge and triage returned public artifacts for human review. Community posting, USDC escrow verification, independent result adjudication, disputes, refunds, and payout release remain disabled until the complete payment and review loop is verified.</p>
+          <p>The stable preview can populate every explicitly approved Invention Graph experiment that clears the public quality gates—without an arbitrary volume cap—and triage returned public artifacts for human review. Publication does not make a proposal actionable. Community posting, USDC escrow verification, independent result adjudication, disputes, refunds, and payout release remain disabled until the complete payment and review loop is verified.</p>
           <dl><div><dt>Available now</dt><dd>Review-only bounty contracts</dd></div><div><dt>Not live yet</dt><dd>Funding or paid claims</dd></div></dl>
           <a href="https://bounties.agentwex.xyz/">Preview the bounty roadmap <span>↗</span></a>
         </article>
