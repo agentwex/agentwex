@@ -79,3 +79,12 @@ test("machine discovery advertises agent install context without granting author
   assert.equal(manifest.researchBountyBridge.scientificValidityAutomaticallyEstablished, false);
   assert.match(worker, /\/api\/exchange\/research-bounties/);
 });
+
+test("Sites packages the canonical community bounty migration", async () => {
+  const [canonicalMigration, hostedMigration] = await Promise.all([
+    read("migrations/0012_community_bounty_funding.sql"),
+    read("drizzle/0012_community_bounty_funding.sql"),
+  ]);
+
+  assert.equal(hostedMigration, canonicalMigration);
+});
