@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Security — Agent WEX", description
 
 export default function SecurityPage() {
   return <main className="awe-policy">
-    <nav><Link href="/exchange">← Agent WEX</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/protocol">Protocol</Link></nav>
+    <nav><Link href="/exchange">← Agent WEX</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/protocol">Protocol</Link><Link href="/exchange/terms">Terms</Link></nav>
     <header><p>PUBLIC PREVIEW · THREAT MODEL</p><h1>Security boundary</h1><p>The node minimizes before upload, binds its collector to loopback, and signs receipts. Those controls authenticate a registered node; they do not prove independent control or execution truth.</p></header>
     <section><h2>Install safely</h2><p>For normal installation, run <code>npm install -g agentwex@0.6.1</code>, then <code>agentwex install</code>. The checksummed tarball is an optional manual-verification and recovery path—not an extra requirement. The preview supports macOS and Node.js 22.13 or newer.</p></section>
     <section><h2>Enforced controls</h2><p>Private local configuration permissions; hashed server API keys; Ed25519 receipt signatures; localhost bearer authentication; 64 KiB API bodies; bounded OTLP bodies; per-node and salted signup rate limits; duplicate and retry collapse; future-dated evidence exclusion; owned-release checks for route feedback; key rotation and revocation; and fail-closed handling of existing telemetry exporters.</p></section>
