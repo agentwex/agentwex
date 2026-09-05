@@ -9,7 +9,7 @@
       "name": "agentwex",
       "source": ".",
       "description": "Check exact public agent-tool compatibility, contribute minimized signed outcomes, and retrieve policy-gated recovery evidence.",
-      "version": "0.6.1"
+      "version": "0.6.2"
     }
   ]
 }

@@ -27,6 +27,7 @@ test("OpenAI plugin metadata matches the released Agent WEX package", () => {
   assert.equal(plugin.skills, "./skills/");
   assert.equal("mcpServers" in plugin, false);
   assert.equal("apps" in plugin, false);
+  assert.equal(plugin.interface.capabilities.includes("OpenInference TOOL-span normalization"), true);
 
   for (const asset of [plugin.interface.composerIcon, plugin.interface.logo]) {
     assert.equal(asset.startsWith("./assets/"), true);

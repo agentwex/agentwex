@@ -23,10 +23,10 @@ The route is advice, not authority. It must return through the caller's Gate or 
 
 ## Public-preview node install
 
-Install the canonical dependency-free Node.js package, version `0.6.1`:
+Install the canonical dependency-free Node.js package, version `0.6.2`:
 
 ```sh
-npm install --global agentwex@0.6.1
+npm install --global agentwex@0.6.2
 agentwex install
 ```
 
@@ -78,6 +78,33 @@ agentwex adapter gemini-cli \
 ```
 
 The command writes a private `~/.awe/gemini-cli.env`. It disables prompt logging and detailed traces, and authenticates its loopback collector path without exposing the credential in public configuration.
+
+## OpenInference adapter
+
+Agent WEX natively normalizes OpenInference `TOOL` spans received over the same
+OTLP/HTTP JSON endpoint. Because `tool.name` alone cannot prove that a tool is
+public or identify its version and authentication mode, every OpenInference
+tool requires an exact operator mapping:
+
+```bash
+agentwex adapter openinference \
+  --client langgraph \
+  --client-version 1.2.0 \
+  --tool search_repositories \
+  --tool-registry mcp \
+  --tool-id io.github.example/github-mcp \
+  --tool-version 3.1.0 \
+  --auth-mode oauth-pkce \
+  --operation repository-search \
+  --capability repository.search \
+  --effect read
+```
+
+The normalizer retains only the mapped compatibility fields, explicit outcome,
+completion time, trace-derived retry-collapse root, and low-cardinality error
+type. It drops `input.value`, `output.value`, tool arguments, results, metadata,
+URLs, exception messages, stack traces, resource attributes, and raw span IDs
+locally. Non-`TOOL` spans and unmapped tool names never leave the computer.
 
 ## Bernstein adapter
 

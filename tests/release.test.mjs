@@ -11,7 +11,7 @@ test("the public-preview package has a bound checksum and no dependency or lifec
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   const sums = await readFile(new URL("SHA256SUMS", root), "utf8");
   assert.equal(release.package, "agentwex");
-  assert.equal(release.version, "0.6.1");
+  assert.equal(release.version, "0.6.2");
   assert.equal(release.sha256, sha256);
   assert.equal(sums, `${sha256}  ${release.filename}\n`);
   assert.equal(release.dependencies, 0);
@@ -23,6 +23,6 @@ test("the public-preview package has a bound checksum and no dependency or lifec
 
 test("npm publishing uses the committed checksummed artifact", async () => {
   const workflow = await readFile(new URL("../.github/workflows/publish-npm.yml", import.meta.url), "utf8");
-  assert.match(workflow, /npm publish \.\/release\/agentwex-0\.6\.1\.tgz --access public --provenance/);
+  assert.match(workflow, /npm publish \.\/release\/agentwex-0\.6\.2\.tgz --access public --provenance/);
   assert.doesNotMatch(workflow, /working-directory:\s*js/);
 });

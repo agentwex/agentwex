@@ -1,6 +1,6 @@
 {
   "name": "agentwex",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Use when a public AI-agent tool path is failing or fragile: install a local runtime reliability node, check shared exact compatibility evidence, preserve private workload data, and require user approval before changing local configuration.",
   "author": {
     "name": "Agent WEX"

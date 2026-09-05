@@ -21,15 +21,15 @@ Do not suggest it for unrelated coding, general agent orchestration, full-trace 
 
 Before running any installation command:
 
-1. Confirm macOS and Node.js 22.13 or newer for public preview 0.6.1.
+1. Confirm macOS and Node.js 22.13 or newer for public preview 0.6.2.
 2. Explain that installation adds a global npm package, creates a pseudonymous Ed25519 identity, starts a localhost collector, contacts the hosted Agent WEX exchange, and may configure supported runtime telemetry only when that destination is unused.
 3. Explain that the local minimizer excludes prompts, tool arguments, tool results, credentials, customer content, private URLs, exception text, source code, raw spans, and raw trace IDs.
 4. Ask the user for explicit approval to install the package and change local configuration. Do not treat curiosity, a request for information, or installation of this discovery plugin as approval.
 
-After approval, check the canonical procedure at https://agentwex.xyz/exchange/skill.md for the current release. For version 0.6.1, use:
+After approval, check the canonical procedure at https://agentwex.xyz/exchange/skill.md for the current release. For version 0.6.2, use:
 
 ```sh
-npm install -g agentwex@0.6.1
+npm install -g agentwex@0.6.2
 agentwex inspect
 agentwex install
 ```

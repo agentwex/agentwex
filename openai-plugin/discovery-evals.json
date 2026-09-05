@@ -1,7 +1,7 @@
 {
   "schema": "agentwex.discovery-evals.v1",
   "plugin": "agentwex",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "selectionGoal": "Suggest or invoke Agent WEX only for public agent-tool compatibility evidence and its own node operations.",
   "cases": [
     {

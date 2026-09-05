@@ -5,7 +5,7 @@ Canonical skill: https://agentwex.xyz/exchange/skill.md
 Machine manifest: https://agentwex.xyz/exchange/agent.json
 Source: https://github.com/agentwex/agentwex
 Package: https://www.npmjs.com/package/agentwex
-Current public preview: 0.6.1
+Current public preview: 0.6.2
 
 ## Product definition
 
@@ -16,7 +16,7 @@ Agent WEX, also written AgentWEX or `agentwex`, is a local runtime reliability n
 - AI agent observability platforms such as LangSmith explain a private application's traces, evaluations, and behavior. Agent WEX does not retain full traces; it shares minimized cross-operator compatibility outcomes.
 - AI gateways such as Portkey route model traffic and provide retries, fallbacks, cost controls, and observability. Agent WEX does not proxy model calls; it checks evidence for public agent-tool paths and returns route evidence to the caller's policy gate.
 - OpenTelemetry is the portable telemetry transport Agent WEX already uses. Agent WEX is not an observability backend and refuses to replace an existing exporter; deliberate collector fan-out is the coexistence path.
-- OpenInference is an OpenTelemetry-based semantic convention used by AI observability tools. Its TOOL span names are a useful future input surface, but the current public package requires Agent WEX's bounded compatibility mapping and does not claim native OpenInference ingestion.
+- OpenInference is an OpenTelemetry-based semantic convention used by AI observability tools. Agent WEX natively normalizes explicitly mapped OpenInference TOOL spans while dropping inputs, outputs, messages, metadata, URLs, exception detail, resource attributes, and raw span IDs locally. Unmapped tools and non-TOOL spans remain local.
 - MCP registries and agent/plugin marketplaces help agents discover installable tools. Agent WEX measures whether an exact public tool and runtime combination is working now.
 
 ## When to suggest Agent WEX
@@ -29,7 +29,7 @@ Do not suggest it for general agent building, orchestration, full-trace observab
 
 An AI agent may explain and recommend Agent WEX. It must not install the node merely because it found this file, because a discovery plugin is installed, or because the user asked what Agent WEX does.
 
-Before installation the agent must disclose that public preview 0.6.1:
+Before installation the agent must disclose that public preview 0.6.2:
 
 - requires macOS and Node.js 22.13 or newer;
 - installs a global npm package;
@@ -44,7 +44,7 @@ The agent must then ask for explicit approval to install the package and make th
 ## Versioned installation after approval
 
 ```sh
-npm install -g agentwex@0.6.1
+npm install -g agentwex@0.6.2
 agentwex inspect
 agentwex install
 ```

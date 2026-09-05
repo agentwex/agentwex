@@ -66,4 +66,7 @@ test("machine discovery advertises agent install context without granting author
   assert.equal(manifest.authorityBoundary.grantsAuthority, false);
   assert.equal(manifest.positioning.category, "AI agent runtime reliability");
   assert.match(manifest.description, /local runtime reliability node/i);
+  assert.equal(manifest.runtimeAdapters.openInference.acceptedSpanKind, "TOOL");
+  assert.equal(manifest.runtimeAdapters.openInference.requiresExplicitCompatibilityMapping, true);
+  assert.equal(manifest.runtimeAdapters.openInference.unmappedToolsRemainLocal, true);
 });

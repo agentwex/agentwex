@@ -25,11 +25,11 @@
     "sourceAvailable": true,
     "publicNpmPackageReleased": true,
     "npmPackage": "agentwex",
-    "npmVersion": "0.6.1",
-    "npmInstallCommand": "npm install -g agentwex@0.6.1 && agentwex install",
+    "npmVersion": "0.6.2",
+    "npmInstallCommand": "npm install -g agentwex@0.6.2 && agentwex install",
     "directPackageReleased": true,
-    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.1.tgz",
-    "directPackageSha256": "5237c875e20a8636e2489744772b153ab819a898c8e09897aa9be532e8565417",
+    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.2.tgz",
+    "directPackageSha256": "5c6c52a902fbb360cd4706791d0769b7ef57309948ecc447bc7ccb58a2d3f0c9",
     "checksumUrl": "https://agentwex.xyz/exchange/SHA256SUMS",
     "hostedExchangeReleased": true,
     "hostedExchangeStage": "public-preview",
@@ -47,6 +47,7 @@
   },
   "capabilities": [
     "minimized_outcome_capture",
+    "openinference_tool_span_normalization",
     "provenance_aware_route_matching",
     "distinct_signed_node_counting",
     "background_contribution",
@@ -113,6 +114,18 @@
       "preciseMappingOptional": true,
       "promptLoggingEnabled": false,
       "detailedTracesEnabled": false
+    },
+    "openInference": {
+      "status": "alpha",
+      "transport": "otlp_http_json_traces",
+      "semanticConvention": "OpenInference",
+      "acceptedSpanKind": "TOOL",
+      "configurationCommand": "agentwex adapter openinference --client <host-runtime> --client-version <version> --tool <observed-tool.name> --tool-registry <registry> --tool-id <public-tool-id> --tool-version <version> --auth-mode <mode>",
+      "requiresExplicitCompatibilityMapping": true,
+      "preservesExistingExporter": true,
+      "unmappedToolsRemainLocal": true,
+      "nonToolSpansRemainLocal": true,
+      "forbiddenFields": ["input.value", "output.value", "tool.arguments", "tool.results", "messages", "metadata", "urls", "exception.message", "exception.stacktrace", "resource.attributes", "span.id"]
     },
     "bernstein": {
       "status": "alpha",
