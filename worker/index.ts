@@ -11,6 +11,7 @@ interface Env {
   AWE_OWNER_EMAIL?: string;
   AWE_OWNER_NODE_ALIASES?: string;
   AWE_RATE_LIMIT_SALT?: string;
+  AWE_COMMUNITY_BOUNTIES_ENABLED?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -64,6 +65,7 @@ const worker = {
         adminToken: env.AWE_ADMIN_TOKEN,
         ownerEmail: env.AWE_OWNER_EMAIL,
         ownerAliases: ownerAliases(env.AWE_OWNER_NODE_ALIASES),
+        communityBountiesEnabled: env.AWE_COMMUNITY_BOUNTIES_ENABLED === "enabled",
         clientFingerprint: url.pathname === "/api/exchange/signup" ? await signupFingerprint(request, env.AWE_RATE_LIMIT_SALT) : null,
         requireClientFingerprint: true,
       });

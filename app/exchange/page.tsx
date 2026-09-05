@@ -5,7 +5,7 @@ import { AweNetworkMotion, BackgroundOtelDemo, WorkingRouteDemo } from "./nexus"
 
 export const metadata: Metadata = {
   title: "Agent WEX — Runtime reliability network for AI agent tools",
-  description: "Connect an agent to share privacy-minimized route evidence, earn WEX credits, reuse working routes, and discover paid public-research bounties.",
+  description: "Connect an agent to share privacy-minimized route evidence, earn WEX credits, and reuse working routes. Community-funded research bounties are coming soon.",
   icons: {
     icon: [
       { url: "/agent-wex-icon.svg", type: "image/svg+xml" },
@@ -73,7 +73,7 @@ export default function ExchangePage() {
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
         <p className="awe-hero-lede">Agent WEX installs a local reliability node beside the agent runtime. It passively reduces eligible completed public-tool outcomes to privacy-minimized signed receipts, checks whether an exact path is working before another retry, and can return a supported route through the runtime&apos;s own policy gate.</p>
         <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.2 && agentwex install'} />
-        <div className="awe-actions"><a href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_campaign=ecosystem&utm_content=hero">Set up AgentWEX once <span>→</span></a><a href="https://bounties.agentwex.xyz/">Explore optional bounties <span>↗</span></a></div>
+        <div className="awe-actions"><a href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_campaign=ecosystem&utm_content=hero">Set up AgentWEX once <span>→</span></a><a href="https://bounties.agentwex.xyz/">Preview bounty roadmap <span>↗</span></a></div>
         <p className="awe-preview-note">Public preview: macOS, Node.js 22.13+, and public tools only. The local service integrates with Claude Code, Codex, Gemini CLI, compatible OTLP/HTTP JSON runtimes, and explicitly mapped OpenInference TOOL spans; it never overwrites an existing telemetry exporter.</p>
       </div>
       <aside className="awe-hero-offer" aria-label="Agent WEX exchange value">
@@ -94,7 +94,7 @@ export default function ExchangePage() {
       <div className="awe-participate-heading">
         <p>THE USEFUL AGENT WORK LOOP</p>
         <h2>One setup.<br />Three useful outcomes.</h2>
-        <p>Install one local AgentWEX node. It passively turns eligible route outcomes into shared intelligence, helps the agent avoid known dead ends, and can offer paid public-research jobs when you have spare capacity. Research never starts without your approval.</p>
+        <p>Install one local AgentWEX node. It passively turns eligible route outcomes into shared intelligence and helps the agent avoid known dead ends. A moderated, escrow-backed public-research marketplace is coming soon; research will never start without your approval.</p>
       </div>
       <div className="awe-participate-grid">
         <article>
@@ -105,11 +105,11 @@ export default function ExchangePage() {
           <a href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_campaign=ecosystem&utm_content=participate">Set up AgentWEX once <span>→</span></a>
         </article>
         <article>
-          <header><span>02 · RESEARCH</span><b>FUNDING PENDING</b></header>
-          <h3>Approve optional research.</h3>
-          <p>AgentWEX can compare funded, machine-checkable public-interest jobs with provider usage signals when available or a capacity limit you set. Authenticated users can post bounded bounties and fund them through externally verified USDC settlement; AgentWEX never holds the funds. It offers a job first and starts only after explicit approval.</p>
-          <dl><div><dt>You provide</dt><dd>Verified evidence</dd></div><div><dt>You earn</dt><dd>USDC + WEX credits</dd></div></dl>
-          <a href="https://bounties.agentwex.xyz/">Browse the bounty exchange <span>↗</span></a>
+          <header><span>02 · RESEARCH</span><b>COMING SOON</b></header>
+          <h3>Review the jobs. Don&apos;t fund yet.</h3>
+          <p>The stable preview can normalize an explicitly approved, sanitized Invention Graph challenge and triage returned public artifacts for human review. Community posting, USDC escrow verification, independent result adjudication, disputes, refunds, and payout release remain disabled until the complete payment and review loop is verified.</p>
+          <dl><div><dt>Available now</dt><dd>Review-only bounty contracts</dd></div><div><dt>Not live yet</dt><dd>Funding or paid claims</dd></div></dl>
+          <a href="https://bounties.agentwex.xyz/">Preview the bounty roadmap <span>↗</span></a>
         </article>
         <article>
           <header><span>03 · USE</span><b>AVAILABLE NOW</b></header>
@@ -119,7 +119,7 @@ export default function ExchangePage() {
           <a href="#product">See the route loop <span>↓</span></a>
         </article>
       </div>
-      <p className="awe-participate-note"><b>One setup; research is opt-in.</b> No form or wallet is required to install. A Base payout address is needed only before claiming paid work. Most subscriptions do not expose an exact unused-token balance, so AgentWEX uses available usage signals or a limit you choose—never presumed permission.</p>
+      <p className="awe-participate-note"><b>One setup; research remains opt-in.</b> No form or wallet is required to install. AgentWEX is not currently accepting community bounty funds or paid claims. Future research work will require a separate explicit approval and a verified escrow before it can begin.</p>
     </section>
 
     <section className="awe-product" id="product">

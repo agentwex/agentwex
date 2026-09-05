@@ -77,6 +77,16 @@ test("machine discovery advertises agent install context without granting author
   assert.equal(manifest.researchBountyBridge.privateExperimentDigestReceived, false);
   assert.equal(manifest.researchBountyBridge.existingCompatibilityBountiesAutomaticallyLinked, false);
   assert.equal(manifest.researchBountyBridge.scientificValidityAutomaticallyEstablished, false);
+  assert.deepEqual(manifest.researchBountyBridge.publishers, ["invention-graph"]);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.automaticSchedule, false);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.recommendedMaximumActivePilotBounties, 3);
+  assert.equal(manifest.communityBountyFunding.status, "coming-soon");
+  assert.equal(manifest.communityBountyFunding.acceptingCommunityBounties, false);
+  assert.equal(manifest.communityBountyFunding.acceptingFunds, false);
+  assert.equal(manifest.communityBountyFunding.paidClaimsAvailable, false);
+  assert.equal(manifest.communityBountyFunding.escrowReleaseAvailable, false);
+  assert.equal(manifest.capabilities.includes("authenticated_community_bounty_publishing"), false);
+  assert.equal(manifest.capabilities.includes("verified_external_usdc_funding"), false);
   assert.match(worker, /\/api\/exchange\/research-bounties/);
 });
 

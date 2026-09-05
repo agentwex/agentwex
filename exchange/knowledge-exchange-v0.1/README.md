@@ -93,12 +93,11 @@ endpoints are:
 - `POST /api/exchange/queries` — ask an exact compatibility question when local evidence is insufficient.
 - `GET /api/exchange/bounties` — discover missing compatibility cells.
 - `POST /api/exchange/research-bounties` — publish an explicitly approved,
-  sanitized Invention Graph bounty or authenticated community-funded bounty.
-- `GET /api/exchange/research-bounties` — discover funding-pending and open research bounties
+  sanitized Invention Graph bounty. Community publishing is coming soon and fails closed.
+- `GET /api/exchange/research-bounties` — discover open research bounties
   without access to the originating private graph.
-- `POST /api/exchange/research-bounties/:id/funding-intents` — bind a USDC
-  commitment to an external settlement receipt. AgentWEX never custodies funds,
-  and the bounty stays closed to work until the receipt is independently verified.
+- `POST /api/exchange/research-bounties/:id/funding-intents` — reserved for the
+  coming-soon USDC flow; it accepts no funds or funding claims in the stable preview.
 - `POST /api/exchange/research-bounties/:id/submissions` — submit a public
   artifact and bounded evidence summary as an unreviewed candidate.
 - `GET /api/exchange/research-bounties/:id/quality` — let the publishing node
