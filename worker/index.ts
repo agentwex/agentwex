@@ -55,7 +55,7 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
-    if (["/api/exchange/signup", "/api/exchange/account", "/api/exchange/ledger", "/api/exchange/preflight", "/api/exchange/alerts", "/api/exchange/route-feedback", "/api/exchange/signing-keys", "/api/exchange/signing-keys/revoke", "/api/exchange/api-keys/rotate", "/api/exchange/contributions", "/api/exchange/queries", "/api/exchange/working-route-comps", "/api/exchange/bounties", "/api/exchange/research-bounties", "/api/exchange/unlock", "/api/exchange/coverage", "/api/exchange/internal/accept", "/api/exchange/internal/lab-enroll", "/api/exchange/internal/owner-snapshot", "/api/exchange/internal/stats"].includes(url.pathname)
+    if (["/api/exchange/signup", "/api/exchange/account", "/api/exchange/ledger", "/api/exchange/preflight", "/api/exchange/alerts", "/api/exchange/route-feedback", "/api/exchange/signing-keys", "/api/exchange/signing-keys/revoke", "/api/exchange/api-keys/rotate", "/api/exchange/contributions", "/api/exchange/queries", "/api/exchange/working-route-comps", "/api/exchange/bounties", "/api/exchange/research-bounties", "/api/exchange/unlock", "/api/exchange/coverage", "/api/exchange/internal/accept", "/api/exchange/internal/research-bounty-funding/verify", "/api/exchange/internal/research-bounties/moderate", "/api/exchange/internal/lab-enroll", "/api/exchange/internal/owner-snapshot", "/api/exchange/internal/stats"].includes(url.pathname)
       || url.pathname.startsWith("/api/exchange/contributions/")
       || url.pathname.startsWith("/api/exchange/queries/")
       || url.pathname.startsWith("/api/exchange/research-bounties/")) {

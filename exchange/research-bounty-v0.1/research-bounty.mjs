@@ -1,6 +1,8 @@
 import { canonicalJson } from "../knowledge-exchange-v0.1/receipt-attestation.mjs";
 
 export const RESEARCH_BOUNTY_SCHEMA = "agentwex.research-bounty.v0.1";
+export const COMMUNITY_RESEARCH_BOUNTY_SCHEMA = "agentwex.community-research-bounty.v0.1";
+export const RESEARCH_FUNDING_INTENT_SCHEMA = "agentwex.research-bounty-funding-intent.v0.1";
 export const RESEARCH_SUBMISSION_SCHEMA = "agentwex.research-bounty-submission.v0.1";
 export const RESEARCH_QUALITY_SCHEMA = "agentwex.research-bounty-quality.v0.1";
 
@@ -9,6 +11,14 @@ const bountyFields = new Set([
   "acceptanceCriteria", "falsificationCriterion", "requiredObservations",
   "minimumIndependentRoots", "safetyConstraints", "expiresAt",
   "publicationReceiptDigest",
+]);
+const communityBountyFields = new Set([
+  ...bountyFields,
+  "fundingGoalUsdc", "settlementRail",
+]);
+const fundingIntentFields = new Set([
+  "schema", "amountUsdc", "settlementRail", "idempotencyKey",
+  "externalSettlementId", "settlementReceiptDigest",
 ]);
 const submissionFields = new Set([
   "schema", "publicArtifactUrl", "artifactDigest", "methodSummary",
@@ -47,6 +57,14 @@ function isoTimestamp(value) {
   return new Date(value).toISOString() === value ? value : null;
 }
 
+export function usdcMicrounits(value) {
+  if (typeof value !== "string" || !/^(?:0|[1-9][0-9]{0,6})(?:\.[0-9]{1,6})?$/.test(value)) return null;
+  const [whole, fraction = ""] = value.split(".");
+  const amount = (Number(whole) * 1_000_000) + Number(fraction.padEnd(6, "0"));
+  return Number.isSafeInteger(amount) && amount >= 1 && amount <= 1_000_000_000_000
+    ? amount : null;
+}
+
 function publicHttpsUrl(value) {
   if (typeof value !== "string" || value.length > 2_048) return null;
   try {
@@ -64,9 +82,17 @@ function publicHttpsUrl(value) {
 }
 
 export function validateResearchBounty(value) {
-  if (!exactKeys(value, bountyFields) || value.schema !== RESEARCH_BOUNTY_SCHEMA) return null;
-  if (value.sourceSystem !== "invention-graph") return null;
-  if (!/^igb_[a-f0-9]{32}$/.test(value.sourceBountyId ?? "")) return null;
+  const inventionGraph = value?.schema === RESEARCH_BOUNTY_SCHEMA
+    && exactKeys(value, bountyFields)
+    && value.sourceSystem === "invention-graph"
+    && /^igb_[a-f0-9]{32}$/.test(value.sourceBountyId ?? "");
+  const community = value?.schema === COMMUNITY_RESEARCH_BOUNTY_SCHEMA
+    && exactKeys(value, communityBountyFields)
+    && value.sourceSystem === "agentwex-community"
+    && /^community_[a-f0-9]{32}$/.test(value.sourceBountyId ?? "")
+    && usdcMicrounits(value.fundingGoalUsdc) !== null
+    && ["taskmarket_escrow", "x402_direct"].includes(value.settlementRail);
+  if (!inventionGraph && !community) return null;
   const title = boundedPublicText(value.title, 200);
   const researchQuestion = boundedPublicText(value.researchQuestion, 2_000);
   const acceptanceCriteria = boundedPublicTextList(value.acceptanceCriteria);
@@ -83,8 +109,8 @@ export function validateResearchBounty(value) {
   if (!Number.isInteger(value.minimumIndependentRoots) || value.minimumIndependentRoots < 1
     || value.minimumIndependentRoots > 100) return null;
   return {
-    schema: RESEARCH_BOUNTY_SCHEMA,
-    sourceSystem: "invention-graph",
+    schema: value.schema,
+    sourceSystem: value.sourceSystem,
     sourceBountyId: value.sourceBountyId,
     title,
     researchQuestion,
@@ -94,7 +120,32 @@ export function validateResearchBounty(value) {
     minimumIndependentRoots: value.minimumIndependentRoots,
     safetyConstraints,
     expiresAt,
+    ...(community ? {
+      fundingGoalUsdc: value.fundingGoalUsdc,
+      settlementRail: value.settlementRail,
+    } : {}),
     publicationReceiptDigest,
+  };
+}
+
+export function validateResearchFundingIntent(value, requiredRail) {
+  if (!exactKeys(value, fundingIntentFields)
+    || value.schema !== RESEARCH_FUNDING_INTENT_SCHEMA) return null;
+  const amountMicrounits = usdcMicrounits(value.amountUsdc);
+  if (!amountMicrounits || value.settlementRail !== requiredRail) return null;
+  if (!/^funding_[a-f0-9]{32}$/.test(value.idempotencyKey ?? "")) return null;
+  if (typeof value.externalSettlementId !== "string"
+    || !/^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$/.test(value.externalSettlementId)) return null;
+  if (typeof value.settlementReceiptDigest !== "string"
+    || !/^sha256:[a-f0-9]{64}$/.test(value.settlementReceiptDigest)) return null;
+  return {
+    schema: RESEARCH_FUNDING_INTENT_SCHEMA,
+    amountUsdc: value.amountUsdc,
+    amountMicrounits,
+    settlementRail: value.settlementRail,
+    idempotencyKey: value.idempotencyKey,
+    externalSettlementId: value.externalSettlementId,
+    settlementReceiptDigest: value.settlementReceiptDigest,
   };
 }
 

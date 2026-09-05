@@ -15,6 +15,8 @@
     "canonicalSkill": "https://github.com/agentwex/agentwex/blob/main/docs/INSTALL.md",
     "protocol": "https://github.com/agentwex/agentwex/tree/main/exchange/knowledge-exchange-v0.1",
     "researchBountyProtocol": "https://github.com/agentwex/agentwex/tree/main/exchange/research-bounty-v0.1",
+    "communityBountySchema": "https://github.com/agentwex/agentwex/blob/main/exchange/research-bounty-v0.1/community-research-bounty.schema.json",
+    "fundingIntentSchema": "https://github.com/agentwex/agentwex/blob/main/exchange/research-bounty-v0.1/research-bounty-funding-intent.schema.json",
     "source": "https://github.com/agentwex/agentwex"
   },
   "positioning": {
@@ -65,11 +67,13 @@
     "contribution_history",
     "bounded_route_feedback",
     "sanitized_research_bounty_intake",
-    "research_submission_quality_monitoring"
+    "research_submission_quality_monitoring",
+    "authenticated_community_bounty_publishing",
+    "verified_external_usdc_funding"
   ],
   "researchBountyBridge": {
     "status": "preview",
-    "publisher": "invention-graph",
+    "publishers": ["invention-graph", "authenticated-community"],
     "publicationRequiresLocalApprovalReceipt": true,
     "privateGraphReceived": false,
     "privateExperimentDigestReceived": false,
@@ -84,6 +88,19 @@
     "scientificValidityAutomaticallyEstablished": false,
     "provenanceIndependenceAutomaticallyVerified": false,
     "authorityGranted": false
+  },
+  "communityBountyFunding": {
+    "status": "api-foundation",
+    "currency": "USDC",
+    "network": "eip155:8453",
+    "settlementRails": ["taskmarket_escrow", "x402_direct"],
+    "publicationEndpoint": "POST /api/exchange/research-bounties",
+    "fundingIntentEndpointTemplate": "POST /api/exchange/research-bounties/{bountyId}/funding-intents",
+    "fundsCustodiedByAgentWex": false,
+    "selfAttestedPaymentAccepted": false,
+    "communityPublicationRequiresModeration": true,
+    "workOpensOnlyAfterVerifiedGoal": true,
+    "fundingChangesEvidenceWeight": false
   },
   "economics": {
     "signupCredits": 0,

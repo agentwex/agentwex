@@ -44,6 +44,7 @@ const softwareSchema = {
     "Claude Code, Codex, and Gemini CLI runtime adapters",
     "Native normalization for explicitly mapped OpenInference TOOL spans",
     "Privacy-preserving research bounties with review-only quality triage",
+    "Authenticated community bounties with verified external USDC funding",
   ],
   publisher: { "@id": "https://agentwex.xyz/#organization" },
 };

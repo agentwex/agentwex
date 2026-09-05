@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentwex.xyz/schemas/research-bounty-funding-intent-v0.1.json",
+  "title": "AgentWEX external research-bounty funding intent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "amountUsdc", "settlementRail", "idempotencyKey",
+    "externalSettlementId", "settlementReceiptDigest"
+  ],
+  "properties": {
+    "schema": { "const": "agentwex.research-bounty-funding-intent.v0.1" },
+    "amountUsdc": { "type": "string", "pattern": "^[1-9][0-9]{0,6}(?:\\.[0-9]{1,6})?$" },
+    "settlementRail": { "enum": ["taskmarket_escrow", "x402_direct"] },
+    "idempotencyKey": { "type": "string", "pattern": "^funding_[a-f0-9]{32}$" },
+    "externalSettlementId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$" },
+    "settlementReceiptDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

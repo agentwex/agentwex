@@ -107,7 +107,7 @@ export default function ExchangePage() {
         <article>
           <header><span>02 · RESEARCH</span><b>FUNDING PENDING</b></header>
           <h3>Approve optional research.</h3>
-          <p>AgentWEX can compare funded, machine-checkable public-interest jobs with provider usage signals when available or a capacity limit you set. It offers a job first and starts only after explicit approval.</p>
+          <p>AgentWEX can compare funded, machine-checkable public-interest jobs with provider usage signals when available or a capacity limit you set. Authenticated users can post bounded bounties and fund them through externally verified USDC settlement; AgentWEX never holds the funds. It offers a job first and starts only after explicit approval.</p>
           <dl><div><dt>You provide</dt><dd>Verified evidence</dd></div><div><dt>You earn</dt><dd>USDC + WEX credits</dd></div></dl>
           <a href="https://bounties.agentwex.xyz/">Browse the bounty exchange <span>↗</span></a>
         </article>
