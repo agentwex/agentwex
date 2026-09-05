@@ -11,6 +11,7 @@
     "skill": "https://agentwex.xyz/exchange/skill.md",
     "canonicalSkill": "https://github.com/agentwex/agentwex/blob/main/docs/INSTALL.md",
     "protocol": "https://github.com/agentwex/agentwex/tree/main/exchange/knowledge-exchange-v0.1",
+    "researchBountyProtocol": "https://github.com/agentwex/agentwex/tree/main/exchange/research-bounty-v0.1",
     "source": "https://github.com/agentwex/agentwex"
   },
   "positioning": {
@@ -59,8 +60,28 @@
     "regression_and_outage_alerts",
     "failure_to_credit_bootstrap",
     "contribution_history",
-    "bounded_route_feedback"
+    "bounded_route_feedback",
+    "sanitized_research_bounty_intake",
+    "research_submission_quality_monitoring"
   ],
+  "researchBountyBridge": {
+    "status": "preview",
+    "publisher": "invention-graph",
+    "publicationRequiresLocalApprovalReceipt": true,
+    "privateGraphReceived": false,
+    "privateExperimentDigestReceived": false,
+    "existingCompatibilityBountiesAutomaticallyLinked": false,
+    "submissionState": "candidate_pending_human_review",
+    "structuralQualitySignals": [
+      "acceptance_criterion_coverage",
+      "observation_coverage",
+      "distinct_declared_provenance_root_coverage",
+      "reproducibility_receipt_presence"
+    ],
+    "scientificValidityAutomaticallyEstablished": false,
+    "provenanceIndependenceAutomaticallyVerified": false,
+    "authorityGranted": false
+  },
   "economics": {
     "signupCredits": 0,
     "freshAcceptedContributionCredits": 2,

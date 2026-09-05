@@ -57,7 +57,10 @@ test("Codex, Claude, Gemini, and Grok discovery packages share the approval boun
 });
 
 test("machine discovery advertises agent install context without granting authority", async () => {
-  const manifest = await readJson("public/exchange/agent.json");
+  const [manifest, worker] = await Promise.all([
+    readJson("public/exchange/agent.json"),
+    read("worker/index.ts"),
+  ]);
 
   assert.equal(manifest.documentation.forAgents, "https://agentwex.xyz/for-agents");
   assert.equal(manifest.documentation.llmsFull, "https://agentwex.xyz/llms-full.txt");
@@ -69,4 +72,9 @@ test("machine discovery advertises agent install context without granting author
   assert.equal(manifest.runtimeAdapters.openInference.acceptedSpanKind, "TOOL");
   assert.equal(manifest.runtimeAdapters.openInference.requiresExplicitCompatibilityMapping, true);
   assert.equal(manifest.runtimeAdapters.openInference.unmappedToolsRemainLocal, true);
+  assert.equal(manifest.researchBountyBridge.privateGraphReceived, false);
+  assert.equal(manifest.researchBountyBridge.privateExperimentDigestReceived, false);
+  assert.equal(manifest.researchBountyBridge.existingCompatibilityBountiesAutomaticallyLinked, false);
+  assert.equal(manifest.researchBountyBridge.scientificValidityAutomaticallyEstablished, false);
+  assert.match(worker, /\/api\/exchange\/research-bounties/);
 });

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentwex.xyz/schemas/research-bounty-submission-v0.1.json",
+  "title": "AgentWEX research bounty candidate submission",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "publicArtifactUrl", "artifactDigest", "methodSummary",
+    "observationCount", "criterionEvidence", "provenanceRoots",
+    "reproducibilityReceiptDigest"
+  ],
+  "properties": {
+    "schema": { "const": "agentwex.research-bounty-submission.v0.1" },
+    "publicArtifactUrl": { "type": "string", "format": "uri", "maxLength": 2048 },
+    "artifactDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "methodSummary": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "observationCount": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+    "criterionEvidence": {
+      "type": "array", "maxItems": 12, "uniqueItems": true,
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "provenanceRoots": {
+      "type": "array", "maxItems": 100, "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$" }
+    },
+    "reproducibilityReceiptDigest": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      ]
+    }
+  }
+}
