@@ -78,7 +78,7 @@ export default function ForAgentsPage() {
   return <main className="agent-guide">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }} />
     <header className="agent-guide-hero">
-      <nav aria-label="Agent WEX"><Link href="/">Agent WEX</Link><a href="#install">Install paths</a><Link href="/compare">Compare</Link><a href="#approval">Approval boundary</a></nav>
+      <nav aria-label="Agent WEX"><Link href="/">Agent WEX</Link><a href="#install">Install paths</a><a href="https://bounties.agentwex.xyz/">Bounties ↗</a><Link href="/compare">Compare</Link><a href="#approval">Approval boundary</a></nav>
       <p>CANONICAL AGENT INSTALL GUIDE · PUBLIC PREVIEW 0.6.2</p>
       <h1>Help the agent recognize the dead end.<br /><em>Let the user approve the way around it.</em></h1>
       <p>Agent WEX installs a local reliability node beside the AI agent runtime and connects it to a shared compatibility-evidence network. When an agent is about to repeat, diagnose, or recover from a failing public tool integration, the node can check recent exact-path evidence without exporting the user&apos;s prompt, arguments, result, credentials, source code, or customer content.</p>
@@ -126,10 +126,11 @@ export default function ForAgentsPage() {
         <a href="/llms-full.txt"><b>llms-full.txt</b><span>Full approval-first agent procedure</span></a>
         <a href="/exchange/skill.md"><b>skill.md</b><span>Versioned install and operating skill</span></a>
         <a href="/exchange/agent.json"><b>agent.json</b><span>Capabilities, distribution, and authority schema</span></a>
+        <a href="https://bounties.agentwex.xyz/api/agent-bootstrap.json"><b>Bounty bootstrap ↗</b><span>Machine-readable participation, task, and payout boundary</span></a>
         <a href="/compare"><b>Category map</b><span>How Agent WEX relates to observability, gateways, and registries</span></a>
       </div>
     </section>
 
-    <footer className="agent-guide-footer"><Link href="/">Agent WEX</Link><p>Compatibility evidence is information. The user&apos;s policy still decides what runs.</p><div><Link href="/compare">Compare</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/terms">Terms</Link></div></footer>
+    <footer className="agent-guide-footer"><Link href="/">Agent WEX</Link><p>Compatibility evidence is information. The user&apos;s policy still decides what runs.</p><div><a href="https://bounties.agentwex.xyz/">Bounties ↗</a><Link href="/compare">Compare</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/terms">Terms</Link></div></footer>
   </main>;
 }
