@@ -122,6 +122,7 @@ controllers or proof that an execution genuinely occurred.
 - `exchange/knowledge-exchange-v0.1/` — bounded protocol and schemas
 - `db/` and `migrations/` — exchange API, ledger, and D1 schema
 - `docs/` — privacy, security, protocol, and release boundaries
+- `openai-plugin/` — submission-ready Agent WEX plugin package and discovery evaluation set
 - `docs/DECISION-RELATIVE-INDEPENDENCE.md` — explicit proximal-root cuts, material sensitivity, and the unchanged public controller-group policy
 - `docs/VERIFIER-OPERATIONS.md` — hosted verification policy and operator runbook
 - `tests/` — installer, minimization, exchange, lifecycle, and adapter tests

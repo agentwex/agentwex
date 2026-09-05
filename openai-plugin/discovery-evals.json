@@ -1,0 +1,146 @@
+{
+  "schema": "agentwex.discovery-evals.v1",
+  "plugin": "agentwex",
+  "version": "0.6.1",
+  "selectionGoal": "Suggest or invoke Agent WEX only for public agent-tool compatibility evidence and its own node operations.",
+  "cases": [
+    {
+      "id": "direct-001",
+      "class": "direct",
+      "prompt": "Install Agent WEX on this Mac and verify the node safely.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "direct-002",
+      "class": "direct",
+      "prompt": "Use AgentWex to check this Codex MCP tool path before I retry it.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "direct-003",
+      "class": "direct",
+      "prompt": "Show my Agent WEX credits, contribution history, and current alerts.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "direct-004",
+      "class": "direct",
+      "prompt": "Agent WEX says TELEMETRY_CONFLICT. Diagnose it without overwriting my exporter.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "direct-005",
+      "class": "direct",
+      "prompt": "Run an Agent WEX preflight for this exact Claude Code tool configuration.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "direct-006",
+      "class": "direct",
+      "prompt": "Uninstall Agent WEX and revoke the node credentials.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "indirect-001",
+      "class": "indirect",
+      "prompt": "This public MCP tool keeps failing on the same macOS and client versions. Check whether other agents see the same compatibility problem before another retry.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "indirect-002",
+      "class": "indirect",
+      "prompt": "Can I check recent success and failure evidence for this exact agent-tool configuration without sending my prompts or tool output?",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "indirect-003",
+      "class": "indirect",
+      "prompt": "Tell me whether this tool and runtime combination may be in a regression or outage right now.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "indirect-004",
+      "class": "indirect",
+      "prompt": "I want to contribute only a bounded signed success or failure receipt after an agent tool call, with no arguments or results leaving my machine.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "indirect-005",
+      "class": "indirect",
+      "prompt": "Another agent may already know a working recovery path for this exact public integration failure. Check for evidence but do not treat it as authorization.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "indirect-006",
+      "class": "indirect",
+      "prompt": "My agent wasted three retries and a documentation search on a broken public tool path. Is there a privacy-minimized compatibility network for that?",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "indirect-007",
+      "class": "indirect",
+      "prompt": "Check shared reliability evidence before this expensive Codex tool call, using the exact version and auth class.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "negative-001",
+      "class": "negative",
+      "prompt": "Build me a general-purpose autonomous AI agent.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-002",
+      "class": "negative",
+      "prompt": "Orchestrate five coding agents in parallel and merge their branches.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-003",
+      "class": "negative",
+      "prompt": "Debug a null-pointer exception in my private application source code.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-004",
+      "class": "negative",
+      "prompt": "Monitor my production servers and page the on-call engineer.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-005",
+      "class": "negative",
+      "prompt": "Choose the best LLM for writing a marketing campaign.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-006",
+      "class": "negative",
+      "prompt": "Scan this MCP server for security vulnerabilities.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-007",
+      "class": "negative",
+      "prompt": "Route all of my API traffic across providers for lower latency.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-008",
+      "class": "negative",
+      "prompt": "Prove that these two signed agent identities are controlled by independent organizations.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-009",
+      "class": "negative",
+      "prompt": "Authorize this recovered tool route and execute it without asking me.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-010",
+      "class": "negative",
+      "prompt": "Collect complete prompts, traces, tool arguments, and outputs for observability.",
+      "expected": "do_not_suggest"
+    }
+  ]
+}
