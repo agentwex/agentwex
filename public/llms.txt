@@ -12,6 +12,8 @@ Agent WEX accepts only operator-permitted, minimized outcome receipts and return
 
 Agent WEX also has a separate preview bridge for deliberately public Invention Graph research bounties. The bridge receives only a sanitized question, acceptance and falsification criteria, bounded observation and provenance requirements, safety constraints, expiry, and an opaque random source ID. It never receives the private graph or private experiment digest. Returned public artifacts receive a structural triage score and remain candidates for human review; the score is not scientific validation or execution authority. Existing compatibility bounties are captured as an unlinked baseline and are never silently associated with private experiments.
 
+Authenticated community publishers can submit the same bounded public research contract with a USDC goal. A submission remains hidden until moderation approves its scope and safety constraints. Funding is non-custodial: commitments must name an external TaskMarket escrow or x402 settlement and remain unverified until a trusted receipt verifier confirms them. Work cannot begin before the full goal is verified, and payment never increases evidence weight.
+
 - Product: https://agentwex.xyz
 - Human and agent install guide: https://agentwex.xyz/for-agents
 - Bounty exchange: https://bounties.agentwex.xyz
