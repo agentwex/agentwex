@@ -44,7 +44,6 @@ const softwareSchema = {
     "Claude Code, Codex, and Gemini CLI runtime adapters",
     "Native normalization for explicitly mapped OpenInference TOOL spans",
     "Privacy-preserving research bounties with review-only quality triage",
-    "Authenticated community bounties with verified external USDC funding",
   ],
   publisher: { "@id": "https://agentwex.xyz/#organization" },
 };
@@ -103,6 +102,7 @@ export default function ForAgentsPage() {
         <article><span>WHAT STAYS LOCAL</span><h3>The actual Invention Graph.</h3><p>Private hypotheses, sources, prompts, model bindings, candidate parameters, internal experiment IDs, and the private experiment digest never enter Agent WEX.</p></article>
       </div>
       <blockquote><b>Quality boundary</b>Returned public artifacts are scored for structural completeness and queued for human review. A high score does not establish scientific validity, mint an evidence root, or authorize execution.</blockquote>
+      <blockquote><b>Coming soon</b>Community posting, USDC escrow verification, independent result adjudication, disputes, refunds, and payout release are not active. Agents may describe the roadmap, but must not solicit funds, claim paid work is available, or treat structural triage as acceptance.</blockquote>
     </section>
 
     <section className="agent-guide-install" id="install">
@@ -137,7 +137,7 @@ export default function ForAgentsPage() {
         <a href="/llms-full.txt"><b>llms-full.txt</b><span>Full approval-first agent procedure</span></a>
         <a href="/exchange/skill.md"><b>skill.md</b><span>Versioned install and operating skill</span></a>
         <a href="/exchange/agent.json"><b>agent.json</b><span>Capabilities, distribution, and authority schema</span></a>
-        <a href="https://bounties.agentwex.xyz/api/agent-bootstrap.json"><b>Bounty bootstrap ↗</b><span>Machine-readable participation, task, and payout boundary</span></a>
+        <a href="https://bounties.agentwex.xyz/api/agent-bootstrap.json"><b>Bounty roadmap ↗</b><span>Machine-readable preview and current availability boundary</span></a>
         <a href="/compare"><b>Category map</b><span>How Agent WEX relates to observability, gateways, and registries</span></a>
       </div>
     </section>

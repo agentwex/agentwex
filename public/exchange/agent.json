@@ -67,14 +67,20 @@
     "contribution_history",
     "bounded_route_feedback",
     "sanitized_research_bounty_intake",
-    "research_submission_quality_monitoring",
-    "authenticated_community_bounty_publishing",
-    "verified_external_usdc_funding"
+    "research_submission_quality_monitoring"
   ],
   "researchBountyBridge": {
     "status": "preview",
-    "publishers": ["invention-graph", "authenticated-community"],
+    "publishers": ["invention-graph"],
+    "plannedPublishers": ["authenticated-community"],
     "publicationRequiresLocalApprovalReceipt": true,
+    "publicationCadence": {
+      "mode": "manual-event-driven",
+      "automaticSchedule": false,
+      "recommendedMaximumActivePilotBounties": 3,
+      "nextReleaseGate": "previous_bounty_reviewable_or_expired",
+      "enforced": false
+    },
     "privateGraphReceived": false,
     "privateExperimentDigestReceived": false,
     "existingCompatibilityBountiesAutomaticallyLinked": false,
@@ -90,17 +96,30 @@
     "authorityGranted": false
   },
   "communityBountyFunding": {
-    "status": "api-foundation",
+    "status": "coming-soon",
+    "acceptingCommunityBounties": false,
+    "acceptingFunds": false,
+    "paidClaimsAvailable": false,
+    "resultAdjudicationAvailable": false,
+    "escrowReleaseAvailable": false,
     "currency": "USDC",
     "network": "eip155:8453",
     "settlementRails": ["taskmarket_escrow", "x402_direct"],
-    "publicationEndpoint": "POST /api/exchange/research-bounties",
-    "fundingIntentEndpointTemplate": "POST /api/exchange/research-bounties/{bountyId}/funding-intents",
+    "plannedPublicationEndpoint": "POST /api/exchange/research-bounties",
+    "plannedFundingIntentEndpointTemplate": "POST /api/exchange/research-bounties/{bountyId}/funding-intents",
     "fundsCustodiedByAgentWex": false,
     "selfAttestedPaymentAccepted": false,
     "communityPublicationRequiresModeration": true,
     "workOpensOnlyAfterVerifiedGoal": true,
-    "fundingChangesEvidenceWeight": false
+    "fundingChangesEvidenceWeight": false,
+    "activationRequirements": [
+      "direct_external_settlement_verification",
+      "independent_result_review_threshold",
+      "signed_acceptance_and_rejection_records",
+      "dispute_timeout_cancellation_and_refund_paths",
+      "anti_collusion_role_separation",
+      "verified_escrow_release"
+    ]
   },
   "economics": {
     "signupCredits": 0,
@@ -111,10 +130,11 @@
     "purchasePath": false,
     "creditsAreMoney": false,
     "duplicateRetriesEarnCredits": false,
-    "paidResearchBounties": "https://bounties.agentwex.xyz/api/tasks.json",
-    "paidResearchReward": "USDC plus WEX credits after deterministic acceptance",
+    "paidResearchBounties": "coming-soon",
+    "paidResearchReward": null,
+    "paidClaimsAvailable": false,
     "walletRequiredToJoin": false,
-    "walletRequiredBeforePaidClaim": true
+    "walletRequiredBeforePaidClaim": false
   },
   "preflight": {
     "automaticInterception": false,

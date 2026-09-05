@@ -4,6 +4,15 @@ import { createResearchBountyFundingIntent, getResearchBountyQuality, listResear
 const json = (body, status = 200, headers = {}) => Response.json(body, { status, headers: { "cache-control": "no-store", ...headers } });
 const maximumJsonBytes = 65_536;
 
+const communityBountyComingSoon = () => json({
+  error: "community_bounty_funding_coming_soon",
+  status: "coming_soon",
+  acceptingCommunityBounties: false,
+  acceptingFunds: false,
+  paidClaimsAvailable: false,
+  escrowReleaseAvailable: false,
+}, 503, { "retry-after": "86400" });
+
 async function boundedJson(request) {
   const declared = Number(request.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > maximumJsonBytes) return { error: "request_body_too_large", status: 413 };
@@ -57,9 +66,20 @@ export async function handleExchangeApi(request, db, options = {}) {
   }
 
   if (url.pathname === "/api/exchange/research-bounties" && request.method === "GET") {
+    const communityBountiesEnabled = options.communityBountiesEnabled === true;
+    const listed = await listResearchBounties(db, { limit: url.searchParams.get("limit") ?? 50 });
     return json({
       schema: "agentwex.research-bounty-list.v0.1",
-      bounties: await listResearchBounties(db, { limit: url.searchParams.get("limit") ?? 50 }),
+      bounties: communityBountiesEnabled
+        ? listed
+        : listed.filter((bounty) => bounty.sourceSystem !== "agentwex-community"),
+      communityBountyFunding: {
+        status: communityBountiesEnabled ? "enabled" : "coming_soon",
+        acceptingCommunityBounties: communityBountiesEnabled,
+        acceptingFunds: communityBountiesEnabled,
+        paidClaimsAvailable: false,
+        escrowReleaseAvailable: false,
+      },
       privateGraphExposed: false,
       authorityGranted: false,
     }, 200, { "cache-control": "public, max-age=60" });
@@ -254,6 +274,7 @@ export async function handleExchangeApi(request, db, options = {}) {
     const body = await limitedJson(request);
     if (body instanceof Response) return body;
     if (body?.schema === "agentwex.community-research-bounty.v0.1") {
+      if (options.communityBountiesEnabled !== true) return communityBountyComingSoon();
       const publicationRate = await consumeRateLimit(
         db, `community-bounty:${agent.id}`, 10, 86_400,
       );
@@ -283,6 +304,7 @@ export async function handleExchangeApi(request, db, options = {}) {
 
   const researchFundingMatch = url.pathname.match(/^\/api\/exchange\/research-bounties\/(researchbounty_[a-f0-9]{32})\/funding-intents$/);
   if (researchFundingMatch && request.method === "POST") {
+    if (options.communityBountiesEnabled !== true) return communityBountyComingSoon();
     const body = await limitedJson(request);
     if (body instanceof Response) return body;
     const fundingRate = await consumeRateLimit(

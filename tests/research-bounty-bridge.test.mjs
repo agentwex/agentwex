@@ -115,6 +115,8 @@ function fundingIntent(amount, suffix) {
   };
 }
 
+const communityPreviewOptions = { communityBountiesEnabled: true };
+
 test("research bounty validation fails closed on private context and receipt tampering", async () => {
   const body = await bountyBody();
   assert.equal(body.publicationReceiptDigest, "sha256:0070a02d2d3f19d43434f6cb83282df645bc2f3db9e41b949eac4d2b02934e3c");
@@ -202,7 +204,38 @@ test("approved public bounty crosses the bridge and quality remains review-only"
   assert.equal(quality.authorityGranted, false);
 });
 
-test("community bounties open only after externally verified funding", async () => {
+test("community bounty publishing and funding fail closed while coming soon", async () => {
+  const db = d1TestDatabase();
+  const publisher = await signup(db, "community-coming-soon-publisher");
+  const body = await communityBountyBody();
+
+  const publication = await handleExchangeApi(request("/api/exchange/research-bounties", {
+    method: "POST", token: publisher.apiKey, body,
+  }), db);
+  assert.equal(publication.status, 503);
+  assert.deepEqual(await publication.json(), {
+    error: "community_bounty_funding_coming_soon",
+    status: "coming_soon",
+    acceptingCommunityBounties: false,
+    acceptingFunds: false,
+    paidClaimsAvailable: false,
+    escrowReleaseAvailable: false,
+  });
+
+  const funding = await handleExchangeApi(request(
+    `/api/exchange/research-bounties/researchbounty_${"a".repeat(32)}/funding-intents`,
+    { method: "POST", token: publisher.apiKey, body: fundingIntent("1.00", "c") },
+  ), db);
+  assert.equal(funding.status, 503);
+
+  const listing = await handleExchangeApi(request("/api/exchange/research-bounties"), db);
+  const listed = await listing.json();
+  assert.equal(listed.communityBountyFunding.status, "coming_soon");
+  assert.equal(listed.communityBountyFunding.acceptingFunds, false);
+  assert.equal(listed.communityBountyFunding.paidClaimsAvailable, false);
+});
+
+test("disabled community bounty foundation opens only after externally verified funding", async () => {
   const db = d1TestDatabase();
   const publisher = await signup(db, "community-publisher");
   const firstFunder = await signup(db, "community-funder-a");
@@ -212,7 +245,7 @@ test("community bounties open only after externally verified funding", async () 
 
   const publishedResponse = await handleExchangeApi(request("/api/exchange/research-bounties", {
     method: "POST", token: publisher.apiKey, body,
-  }), db);
+  }), db, communityPreviewOptions);
   assert.equal(publishedResponse.status, 201);
   const published = await publishedResponse.json();
   assert.equal(published.status, "pending_review");
@@ -224,7 +257,7 @@ test("community bounties open only after externally verified funding", async () 
 
   const hiddenList = await handleExchangeApi(request("/api/exchange/research-bounties", {
     token: solver.apiKey,
-  }), db);
+  }), db, communityPreviewOptions);
   assert.equal((await hiddenList.json()).bounties.length, 0);
 
   const moderation = {
@@ -235,19 +268,19 @@ test("community bounties open only after externally verified funding", async () 
   const selfModeration = await handleExchangeApi(request(
     "/api/exchange/internal/research-bounties/moderate",
     { method: "POST", token: publisher.apiKey, body: moderation },
-  ), db, { adminToken: "trusted-admin" });
+  ), db, { ...communityPreviewOptions, adminToken: "trusted-admin" });
   assert.equal(selfModeration.status, 401);
   const moderated = await handleExchangeApi(request(
     "/api/exchange/internal/research-bounties/moderate",
     { method: "POST", token: "trusted-admin", body: moderation },
-  ), db, { adminToken: "trusted-admin" });
+  ), db, { ...communityPreviewOptions, adminToken: "trusted-admin" });
   assert.equal(moderated.status, 200);
   assert.equal((await moderated.json()).status, "funding_pending");
 
   const prematureSubmission = await handleExchangeApi(request(
     `/api/exchange/research-bounties/${published.bountyId}/submissions`,
     { method: "POST", token: solver.apiKey, body: {} },
-  ), db);
+  ), db, communityPreviewOptions);
   assert.equal(prematureSubmission.status, 409);
   assert.deepEqual(await prematureSubmission.json(), { error: "research_bounty_not_open" });
 
@@ -255,7 +288,7 @@ test("community bounties open only after externally verified funding", async () 
   const firstIntentResponse = await handleExchangeApi(request(
     `/api/exchange/research-bounties/${published.bountyId}/funding-intents`,
     { method: "POST", token: firstFunder.apiKey, body: firstIntentBody },
-  ), db);
+  ), db, communityPreviewOptions);
   assert.equal(firstIntentResponse.status, 201);
   const firstIntent = await firstIntentResponse.json();
   assert.equal(firstIntent.status, "awaiting_verification");
@@ -265,7 +298,7 @@ test("community bounties open only after externally verified funding", async () 
   const replayResponse = await handleExchangeApi(request(
     `/api/exchange/research-bounties/${published.bountyId}/funding-intents`,
     { method: "POST", token: firstFunder.apiKey, body: firstIntentBody },
-  ), db);
+  ), db, communityPreviewOptions);
   assert.equal(replayResponse.status, 200);
   assert.equal((await replayResponse.json()).idempotentReplay, true);
 
@@ -278,19 +311,19 @@ test("community bounties open only after externally verified funding", async () 
   const selfVerification = await handleExchangeApi(request(
     "/api/exchange/internal/research-bounty-funding/verify",
     { method: "POST", token: firstFunder.apiKey, body: verification },
-  ), db, { verifierToken: "trusted-verifier" });
+  ), db, { ...communityPreviewOptions, verifierToken: "trusted-verifier" });
   assert.equal(selfVerification.status, 401);
 
   const verifiedFirst = await handleExchangeApi(request(
     "/api/exchange/internal/research-bounty-funding/verify",
     { method: "POST", token: "trusted-verifier", body: verification },
-  ), db, { verifierToken: "trusted-verifier" });
+  ), db, { ...communityPreviewOptions, verifierToken: "trusted-verifier" });
   assert.equal(verifiedFirst.status, 200);
   assert.equal((await verifiedFirst.json()).paymentVerified, true);
 
   const halfwayList = await handleExchangeApi(request("/api/exchange/research-bounties", {
     token: publisher.apiKey,
-  }), db);
+  }), db, communityPreviewOptions);
   const halfway = (await halfwayList.json()).bounties[0];
   assert.equal(halfway.status, "funding_pending");
   assert.equal(halfway.funding.verifiedUsdc, "10");
@@ -301,7 +334,7 @@ test("community bounties open only after externally verified funding", async () 
   const secondIntentResponse = await handleExchangeApi(request(
     `/api/exchange/research-bounties/${published.bountyId}/funding-intents`,
     { method: "POST", token: secondFunder.apiKey, body: secondIntentBody },
-  ), db);
+  ), db, communityPreviewOptions);
   const secondIntent = await secondIntentResponse.json();
   const verifiedSecond = await handleExchangeApi(request(
     "/api/exchange/internal/research-bounty-funding/verify",
@@ -311,10 +344,12 @@ test("community bounties open only after externally verified funding", async () 
       verifierReference: "taskmarket:verification:second",
       verifiedAt: "2026-09-05T22:01:00.000Z",
     } },
-  ), db, { verifierToken: "trusted-verifier" });
+  ), db, { ...communityPreviewOptions, verifierToken: "trusted-verifier" });
   assert.equal(verifiedSecond.status, 200);
 
-  const fundedList = await handleExchangeApi(request("/api/exchange/research-bounties"), db);
+  const fundedList = await handleExchangeApi(
+    request("/api/exchange/research-bounties"), db, communityPreviewOptions,
+  );
   const funded = (await fundedList.json()).bounties[0];
   assert.equal(funded.status, "open");
   assert.equal(funded.funding.status, "funded");
