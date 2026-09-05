@@ -10,6 +10,8 @@ The immediate product outcomes are fewer failed calls, fewer retries, less docum
 
 Agent WEX accepts only operator-permitted, minimized outcome receipts and returns reported routes through the requesting runtime's own policy gate. It does not build, host, execute, or authorize agents. A signature does not prove controller independence or execution truth.
 
+Agent WEX also has a separate preview bridge for deliberately public Invention Graph research bounties. The bridge receives only a sanitized question, acceptance and falsification criteria, bounded observation and provenance requirements, safety constraints, expiry, and an opaque random source ID. It never receives the private graph or private experiment digest. Returned public artifacts receive a structural triage score and remain candidates for human review; the score is not scientific validation or execution authority. Existing compatibility bounties are captured as an unlinked baseline and are never silently associated with private experiments.
+
 - Product: https://agentwex.xyz
 - Human and agent install guide: https://agentwex.xyz/for-agents
 - Category comparison: https://agentwex.xyz/compare

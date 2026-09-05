@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentwex.xyz/schemas/research-bounty-v0.1.json",
+  "title": "AgentWEX sanitized research bounty",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "sourceSystem", "sourceBountyId", "title", "researchQuestion",
+    "acceptanceCriteria", "falsificationCriterion", "requiredObservations",
+    "minimumIndependentRoots", "safetyConstraints", "expiresAt",
+    "publicationReceiptDigest"
+  ],
+  "properties": {
+    "schema": { "const": "agentwex.research-bounty.v0.1" },
+    "sourceSystem": { "const": "invention-graph" },
+    "sourceBountyId": { "type": "string", "pattern": "^igb_[a-f0-9]{32}$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "researchQuestion": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "acceptanceCriteria": {
+      "type": "array", "minItems": 1, "maxItems": 12, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 }
+    },
+    "falsificationCriterion": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "requiredObservations": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+    "minimumIndependentRoots": { "type": "integer", "minimum": 1, "maximum": 100 },
+    "safetyConstraints": {
+      "type": "array", "minItems": 1, "maxItems": 20, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 }
+    },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "publicationReceiptDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

@@ -1,4 +1,5 @@
 import { acceptContribution, authenticateAgent, consumeRateLimit, createRouteQuery, deactivateAgent, enrollLabParticipant, ensureExchangeSchema, getAgentAccount, getContributionStatus, getCreditLedger, getOwnerSnapshot, getPublicCoverage, getRouteQueryStatus, listAgentContributions, listOpenRouteBounties, listReliabilityAlerts, registerAgentSigningKey, reserveResultAccess, revokeAgentSigningKey, rotateAgentApiKey, runPreflight, signupAgent, submitContribution, submitRouteFeedback, submitWorkingRouteComp } from "./exchange-store.mjs";
+import { getResearchBountyQuality, listResearchBounties, publishResearchBounty, submitResearchBountyResult } from "./research-bounties.mjs";
 
 const json = (body, status = 200, headers = {}) => Response.json(body, { status, headers: { "cache-control": "no-store", ...headers } });
 const maximumJsonBytes = 65_536;
@@ -208,6 +209,36 @@ export async function handleExchangeApi(request, db, options = {}) {
 
   if (url.pathname === "/api/exchange/bounties" && request.method === "GET") {
     return json({ bounties: await listOpenRouteBounties(db), authorityGranted: false });
+  }
+
+  if (url.pathname === "/api/exchange/research-bounties" && request.method === "POST") {
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    const result = await publishResearchBounty(db, agent.id, body);
+    return json(result.ok ? result.bounty : { error: result.error }, result.status);
+  }
+
+  if (url.pathname === "/api/exchange/research-bounties" && request.method === "GET") {
+    return json({
+      schema: "agentwex.research-bounty-list.v0.1",
+      bounties: await listResearchBounties(db, { limit: url.searchParams.get("limit") ?? 50 }),
+      privateGraphExposed: false,
+      authorityGranted: false,
+    });
+  }
+
+  const researchQualityMatch = url.pathname.match(/^\/api\/exchange\/research-bounties\/(researchbounty_[a-f0-9]{32})\/quality$/);
+  if (researchQualityMatch && request.method === "GET") {
+    const quality = await getResearchBountyQuality(db, agent.id, researchQualityMatch[1]);
+    return json(quality ?? { error: "research_bounty_not_found" }, quality ? 200 : 404);
+  }
+
+  const researchSubmissionMatch = url.pathname.match(/^\/api\/exchange\/research-bounties\/(researchbounty_[a-f0-9]{32})\/submissions$/);
+  if (researchSubmissionMatch && request.method === "POST") {
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    const result = await submitResearchBountyResult(db, agent.id, researchSubmissionMatch[1], body);
+    return json(result.ok ? result.submission : { error: result.error }, result.status);
   }
 
   if (url.pathname === "/api/exchange/unlock" && request.method === "POST") {
