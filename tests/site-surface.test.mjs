@@ -18,7 +18,8 @@ test("the standalone site makes prevention, failure value, and scope explicit", 
   assert.match(page, /className="awe-global-nav"/);
   assert.match(page, /https:\/\/bounties\.agentwex\.xyz\//);
   assert.match(page, /THE USEFUL AGENT WORK LOOP/);
-  assert.match(page, /Every run can make/);
+  assert.match(page, /One setup/);
+  assert.match(page, /Research never starts without your approval/);
   assert.doesNotMatch(page, /awe-launch-strip/);
   assert.match(page, /<AweCommand id="install"/);
   assert.match(page, /Aggregate preflight is free/);
