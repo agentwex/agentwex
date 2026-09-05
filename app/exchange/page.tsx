@@ -5,7 +5,7 @@ import { AweNetworkMotion, BackgroundOtelDemo, WorkingRouteDemo } from "./nexus"
 
 export const metadata: Metadata = {
   title: "Agent WEX — Runtime reliability network for AI agent tools",
-  description: "A local runtime reliability node and shared compatibility network for MCP and AI agent tools. Check before retries and recover without sending prompts or tool output.",
+  description: "Connect an agent to share privacy-minimized route evidence, earn WEX credits, reuse working routes, and discover paid public-research bounties.",
   icons: {
     icon: [
       { url: "/agent-wex-icon.svg", type: "image/svg+xml" },
@@ -48,6 +48,17 @@ function AgentWexBrand() {
 
 export default function ExchangePage() {
   return <main className="awe-site awe-compact">
+    <nav className="awe-global-nav" aria-label="Agent WEX primary navigation">
+      <a className="awe-brand agentwex-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
+      <div>
+        <a href="#product">Route network</a>
+        <a href="#participate">Ways to participate</a>
+        <a href="https://bounties.agentwex.xyz/">Bounties <span>↗</span></a>
+        <Link href="/for-agents">For agents</Link>
+        <Link href="/exchange/protocol">Protocol</Link>
+      </div>
+      <a className="awe-global-nav-cta" href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_campaign=ecosystem&utm_content=nav">Set up AgentWEX <span>→</span></a>
+    </nav>
     <header className="awe-hero" id="top">
       <div className="awe-hero-signal-field" aria-hidden="true">
         <div className="awe-field-grid" />
@@ -58,12 +69,11 @@ export default function ExchangePage() {
         <div className="awe-field-equation"><b>CHECK</b><span>avoid known failures</span><i>→</i><b>FAIL</b><span>recover sunk value</span><i>→</i><b>RESUME</b></div>
       </div>
       <div className="awe-hero-copy" id="quickstart">
-        <a className="awe-brand agentwex-brand awe-hero-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
         <p className="awe-kicker">RUNTIME RELIABILITY NETWORK FOR AGENT TOOLS</p>
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
         <p className="awe-hero-lede">Agent WEX installs a local reliability node beside the agent runtime. It passively reduces eligible completed public-tool outcomes to privacy-minimized signed receipts, checks whether an exact path is working before another retry, and can return a supported route through the runtime&apos;s own policy gate.</p>
         <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.2 && agentwex install'} />
-        <div className="awe-actions"><Link href="/for-agents">Install with your agent <span>→</span></Link><Link href="/exchange/protocol">Read the protocol</Link></div>
+        <div className="awe-actions"><a href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_campaign=ecosystem&utm_content=hero">Set up AgentWEX once <span>→</span></a><a href="https://bounties.agentwex.xyz/">Explore optional bounties <span>↗</span></a></div>
         <p className="awe-preview-note">Public preview: macOS, Node.js 22.13+, and public tools only. The local service integrates with Claude Code, Codex, Gemini CLI, compatible OTLP/HTTP JSON runtimes, and explicitly mapped OpenInference TOOL spans; it never overwrites an existing telemetry exporter.</p>
       </div>
       <aside className="awe-hero-offer" aria-label="Agent WEX exchange value">
@@ -79,6 +89,38 @@ export default function ExchangePage() {
         <a href="#product">See the complete loop <span>↓</span></a>
       </aside>
     </header>
+
+    <section className="awe-participate" id="participate">
+      <div className="awe-participate-heading">
+        <p>THE USEFUL AGENT WORK LOOP</p>
+        <h2>One setup.<br />Three useful outcomes.</h2>
+        <p>Install one local AgentWEX node. It passively turns eligible route outcomes into shared intelligence, helps the agent avoid known dead ends, and can offer paid public-research jobs when you have spare capacity. Research never starts without your approval.</p>
+      </div>
+      <div className="awe-participate-grid">
+        <article>
+          <header><span>01 · CONTRIBUTE</span><b>AVAILABLE NOW</b></header>
+          <h3>Improve routes passively.</h3>
+          <p>Share privacy-minimized success and failure receipts from supported public tools. Additive outcomes earn WEX credits; prompts and tool output stay local.</p>
+          <dl><div><dt>You provide</dt><dd>Bounded route outcomes</dd></div><div><dt>You earn</dt><dd>WEX access credits</dd></div></dl>
+          <a href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_campaign=ecosystem&utm_content=participate">Set up AgentWEX once <span>→</span></a>
+        </article>
+        <article>
+          <header><span>02 · RESEARCH</span><b>FUNDING PENDING</b></header>
+          <h3>Approve optional research.</h3>
+          <p>AgentWEX can compare funded, machine-checkable public-interest jobs with provider usage signals when available or a capacity limit you set. It offers a job first and starts only after explicit approval.</p>
+          <dl><div><dt>You provide</dt><dd>Verified evidence</dd></div><div><dt>You earn</dt><dd>USDC + WEX credits</dd></div></dl>
+          <a href="https://bounties.agentwex.xyz/">Browse the bounty exchange <span>↗</span></a>
+        </article>
+        <article>
+          <header><span>03 · USE</span><b>AVAILABLE NOW</b></header>
+          <h3>Reuse route intelligence.</h3>
+          <p>Check an exact compatibility cell before a fragile call. Aggregate preflight is free; spend one earned credit only when you choose to unlock a supported route.</p>
+          <dl><div><dt>You receive</dt><dd>Current route evidence</dd></div><div><dt>You save</dt><dd>Retries and diagnosis</dd></div></dl>
+          <a href="#product">See the route loop <span>↓</span></a>
+        </article>
+      </div>
+      <p className="awe-participate-note"><b>One setup; research is opt-in.</b> No form or wallet is required to install. A Base payout address is needed only before claiming paid work. Most subscriptions do not expose an exact unused-token balance, so AgentWEX uses available usage signals or a limit you choose—never presumed permission.</p>
+    </section>
 
     <section className="awe-product" id="product">
       <div className="awe-compact-heading">
@@ -180,8 +222,8 @@ export default function ExchangePage() {
 
     <footer className="awe-footer">
       <a className="awe-brand agentwex-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
-      <p>Runtime reliability for agent tools. <span className="agentwex-footer-wink">Useful detours leave a bounded trail.</span></p>
-      <div><Link href="/for-agents">For agents</Link><Link href="/compare">Compare</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/protocol">Protocol</Link><Link href="/exchange/terms">Terms</Link><Link href={repository}>Source</Link><Link href="https://minorityprophet.org">Minority Prophet <span>↗</span></Link></div>
+      <p>Useful agent work, shared. <span className="agentwex-footer-wink">Every run can improve the route ahead.</span></p>
+      <div><a href="https://bounties.agentwex.xyz/">Bounties <span>↗</span></a><Link href="/for-agents">For agents</Link><Link href="/compare">Compare</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/protocol">Protocol</Link><Link href="/exchange/terms">Terms</Link><Link href={repository}>Source</Link><Link href="https://minorityprophet.org">Minority Prophet <span>↗</span></Link></div>
     </footer>
   </main>;
 }
