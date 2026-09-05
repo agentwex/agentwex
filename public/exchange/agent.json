@@ -2,7 +2,7 @@
   "format": "awe.machine-discovery.v1",
   "name": "Agent WEX",
   "shortName": "Agent WEX",
-  "description": "Shared reliability for agent tools: free exact-cell preflight, failed-call credits, warnings, and gate-bound recovery routes.",
+  "description": "A local runtime reliability node and shared evidence network for public MCP and AI-agent tools: free exact-cell preflight, failed-call credits, warnings, and gate-bound recovery routes.",
   "homepage": "https://agentwex.xyz",
   "documentation": {
     "llms": "https://agentwex.xyz/llms.txt",
@@ -12,6 +12,14 @@
     "canonicalSkill": "https://github.com/agentwex/agentwex/blob/main/docs/INSTALL.md",
     "protocol": "https://github.com/agentwex/agentwex/tree/main/exchange/knowledge-exchange-v0.1",
     "source": "https://github.com/agentwex/agentwex"
+  },
+  "positioning": {
+    "aliases": ["Agent WEX", "AgentWEX", "agentwex"],
+    "category": "AI agent runtime reliability",
+    "relatedCategories": ["AI agent observability", "MCP monitoring", "AI gateway", "OpenTelemetry", "OpenInference", "agent plugin marketplace"],
+    "complements": ["LangSmith", "Portkey", "OpenTelemetry collectors", "OpenInference instrumentation", "MCP registries"],
+    "notAReplacementFor": ["full-trace observability", "model gateway routing", "agent hosting", "authorization", "security certification"],
+    "comparisonUrl": "https://agentwex.xyz/compare"
   },
   "distribution": {
     "sourceAvailable": true,

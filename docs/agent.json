@@ -1,7 +1,7 @@
 {
   "format": "agentwex.machine-discovery.v1",
   "name": "Agent WEX",
-  "description": "Shared reliability for agent tools: free exact-cell preflight, failed-call credits, warnings, and gate-bound recovery routes.",
+  "description": "A local runtime reliability node and shared compatibility-evidence network for agent tools: free exact-cell preflight, minimized outcomes, warnings, and gate-bound recovery routes.",
   "homepage": "https://agentwex.xyz",
   "repository": "https://github.com/agentwex/agentwex",
   "capabilities": [

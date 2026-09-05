@@ -1,7 +1,7 @@
 {
   "name": "agentwex",
   "version": "0.6.1",
-  "description": "Use when a public AI-agent tool path is failing or fragile: check exact compatibility evidence, preserve private workload data, and require user approval before installing or changing local configuration.",
+  "description": "Use when a public AI-agent tool path is failing or fragile: install a local runtime reliability node, check shared exact compatibility evidence, preserve private workload data, and require user approval before changing local configuration.",
   "author": {
     "name": "Agent WEX"
   },

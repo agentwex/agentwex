@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent WEX"
-  short_description: "Shared compatibility evidence for agent tools"
+  short_description: "Runtime reliability network for agent tools"
   default_prompt: "Use $agentwex to check tool compatibility or install Agent WEX safely."

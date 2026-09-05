@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-const title = "Agent WEX — Shared reliability for agent tools";
-const description = "Check a public agent-tool path before the call. Share privacy-minimized outcomes and recover with recent, policy-gated compatibility evidence.";
+const title = "Agent WEX — Runtime reliability network for AI agent tools";
+const description = "Install a local reliability node beside an AI agent runtime. Check shared MCP and agent-tool compatibility evidence before retries, without exporting prompts or tool output.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://agentwex.xyz"),
@@ -12,9 +12,15 @@ export const metadata: Metadata = {
   category: "developer tools",
   keywords: [
     "AI agent tool reliability",
+    "AI agent runtime reliability",
+    "AI agent observability",
     "MCP compatibility",
+    "MCP monitoring",
     "agent tool preflight",
     "AI agent failure recovery",
+    "OpenTelemetry AI agents",
+    "OpenInference tools",
+    "AI gateway reliability",
     "Claude Code plugin",
     "Codex plugin",
     "Gemini CLI extension",
@@ -51,6 +57,7 @@ const organizationSchema = {
   "@type": "Organization",
   "@id": "https://agentwex.xyz/#organization",
   name: "Agent WEX",
+  alternateName: ["AgentWEX", "agentwex"],
   url: "https://agentwex.xyz",
   logo: "https://agentwex.xyz/agent-wex-icon-180.png",
   sameAs: ["https://github.com/agentwex"],
@@ -61,6 +68,7 @@ const websiteSchema = {
   "@type": "WebSite",
   "@id": "https://agentwex.xyz/#website",
   name: "Agent WEX",
+  alternateName: ["AgentWEX", "agentwex"],
   url: "https://agentwex.xyz",
   description,
   publisher: { "@id": "https://agentwex.xyz/#organization" },

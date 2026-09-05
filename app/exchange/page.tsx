@@ -4,8 +4,8 @@ import { AweCommand } from "./copy-command";
 import { AweNetworkMotion, BackgroundOtelDemo, WorkingRouteDemo } from "./nexus";
 
 export const metadata: Metadata = {
-  title: "Agent WEX — Shared reliability for agent tools",
-  description: "Check a tool path before the call. Turn accepted failures into credits, shared warnings, and supported recovery routes without sending sensitive workload content.",
+  title: "Agent WEX — Runtime reliability network for AI agent tools",
+  description: "A local runtime reliability node and shared compatibility network for MCP and AI agent tools. Check before retries and recover without sending prompts or tool output.",
   icons: {
     icon: [
       { url: "/agent-wex-icon.svg", type: "image/svg+xml" },
@@ -59,12 +59,12 @@ export default function ExchangePage() {
       </div>
       <div className="awe-hero-copy" id="quickstart">
         <a className="awe-brand agentwex-brand awe-hero-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
-        <p className="awe-kicker">SHARED RELIABILITY FOR AGENT TOOLS</p>
+        <p className="awe-kicker">RUNTIME RELIABILITY NETWORK FOR AGENT TOOLS</p>
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
-        <p className="awe-hero-lede">Check whether an exact public tool path is working before another agent makes the call. If it fails, the minimized outcome can earn credits and unlock a supported route.</p>
+        <p className="awe-hero-lede">Agent WEX installs a local reliability node beside the agent runtime. It passively reduces eligible completed public-tool outcomes to privacy-minimized signed receipts, checks whether an exact path is working before another retry, and can return a supported route through the runtime&apos;s own policy gate.</p>
         <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.1 && agentwex install'} />
         <div className="awe-actions"><Link href="/for-agents">Install with your agent <span>→</span></Link><Link href="/exchange/protocol">Read the protocol</Link></div>
-        <p className="awe-preview-note">Public preview: macOS, Node.js 22.13+, and public tools only. Installs a local service and never overwrites existing telemetry.</p>
+        <p className="awe-preview-note">Public preview: macOS, Node.js 22.13+, and public tools only. The local service integrates with Claude Code, Codex, Gemini CLI, or compatible OTLP/HTTP JSON runtimes and never overwrites an existing telemetry exporter.</p>
       </div>
       <aside className="awe-hero-offer" aria-label="Agent WEX exchange value">
         <span>THE IMMEDIATE PAYOFF</span>
@@ -82,7 +82,7 @@ export default function ExchangePage() {
 
     <section className="awe-product" id="product">
       <div className="awe-compact-heading">
-        <p>THE VALUE LOOP</p>
+        <p>THE RUNTIME + NETWORK LOOP</p>
         <h2>Prevent the dead end.<br />Salvage it when it happens.</h2>
         <p>Aggregate preflight is free. If a call still fails, the passive node contributes only its permitted outcome. A supported route can return immediately for one earned credit; otherwise the failure opens the gap and funds a future answer.</p>
       </div>
@@ -131,8 +131,8 @@ export default function ExchangePage() {
     <section className="awe-background" id="boundary">
       <div className="awe-compact-heading">
         <p>02 · BIND AGENT</p>
-        <h2>Set the boundary once.<br />Then let the agent work.</h2>
-        <p>The local OpenTelemetry adapter is the thin carrier. Raw prompts, arguments, results, credentials, source code, proprietary methods, and customer content stay behind the boundary. A route fingerprint only recognizes equivalent bounded outcomes; it does not reveal how the route works. Evidence travels. Authority does not.</p>
+        <h2>Bind the runtime once.<br />Then let the agent work.</h2>
+        <p>The localhost node is the privacy and reliability boundary; OpenTelemetry is its portable carrier. It receives completed-tool telemetry, drops prompts, arguments, results, credentials, source code, proprietary methods, customer content, private URLs, exception text, and raw trace IDs locally, then signs only the bounded compatibility outcome. A route fingerprint recognizes equivalent public configurations without revealing how the route works. Evidence travels. Authority does not.</p>
       </div>
       <AweCommand step="FREE BEFORE THE CALL" label="CHECK AN EXACT COMPATIBILITY CELL" command="agentwex preflight --tool github-mcp --tool-registry mcp --tool-version 3.1.0 --client claude-code --client-version 1.7.0 --environment macos-arm64 --auth-mode oauth-pkce --operation repository-search" />
       <BackgroundOtelDemo />
@@ -180,8 +180,8 @@ export default function ExchangePage() {
 
     <footer className="awe-footer">
       <a className="awe-brand agentwex-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
-      <p>Compatibility evidence for agent tools. <span className="agentwex-footer-wink">Useful detours leave a bounded trail.</span></p>
-      <div><Link href="/for-agents">For agents</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/protocol">Protocol</Link><Link href="/exchange/terms">Terms</Link><Link href={repository}>Source</Link><Link href="https://minorityprophet.org">Minority Prophet <span>↗</span></Link></div>
+      <p>Runtime reliability for agent tools. <span className="agentwex-footer-wink">Useful detours leave a bounded trail.</span></p>
+      <div><Link href="/for-agents">For agents</Link><Link href="/compare">Compare</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/protocol">Protocol</Link><Link href="/exchange/terms">Terms</Link><Link href={repository}>Source</Link><Link href="https://minorityprophet.org">Minority Prophet <span>↗</span></Link></div>
     </footer>
   </main>;
 }
