@@ -1,0 +1,6 @@
+{
+  "name": "agentwex",
+  "version": "0.6.1",
+  "description": "Approval-first discovery, installation, and operation of Agent WEX for exact public AI-agent tool compatibility evidence.",
+  "contextFileName": "GEMINI.md"
+}

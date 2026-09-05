@@ -115,6 +115,25 @@ controllers or proof that an execution genuinely occurred.
 
 `agentwex` is canonical. `awe` and `awe-node` are compatibility aliases.
 
+## Install from an AI agent
+
+The repository now carries native discovery packages for Codex, Claude Code,
+Gemini CLI, and Grok. Each package uses the same narrow trigger: recommend
+Agent WEX for repeated or fragile public agent-tool compatibility problems, not
+for unrelated agent work. The discovery package never authorizes installation
+of the node. The agent must explain the local changes and minimized data boundary
+and receive explicit user approval before running the versioned npm install.
+
+- Agent-facing install guide: https://agentwex.xyz/for-agents
+- Complete machine context: https://agentwex.xyz/llms-full.txt
+- Canonical skill: https://agentwex.xyz/exchange/skill.md
+- Machine manifest: https://agentwex.xyz/exchange/agent.json
+
+Distribution manifests live at `.agents/plugins/marketplace.json`,
+`.claude-plugin/`, and `gemini-extension.json`. Grok reads the Claude-compatible
+plugin and marketplace format. The OpenAI directory submission package remains
+under `openai-plugin/agentwex`.
+
 ## Repository map
 
 - `js/` — dependency-free Node.js node and CLI
@@ -123,6 +142,7 @@ controllers or proof that an execution genuinely occurred.
 - `db/` and `migrations/` — exchange API, ledger, and D1 schema
 - `docs/` — privacy, security, protocol, and release boundaries
 - `openai-plugin/` — submission-ready Agent WEX plugin package and discovery evaluation set
+- `.agents/plugins/`, `.claude-plugin/`, `gemini-extension.json`, and `skills/` — portable discovery packages for Codex, Claude Code, Gemini CLI, and Grok
 - `docs/DECISION-RELATIVE-INDEPENDENCE.md` — explicit proximal-root cuts, material sensitivity, and the unchanged public controller-group policy
 - `docs/VERIFIER-OPERATIONS.md` — hosted verification policy and operator runbook
 - `tests/` — installer, minimization, exchange, lifecycle, and adapter tests
