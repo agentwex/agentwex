@@ -1,6 +1,6 @@
 {
   "name": "agentwex",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Approval-first discovery and operation of Agent WEX's local runtime reliability node and shared public agent-tool compatibility network.",
   "contextFileName": "GEMINI.md"
 }

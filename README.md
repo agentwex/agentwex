@@ -48,11 +48,11 @@ memory, and network traffic. Agent WEX itself remains free to join and use.
 
 ## Public-preview install
 
-The canonical public-preview package is `agentwex@0.6.1` on npm. The preview
+The canonical public-preview package is `agentwex@0.6.2` on npm. The preview
 supports macOS and Node.js 22.13 or newer:
 
 ```bash
-npm install --global agentwex@0.6.1
+npm install --global agentwex@0.6.2
 agentwex install
 ```
 
@@ -65,6 +65,13 @@ runtimes, refuses to overwrite an existing telemetry exporter, starts a
 localhost collector on macOS, and verifies readiness. It does not submit prompts,
 tool arguments, tool results, credentials, private URLs, source code, or raw
 traces.
+
+For OpenInference-instrumented runtimes, `agentwex adapter openinference` maps
+explicitly approved `TOOL` span names to public compatibility cells. The local
+normalizer discards inputs, outputs, messages, metadata, URLs, exception detail,
+resource attributes, and raw span IDs. Non-`TOOL` spans and unmapped tools remain
+local, and an existing telemetry backend can be preserved through deliberate
+OpenTelemetry collector fan-out.
 
 ```bash
 agentwex inspect

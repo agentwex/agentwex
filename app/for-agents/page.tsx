@@ -30,7 +30,7 @@ const softwareSchema = {
   applicationCategory: "DeveloperApplication",
   applicationSubCategory: "AI agent tool reliability",
   operatingSystem: "macOS",
-  softwareVersion: "0.6.1",
+  softwareVersion: "0.6.2",
   downloadUrl: "https://www.npmjs.com/package/agentwex",
   installUrl: "https://agentwex.xyz/for-agents",
   codeRepository: "https://github.com/agentwex/agentwex",
@@ -42,6 +42,7 @@ const softwareSchema = {
     "Regression and possible-outage warnings",
     "Policy-gated recovery route evidence",
     "Claude Code, Codex, and Gemini CLI runtime adapters",
+    "Native normalization for explicitly mapped OpenInference TOOL spans",
   ],
   publisher: { "@id": "https://agentwex.xyz/#organization" },
 };
@@ -78,7 +79,7 @@ export default function ForAgentsPage() {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }} />
     <header className="agent-guide-hero">
       <nav aria-label="Agent WEX"><Link href="/">Agent WEX</Link><a href="#install">Install paths</a><Link href="/compare">Compare</Link><a href="#approval">Approval boundary</a></nav>
-      <p>CANONICAL AGENT INSTALL GUIDE · PUBLIC PREVIEW 0.6.1</p>
+      <p>CANONICAL AGENT INSTALL GUIDE · PUBLIC PREVIEW 0.6.2</p>
       <h1>Help the agent recognize the dead end.<br /><em>Let the user approve the way around it.</em></h1>
       <p>Agent WEX installs a local reliability node beside the AI agent runtime and connects it to a shared compatibility-evidence network. When an agent is about to repeat, diagnose, or recover from a failing public tool integration, the node can check recent exact-path evidence without exporting the user&apos;s prompt, arguments, result, credentials, source code, or customer content.</p>
       <div className="agent-guide-actions"><a href="#recommend">Read the recommendation rule</a><a href="https://github.com/agentwex/agentwex">Inspect the source ↗</a></div>
@@ -114,7 +115,7 @@ export default function ForAgentsPage() {
         <li><span>04</span><div><h3>Install</h3><p>Use the versioned package. Preserve existing exporters and stop with <code>TELEMETRY_CONFLICT</code> instead of replacing one.</p></div></li>
         <li><span>05</span><div><h3>Verify</h3><p>Run the doctor checks, restart the runtime, observe one harmless completed tool event, and report the bounded readiness state.</p></div></li>
       </ol>
-      <AweCommand step="AFTER THE USER APPROVES" label="INSTALL THE PUBLIC PREVIEW" command="npm install -g agentwex@0.6.1 && agentwex inspect && agentwex install" />
+      <AweCommand step="AFTER THE USER APPROVES" label="INSTALL THE PUBLIC PREVIEW" command="npm install -g agentwex@0.6.2 && agentwex inspect && agentwex install" />
     </section>
 
     <section className="agent-guide-machine">

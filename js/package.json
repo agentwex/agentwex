@@ -1,6 +1,6 @@
 {
   "name": "agentwex",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Privacy-minimizing compatibility-evidence node for Agent WEX",
   "type": "module",
   "license": "Apache-2.0",
@@ -13,6 +13,7 @@
   "exports": {
     ".": "./lib/receipt.mjs",
     "./otlp": "./lib/otlp.mjs",
+    "./openinference": "./lib/openinference.mjs",
     "./claude-code": "./lib/claude-code.mjs",
     "./codex": "./lib/codex.mjs",
     "./gemini-cli": "./lib/gemini-cli.mjs",

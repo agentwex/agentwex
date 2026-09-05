@@ -45,7 +45,7 @@ const categories = [
     label: "TELEMETRY STANDARDS",
     purpose: "Carry and describe traces, including generative-AI and tool spans, across compatible collectors and backends.",
     keeps: "Whatever span attributes and content the operator configures; those can include sensitive values.",
-    relationship: "Infrastructure, not a competing product. AgentWEX already receives bounded OTel tool outcomes; native OpenInference TOOL-span normalization is a logical next adapter.",
+    relationship: "Infrastructure, not a competing product. AgentWEX receives bounded OTel outcomes and natively normalizes explicitly mapped OpenInference TOOL spans.",
   },
   {
     name: "MCP registries and catalogs",
@@ -99,9 +99,9 @@ export default function ComparePage() {
         <a href="https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/" rel="noreferrer">OpenTelemetry GenAI conventions ↗</a>
       </div>
       <div>
-        <p>INTEROPERABILITY NEXT</p>
-        <h2>OpenInference is an input surface.</h2>
-        <p>OpenInference TOOL spans provide a useful normalization path across compatible agent frameworks. Native ingestion is a future adapter—not a capability claimed by the current 0.6.1 package.</p>
+        <p>INTEROPERABILITY NOW</p>
+        <h2>OpenInference is a native input surface.</h2>
+        <p>AgentWEX normalizes explicitly mapped OpenInference TOOL spans into bounded compatibility outcomes. Inputs, outputs, messages, metadata, URLs, exception detail, resource attributes, and raw span IDs remain local.</p>
         <a href="https://arize-ai.github.io/openinference/spec/semantic_conventions.html" rel="noreferrer">OpenInference conventions ↗</a>
       </div>
     </section>

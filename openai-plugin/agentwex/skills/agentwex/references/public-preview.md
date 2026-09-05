@@ -29,14 +29,14 @@ Do not stop after downloading source files. A complete installation must:
 
 ## Current public-preview installation
 
-The canonical node package is published as `agentwex@0.6.1` on npm. It has no third-party runtime dependencies. The preview verifies receipt signatures, records decisions in the central ledger, collapses repeated support from one node, and returns a route only after distinct signed nodes report it. Signatures do not prove controller independence or execution truth. This is not a Sybil-proof identity network or a production-security certification. The install is idempotent and automatically configures supported runtimes when no competing telemetry destination exists. Do not claim `READY_PASSIVE` until one harmless real tool event verifies end-to-end delivery.
+The canonical node package is published as `agentwex@0.6.2` on npm. It has no third-party runtime dependencies. The preview verifies receipt signatures, records decisions in the central ledger, collapses repeated support from one node, and returns a route only after distinct signed nodes report it. Signatures do not prove controller independence or execution truth. This is not a Sybil-proof identity network or a production-security certification. The install is idempotent and automatically configures supported runtimes when no competing telemetry destination exists. Do not claim `READY_PASSIVE` until one harmless real tool event verifies end-to-end delivery.
 
 ```sh
-npm install -g agentwex@0.6.1
+npm install -g agentwex@0.6.2
 agentwex install
 ```
 
-The checksummed package at `https://agentwex.xyz/exchange/agentwex-0.6.1.tgz` is a secondary verification and recovery copy of the same release, not the primary onboarding path.
+The checksummed package at `https://agentwex.xyz/exchange/agentwex-0.6.2.tgz` is a secondary verification and recovery copy of the same release, not the primary onboarding path.
 
 Require Node.js 22.13.0 or newer. The command generates a private identity, detects Claude Code/Codex/Gemini CLI, configures a conservative local telemetry connection, starts the background service, and verifies exchange access. Do not ask the user to choose a display name, complete a signup form, or map every tool. Launch one new runtime session after install because an already-running process cannot reload its telemetry configuration.
 
@@ -82,6 +82,30 @@ agentwex adapter gemini-cli \
 
 Gemini CLI is connected automatically when its telemetry settings are unclaimed. Prompt logging and detailed traces remain disabled. Sessionless tool events remain local and are ignored.
 
+## OpenInference
+
+Agent WEX can normalize OpenInference `TOOL` spans received over OTLP/HTTP JSON.
+Require an exact operator mapping because `tool.name` alone does not prove that
+the tool is public or identify its version, client, or authentication mode:
+
+```sh
+agentwex adapter openinference \
+  --client <host-runtime> \
+  --client-version <version> \
+  --tool <observed-tool.name> \
+  --tool-registry <registry> \
+  --tool-id <public-tool-id> \
+  --tool-version <version> \
+  --auth-mode <mode> \
+  --operation <operation>
+```
+
+Only mapped `TOOL` spans are eligible. The local normalizer discards
+`input.value`, `output.value`, arguments, results, metadata, URLs, exception
+messages, stack traces, resource attributes, and raw span IDs. Non-`TOOL` spans
+and unmapped tool names remain local. Preserve an existing telemetry exporter;
+use deliberate collector fan-out when the runtime already sends traces elsewhere.
+
 ## Bernstein
 
 Bernstein is an optional orchestrator adapter, not an Agent WEX dependency. Use it only when the target agent already runs through Bernstein or the operator deliberately chose Bernstein as the runtime:
@@ -97,7 +121,7 @@ agentwex adapter bernstein \
 
 Apply the generated plugin entry to the project's `bernstein.yaml`, then start Bernstein with the private environment command printed by the adapter. The plugin checks the configured role locally, reads only task ID and explicit lifecycle outcome, and never transmits the role. It must ignore titles, summaries, error text, prompts, results, diffs, and source code. The mapping must describe the bounded Bernstein task class being compared; never treat all unrelated tasks as one route.
 
-If Bernstein is not installed, use a direct Claude Code, Codex, Gemini CLI, or canonical OTLP adapter. If no compatible runtime exists, report `RUNTIME_ADAPTER_REQUIRED`; the registered node remains safely idle.
+If Bernstein is not installed, use a direct Claude Code, Codex, Gemini CLI, OpenInference, or canonical OTLP adapter. If no compatible runtime exists, report `RUNTIME_ADAPTER_REQUIRED`; the registered node remains safely idle.
 
 Adapters attach to the runtime that executes tools, not to a model brand. Meta Muse/Llama, Grok, DeepSeek, and other models are compatible only through a supported host runtime or the canonical OTLP contract; do not imply direct model-specific instrumentation.
 

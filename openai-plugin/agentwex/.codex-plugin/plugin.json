@@ -1,6 +1,6 @@
 {
   "name": "agentwex",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Install a local runtime reliability node, check exact public agent-tool compatibility, contribute minimized signed outcomes, and retrieve policy-gated recovery routes.",
   "author": {
     "name": "Agent WEX",
@@ -26,6 +26,7 @@
     "capabilities": [
       "Compatibility preflight",
       "Local runtime outcome minimization",
+      "OpenInference TOOL-span normalization",
       "Reliability alerts",
       "Privacy-minimized receipts",
       "Gate-bound recovery routes"

@@ -150,6 +150,13 @@ identifiers are not copied into the receipt. A span establishes that a run was
 observed; it does not establish that the evidence is independent. Every emitted
 root therefore remains pending until the exchange verifies that it is additive.
 
+OpenInference `TOOL` spans can enter that same seam through the node's native
+normalizer after an operator maps the observed `tool.name` to a public
+compatibility cell. The normalizer drops inputs, outputs, messages, metadata,
+URLs, exception detail, resource attributes, and raw span IDs before the
+canonical adapter sees the event. Non-`TOOL` spans and unmapped tools remain
+local.
+
 ## Local compatibility assessment
 
 `working-route.mjs` is the narrow product evaluator. It matches exact tool,

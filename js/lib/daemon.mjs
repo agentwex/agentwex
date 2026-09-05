@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { adaptOtelSpanToRouteOutcome } from "./receipt.mjs";
 import { spansFromOtlpJson } from "./otlp.mjs";
+import { normalizeOpenInferenceSpans } from "./openinference.mjs";
 import { spansFromClaudeCodeLogs } from "./claude-code.mjs";
 import { spansFromCodexLogs } from "./codex.mjs";
 import { spansFromGeminiCliLogs } from "./gemini-cli.mjs";
@@ -169,7 +170,12 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
 
   async function ingest(payload) {
     const spans = spansFromOtlpJson(payload);
-    return ingestSpans(spans);
+    const openInference = normalizeOpenInferenceSpans(spans, config.adapters?.openInference);
+    return ingestSpans(openInference.spans, {
+      received: openInference.received,
+      ignored: openInference.ignored,
+      runtimeSource: openInference.normalized > 0 ? "openinference" : "generic-otlp",
+    });
   }
 
   async function ingestClaudeCode(payload) {

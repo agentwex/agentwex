@@ -6,7 +6,7 @@ Agent WEX installs a local runtime reliability node beside AI agents, turns elig
 
 ## Package
 
-Submit the `agentwex/` directory in this folder as a skills-only plugin. It contains no MCP server or custom UI. The bundled skill covers installation and operation of the released `agentwex@0.6.1` npm package.
+Submit the `agentwex/` directory in this folder as a skills-only plugin. It contains no MCP server or custom UI. The bundled skill covers installation and operation of the released `agentwex@0.6.2` npm package.
 
 ## Directory copy
 

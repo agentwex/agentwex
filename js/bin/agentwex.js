@@ -35,7 +35,8 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  process.stdout.write(`Agent WEX node v0.6.1\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-independent-roots 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  inspect [--config PATH]\n  doctor [--config PATH]\n\nUse --capability and --effect together to let Navigator compare evidence-backed alternatives across tools without confusing a read route with a write or execution route. Similarity alone never counts as support.\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Run inspect before or after installation to see the exact outbound schema without contacting the exchange. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
+  process.stdout.write(`Agent WEX node v0.6.2\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-independent-roots 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  inspect [--config PATH]\n  doctor [--config PATH]\n\nUse --capability and --effect together to let Navigator compare evidence-backed alternatives across tools without confusing a read route with a write or execution route. Similarity alone never counts as support.\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Run inspect before or after installation to see the exact outbound schema without contacting the exchange. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
+  process.stdout.write("\nOpenInference adapter:\n  agentwex adapter openinference --client CLIENT --client-version VERSION --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n");
 }
 
 function environmentClass() {
@@ -130,6 +131,20 @@ async function configureGeminiCli(configPath, options) {
   await writePrivateText(environmentPath,
     `export GEMINI_TELEMETRY_ENABLED='1'\nexport GEMINI_TELEMETRY_TARGET='local'\nexport GEMINI_TELEMETRY_OTLP_PROTOCOL='http'\nexport GEMINI_TELEMETRY_OTLP_ENDPOINT='http://127.0.0.1:${config.collector.port}/gemini/${config.collector.token}'\nexport GEMINI_TELEMETRY_LOG_PROMPTS='0'\nexport GEMINI_TELEMETRY_TRACES_ENABLED='0'\n`);
   process.stdout.write(`Gemini CLI adapter configured for ${options.tool}.\nPrompts and detailed traces are disabled.\nStart Gemini CLI with:\n  source ${environmentPath} && gemini\n`);
+}
+
+async function configureOpenInference(configPath, options) {
+  requiredToolOptions(options, "OpenInference");
+  if (!options.client) throw new Error("OpenInference adapter requires --client because the semantic convention does not identify the host runtime");
+  if (!options["client-version"]) throw new Error("OpenInference adapter requires --client-version");
+  const config = await readConfig(configPath);
+  bindTool(config, "openInference", options["client-version"], options);
+  config.adapters.openInference.clientId = options.client;
+  await writePrivateJson(configPath, config);
+  const environmentPath = resolve(configPath, "..", "openinference-otel.env");
+  await writePrivateText(environmentPath,
+    `export OTEL_EXPORTER_OTLP_ENDPOINT='http://127.0.0.1:${config.collector.port}'\nexport OTEL_EXPORTER_OTLP_PROTOCOL='http/json'\nexport OTEL_EXPORTER_OTLP_HEADERS='authorization=Bearer ${config.collector.token}'\n`);
+  process.stdout.write(`OpenInference TOOL-span adapter configured for ${options.tool}.\nOnly explicitly mapped tool names are normalized. Prompts, input.value, output.value, arguments, results, metadata, URLs, exception messages, stack traces, resource attributes, and raw span identifiers are discarded locally.\nConnect the instrumented runtime with:\n  source ${environmentPath}\n`);
 }
 
 function shellQuote(value) {
@@ -483,7 +498,7 @@ async function main() {
   const { command, options, positional } = parseArgs(process.argv.slice(2));
   const configPath = resolve(options.config ?? defaultConfigPath());
   if (command === "help" || command === "--help" || command === "-h") return printHelp();
-  if (command === "--version" || command === "-v" || command === "version") return process.stdout.write("agentwex 0.6.1\n");
+  if (command === "--version" || command === "-v" || command === "version") return process.stdout.write("agentwex 0.6.2\n");
   if (command === "install") return install(options);
   if (command === "uninstall") return uninstall(configPath, options);
   if (command === "rotate-keys") return rotateKeys(configPath);
@@ -491,6 +506,7 @@ async function main() {
   if (command === "adapter" && positional[0] === "claude-code") return configureClaudeCode(configPath, options);
   if (command === "adapter" && positional[0] === "codex") return configureCodex(configPath, options);
   if (command === "adapter" && positional[0] === "gemini-cli") return configureGeminiCli(configPath, options);
+  if (command === "adapter" && positional[0] === "openinference") return configureOpenInference(configPath, options);
   if (command === "adapter" && positional[0] === "bernstein") return configureBernstein(configPath, options);
   if (command === "daemon") return runDaemon(configPath);
   if (command === "status") return status(configPath);
