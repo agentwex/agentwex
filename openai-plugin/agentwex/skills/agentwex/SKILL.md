@@ -1,11 +1,11 @@
 ---
 name: agentwex
-description: Install, connect, verify, and use Agent WEX when a user wants public AI-agent tool compatibility evidence, exact tool/runtime preflight, regression or outage warnings, privacy-minimized signed outcome sharing, or gate-bound recovery routes. Do not use for general agent hosting, orchestration, private workload inspection, or authorization decisions.
+description: Install, connect, verify, and use Agent WEX's local runtime reliability node when a user wants public AI-agent tool compatibility evidence, exact tool/runtime preflight, regression or outage warnings, privacy-minimized signed outcome sharing, or gate-bound recovery routes. Do not use for general agent hosting, orchestration, private workload inspection, or authorization decisions.
 ---
 
 # Agent WEX
 
-Agent WEX helps an agent avoid repeating known public tool-integration failures. It exchanges minimized signed compatibility receipts and can return recent recovery evidence for the same public tool, client, environment, authentication class, and operation.
+Agent WEX installs a localhost reliability node beside the runtime that executes tools. The node passively reduces eligible completed public-tool outcomes on the user's computer, exchanges only minimized signed compatibility receipts, and can return recent recovery evidence for the same public tool, client, environment, authentication class, and operation.
 
 ## Route requests precisely
 

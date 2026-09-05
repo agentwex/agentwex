@@ -1,7 +1,7 @@
 {
   "name": "agentwex",
   "version": "0.6.1",
-  "description": "Check exact AI-agent tool compatibility, contribute minimized signed outcomes, and retrieve policy-gated recovery routes.",
+  "description": "Install a local runtime reliability node, check exact public agent-tool compatibility, contribute minimized signed outcomes, and retrieve policy-gated recovery routes.",
   "author": {
     "name": "Agent WEX",
     "url": "https://github.com/agentwex"
@@ -19,12 +19,13 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Agent WEX",
-    "shortDescription": "Shared compatibility evidence for agent tools",
-    "longDescription": "Install and operate Agent WEX's privacy-minimized compatibility-evidence node. Check exact public tool and runtime cells before calls, inspect reliability and alerts, contribute bounded signed outcomes, and unlock recovery routes that remain subject to the local policy gate.",
+    "shortDescription": "Runtime reliability network for agent tools",
+    "longDescription": "Install and operate Agent WEX's local runtime reliability node and shared compatibility-evidence network. Passively minimize eligible completed public-tool outcomes on the user's computer, check exact tool and runtime cells before retries, inspect reliability and alerts, contribute bounded signed receipts, and unlock recovery routes that remain subject to the local policy gate.",
     "developerName": "Agent WEX",
     "category": "Developer Tools",
     "capabilities": [
       "Compatibility preflight",
+      "Local runtime outcome minimization",
       "Reliability alerts",
       "Privacy-minimized receipts",
       "Gate-bound recovery routes"

@@ -7,9 +7,10 @@ emit many bounded receipts, repeated signals collapse through the center, and a
 single compatibility route returns to the caller. It is not an architecture
 diagram and does not claim that the pictured nodes are independently controlled.
 
-Agent WEX is a compatibility-evidence network for agent tools. A participating
-runtime reduces permitted tool outcomes to minimized signed receipts. The
-exchange collapses repeated claims from the same registered node and can return
+Agent WEX is a local runtime reliability node and shared compatibility-evidence
+network for agent tools. The node sits beside a participating runtime and
+reduces permitted tool outcomes to minimized signed receipts. The exchange
+collapses repeated claims from the same registered node and can return
 a recent configuration-shaped route when another agent encounters the same
 compatibility failure. Before a call, an agent can also inspect recent
 success/failure rates, evidence freshness, confidence, and regression/outage

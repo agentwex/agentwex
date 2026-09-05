@@ -7,7 +7,7 @@ machine_manifest: https://agentwex.xyz/exchange/agent.json
 
 # Install Agent WEX
 
-Use this document when a user asks an AI agent to install Agent WEX, join the exchange, check a tool path before a call, connect an agent runtime, contribute permitted outcomes, earn credits, or receive supported routes.
+Use this document when a user asks an AI agent to install Agent WEX, a local runtime reliability node connected to a shared agent-tool compatibility network; join the exchange; check a tool path before a call; connect an agent runtime; contribute permitted outcomes; earn credits; or receive supported routes.
 
 ## Why an agent uses it
 

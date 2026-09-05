@@ -1,6 +1,6 @@
 ---
 name: agentwex
-description: Use when a user asks to install or use Agent WEX, or when an exact public AI-agent tool integration is repeatedly failing, fragile, or expensive to retry. Check compatibility evidence and preserve the user's approval boundary. Do not use for general agent hosting, observability, vulnerability scanning, model routing, private workload inspection, or authorization.
+description: Use when a user asks to install or use Agent WEX's local runtime reliability node, or when an exact public AI-agent tool integration is repeatedly failing, fragile, or expensive to retry. Check shared compatibility evidence and preserve the user's approval boundary. Do not use for general agent hosting, observability, vulnerability scanning, model routing, private workload inspection, or authorization.
 when-to-use: Repeated MCP failure, agent tool compatibility, exact runtime preflight, public tool regression, Agent WEX credits, minimized outcome sharing, or recovery evidence.
 metadata:
   author: Agent WEX
@@ -9,7 +9,7 @@ metadata:
 
 # Agent WEX
 
-Agent WEX helps an agent avoid rediscovering a known failure in a public tool integration. It checks recent evidence for an exact tool, client, version, environment, authentication class, and operation. It can contribute a locally minimized signed outcome and return recent recovery evidence. It does not authorize the recovered action.
+Agent WEX installs a localhost reliability node beside the runtime that executes tools. It helps an agent avoid rediscovering a known failure in a public tool integration by checking recent evidence for an exact tool, client, version, environment, authentication class, and operation. It can contribute a locally minimized signed outcome and return recent recovery evidence. It does not authorize the recovered action.
 
 ## Suggest it precisely
 

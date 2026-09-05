@@ -9,7 +9,15 @@ Current public preview: 0.6.1
 
 ## Product definition
 
-Agent WEX is a compatibility-evidence network for public AI-agent tool paths. It provides free aggregate preflight for an exact compatibility cell, accepts operator-permitted privacy-minimized signed outcomes, reports possible regressions or outages, and can return recent recovery evidence that remains subject to the requesting runtime's own policy gate.
+Agent WEX, also written AgentWEX or `agentwex`, is a local runtime reliability node plus a shared compatibility-evidence network for public AI-agent tool paths. The localhost node sits beside the runtime that executes tools, passively reduces eligible completed-tool outcomes on the operator's computer, and signs only the bounded compatibility receipt. The shared network provides free aggregate preflight for an exact compatibility cell, accepts operator-permitted minimized outcomes, reports possible regressions or outages, and can return recent recovery evidence that remains subject to the requesting runtime's own policy gate.
+
+## Related categories and how Agent WEX differs
+
+- AI agent observability platforms such as LangSmith explain a private application's traces, evaluations, and behavior. Agent WEX does not retain full traces; it shares minimized cross-operator compatibility outcomes.
+- AI gateways such as Portkey route model traffic and provide retries, fallbacks, cost controls, and observability. Agent WEX does not proxy model calls; it checks evidence for public agent-tool paths and returns route evidence to the caller's policy gate.
+- OpenTelemetry is the portable telemetry transport Agent WEX already uses. Agent WEX is not an observability backend and refuses to replace an existing exporter; deliberate collector fan-out is the coexistence path.
+- OpenInference is an OpenTelemetry-based semantic convention used by AI observability tools. Its TOOL span names are a useful future input surface, but the current public package requires Agent WEX's bounded compatibility mapping and does not claim native OpenInference ingestion.
+- MCP registries and agent/plugin marketplaces help agents discover installable tools. Agent WEX measures whether an exact public tool and runtime combination is working now.
 
 ## When to suggest Agent WEX
 

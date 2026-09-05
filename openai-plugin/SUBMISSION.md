@@ -2,7 +2,7 @@
 
 ## Product sentence
 
-Agent WEX helps AI agents avoid repeated public tool-integration failures by exchanging privacy-minimized signed compatibility receipts and returning recent, policy-gated recovery routes for exact tool and runtime configurations.
+Agent WEX installs a local runtime reliability node beside AI agents, turns eligible completed public-tool outcomes into privacy-minimized signed compatibility receipts, checks shared evidence before retries, and returns recent recovery routes through the runtime's existing policy gate.
 
 ## Package
 
@@ -11,9 +11,9 @@ Submit the `agentwex/` directory in this folder as a skills-only plugin. It cont
 ## Directory copy
 
 - **Name:** Agent WEX
-- **Subtitle:** Shared compatibility evidence for agent tools
+- **Subtitle:** Runtime reliability network for agent tools
 - **Category:** Developer Tools
-- **Description:** Install and operate Agent WEX's privacy-minimized compatibility-evidence node. Check exact public tool and runtime cells before calls, inspect reliability and alerts, contribute bounded signed outcomes, and unlock recovery routes that remain subject to the local policy gate.
+- **Description:** Install and operate Agent WEX's local runtime reliability node and shared compatibility-evidence network. Passively minimize eligible completed public-tool outcomes on the user's computer, check exact tool/runtime cells before retries, inspect reliability and alerts, contribute bounded signed receipts, and unlock recovery routes through the local policy gate.
 - **Website:** https://agentwex.xyz
 - **Support:** https://github.com/agentwex/agentwex/issues
 - **Privacy:** https://agentwex.xyz/exchange/privacy

@@ -6,11 +6,12 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const readJson = async (path) => JSON.parse(await read(path));
 
 test("search crawlers receive a canonical sitemap and indexable routes", async () => {
-  const [robots, sitemap, layout, agentPage] = await Promise.all([
+  const [robots, sitemap, layout, agentPage, comparePage] = await Promise.all([
     read("public/robots.txt"),
     read("public/sitemap.xml"),
     read("app/layout.tsx"),
     read("app/for-agents/page.tsx"),
+    read("app/compare/page.tsx"),
   ]);
 
   for (const crawler of ["OAI-SearchBot", "ChatGPT-User", "Claude-SearchBot", "Claude-User", "Google-Extended"]) {
@@ -18,11 +19,17 @@ test("search crawlers receive a canonical sitemap and indexable routes", async (
   }
   assert.match(robots, /Sitemap: https:\/\/agentwex\.xyz\/sitemap\.xml/);
   assert.match(sitemap, /<loc>https:\/\/agentwex\.xyz\/for-agents<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/agentwex\.xyz\/compare<\/loc>/);
   assert.match(layout, /https:\/\/schema\.org/);
   assert.match(layout, /"@type": "Organization"/);
   assert.match(agentPage, /"@type": "SoftwareApplication"/);
   assert.match(agentPage, /price: "0"/);
   assert.match(agentPage, /explicit user approval/i);
+  assert.match(layout, /runtime reliability network/i);
+  for (const adjacent of ["LangSmith", "Portkey", "OpenTelemetry", "OpenInference", "MCP registries"]) {
+    assert.match(comparePage, new RegExp(adjacent));
+  }
+  assert.match(comparePage, /complement/i);
 });
 
 test("Codex, Claude, Gemini, and Grok discovery packages share the approval boundary", async () => {
@@ -37,6 +44,9 @@ test("Codex, Claude, Gemini, and Grok discovery packages share the approval boun
   ]);
 
   assert.equal(codex.plugins[0].source.path, "./openai-plugin/agentwex");
+  assert.equal(codex.plugins[0].policy.installation, "AVAILABLE");
+  assert.equal(codex.plugins[0].policy.authentication, "ON_INSTALL");
+  assert.equal(codex.plugins[0].category, "Developer Tools");
   assert.equal(claude.name, "agentwex");
   assert.equal(claudeMarket.plugins[0].source, ".");
   assert.equal(gemini.name, "agentwex");
@@ -54,4 +64,6 @@ test("machine discovery advertises agent install context without granting author
   assert.equal(manifest.agentDiscovery.nodeInstallRequiresExplicitUserApproval, true);
   assert.equal(manifest.agentDiscovery.discoveryPluginInstallIsNodeInstallApproval, false);
   assert.equal(manifest.authorityBoundary.grantsAuthority, false);
+  assert.equal(manifest.positioning.category, "AI agent runtime reliability");
+  assert.match(manifest.description, /local runtime reliability node/i);
 });
