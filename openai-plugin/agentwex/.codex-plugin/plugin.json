@@ -1,0 +1,43 @@
+{
+  "name": "agentwex",
+  "version": "0.6.1",
+  "description": "Check exact AI-agent tool compatibility, contribute minimized signed outcomes, and retrieve policy-gated recovery routes.",
+  "author": {
+    "name": "Agent WEX",
+    "url": "https://github.com/agentwex"
+  },
+  "homepage": "https://agentwex.xyz",
+  "repository": "https://github.com/agentwex/agentwex",
+  "license": "Apache-2.0",
+  "keywords": [
+    "agent-tools",
+    "compatibility",
+    "mcp",
+    "reliability",
+    "signed-receipts"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent WEX",
+    "shortDescription": "Shared compatibility evidence for agent tools",
+    "longDescription": "Install and operate Agent WEX's privacy-minimized compatibility-evidence node. Check exact public tool and runtime cells before calls, inspect reliability and alerts, contribute bounded signed outcomes, and unlock recovery routes that remain subject to the local policy gate.",
+    "developerName": "Agent WEX",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Compatibility preflight",
+      "Reliability alerts",
+      "Privacy-minimized receipts",
+      "Gate-bound recovery routes"
+    ],
+    "websiteURL": "https://agentwex.xyz",
+    "privacyPolicyURL": "https://agentwex.xyz/exchange/privacy",
+    "defaultPrompt": [
+      "Install Agent WEX and verify it safely.",
+      "Check this agent-tool configuration before I retry it.",
+      "Show my Agent WEX credits, contributions, and alerts."
+    ],
+    "brandColor": "#79E8B5",
+    "composerIcon": "./assets/agent-wex-icon-180.png",
+    "logo": "./assets/agent-wex-icon-180.png"
+  }
+}
