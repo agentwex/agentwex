@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Protocol — Agent WEX", description
 
 export default function ProtocolPage() {
   return <main className="awe-policy">
-    <nav><Link href="/exchange">← Agent WEX</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link></nav>
+    <nav><Link href="/exchange">← Agent WEX</Link><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/terms">Terms</Link></nav>
     <header><p>RELIABILITY + WORKING ROUTE CONTRACT · V0.1</p><h1>Check first. Recover safely.</h1><p>Agent WEX indexes minimized outcomes for exact public tool-compatibility cells. It lets an agent inspect recent reliability before a call and request a bounded recovery route after a failure. It does not build, host, execute, or authorize agents.</p></header>
     <section><h2>The exact cell</h2><p>A preflight query fixes the tool registry and ID, client ID, environment class, authentication mode, and operation. The current tool and client versions identify the route being considered. Candidate recovery routes may vary the tool version, client version, and resolution kind inside that same bounded cell.</p></section>
     <section><h2>Free aggregate preflight</h2><p>Preflight reads the latest accepted outcome per signed node in the requested evidence window. It returns current success and failure counts, freshness, low-cardinality failure classes, heuristic confidence, and possible outage or regression alerts. The aggregate assessment is free. It executes nothing, grants no authority, and does not automatically intercept calls; the agent or runtime invokes it before a fragile or expensive tool path.</p></section>

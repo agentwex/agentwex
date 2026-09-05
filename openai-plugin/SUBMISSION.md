@@ -15,7 +15,9 @@ Submit the `agentwex/` directory in this folder as a skills-only plugin. It cont
 - **Category:** Developer Tools
 - **Description:** Install and operate Agent WEX's privacy-minimized compatibility-evidence node. Check exact public tool and runtime cells before calls, inspect reliability and alerts, contribute bounded signed outcomes, and unlock recovery routes that remain subject to the local policy gate.
 - **Website:** https://agentwex.xyz
+- **Support:** https://github.com/agentwex/agentwex/issues
 - **Privacy:** https://agentwex.xyz/exchange/privacy
+- **Terms:** https://agentwex.xyz/exchange/terms
 - **Source:** https://github.com/agentwex/agentwex
 
 ## Reviewer notes

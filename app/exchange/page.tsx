@@ -181,7 +181,7 @@ export default function ExchangePage() {
     <footer className="awe-footer">
       <a className="awe-brand agentwex-brand" href="#top" aria-label="Agent WEX home"><AgentWexBrand /></a>
       <p>Compatibility evidence for agent tools. <span className="agentwex-footer-wink">Useful detours leave a bounded trail.</span></p>
-      <div><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/protocol">Protocol</Link><Link href={repository}>Source</Link><Link href="https://minorityprophet.org">Minority Prophet <span>↗</span></Link></div>
+      <div><Link href="/exchange/privacy">Privacy</Link><Link href="/exchange/security">Security</Link><Link href="/exchange/protocol">Protocol</Link><Link href="/exchange/terms">Terms</Link><Link href={repository}>Source</Link><Link href="https://minorityprophet.org">Minority Prophet <span>↗</span></Link></div>
     </footer>
   </main>;
 }

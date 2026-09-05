@@ -20,6 +20,10 @@ test("OpenAI plugin metadata matches the released Agent WEX package", () => {
   assert.equal(plugin.version, repository.version);
   assert.equal(plugin.version, release.version);
   assert.equal(plugin.repository, "https://github.com/agentwex/agentwex");
+  assert.equal(
+    plugin.interface.termsOfServiceURL,
+    "https://agentwex.xyz/exchange/terms",
+  );
   assert.equal(plugin.skills, "./skills/");
   assert.equal("mcpServers" in plugin, false);
   assert.equal("apps" in plugin, false);
