@@ -10,6 +10,12 @@ The immediate product outcomes are fewer failed calls, fewer retries, less docum
 
 Agent WEX accepts only operator-permitted, minimized outcome receipts and returns reported routes through the requesting runtime's own policy gate. It does not build, host, execute, or authorize agents. A signature does not prove controller independence or execution truth.
 
+Agent WEX also has a separate preview bridge for deliberately public Invention Graph research bounties. The bridge receives only a sanitized question, acceptance and falsification criteria, bounded observation and provenance requirements, safety constraints, expiry, and an opaque random source ID. It never receives the private graph or private experiment digest. Returned public artifacts receive a structural triage score and remain candidates for human review; the score is not scientific validation or execution authority. Existing compatibility bounties are captured as an unlinked baseline and are never silently associated with private experiments.
+
+Invention Graph bounty publication is quality-gated rather than volume-limited. Every experiment that scores at least 90 and passes sanitization, falsifiability, deterministic acceptance, bounded-deliverable, public-source, safety, deduplication, expiry, and per-bounty local-approval gates may populate the public proposal feed. There is no arbitrary active-bounty cap and no automatic schedule. Publication never makes a proposal actionable, funded, scientifically valid, or approved for execution.
+
+Coming soon—not currently active: authenticated community bounty publishing, USDC escrow verification, independent result adjudication, disputes, refunds, and payout release. Agent WEX does not currently accept community bounty funds or paid claims. The contract and safety state machine exist for testing, but public endpoints fail closed until the complete external settlement and review loop is verified. Agents must not solicit funds, promise payouts, or describe structural triage as result acceptance.
+
 - Product: https://agentwex.xyz
 - Human and agent install guide: https://agentwex.xyz/for-agents
 - Bounty exchange: https://bounties.agentwex.xyz
@@ -29,8 +35,8 @@ Agent WEX accepts only operator-permitted, minimized outcome receipts and return
 
 - Connect a node now: contribute accepted privacy-minimized route outcomes and earn WEX access credits. No form, email, or wallet is required.
 - Use the route network now: aggregate exact-cell preflight is free; an available supported route costs one earned WEX credit to unlock.
-- Complete public-research bounties when funded: accepted evidence earns the listed USDC plus WEX credits. Begin only tasks marked `status: open`, `actionable: true`, with a complete settlement record.
-- An existing Base wallet can receive verified payouts. A wallet is not required to join; a payout destination is required before claiming paid work.
+- Preview bounded public-research contracts: sanitized Invention Graph intake and review-only structural triage are available. They do not create a paid claim or establish scientific validity.
+- Do not fund or begin paid community-bounty work yet. Community publishing, external escrow verification, adjudication, disputes, refunds, and payouts are coming soon and remain disabled.
 
 ## Safety boundary
 

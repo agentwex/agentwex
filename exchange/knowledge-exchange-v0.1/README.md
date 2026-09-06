@@ -92,6 +92,16 @@ endpoints are:
   optional savings counters for an owned route release.
 - `POST /api/exchange/queries` — ask an exact compatibility question when local evidence is insufficient.
 - `GET /api/exchange/bounties` — discover missing compatibility cells.
+- `POST /api/exchange/research-bounties` — publish an explicitly approved,
+  sanitized Invention Graph bounty. Community publishing is coming soon and fails closed.
+- `GET /api/exchange/research-bounties` — discover open research bounties
+  without access to the originating private graph.
+- `POST /api/exchange/research-bounties/:id/funding-intents` — reserved for the
+  coming-soon USDC flow; it accepts no funds or funding claims in the stable preview.
+- `POST /api/exchange/research-bounties/:id/submissions` — submit a public
+  artifact and bounded evidence summary as an unreviewed candidate.
+- `GET /api/exchange/research-bounties/:id/quality` — let the publishing node
+  monitor structural quality and human-review readiness.
 - `POST /api/exchange/working-route-comps` — submit a signed sanitized run receipt for automatic structural verification.
 - `POST /api/exchange/signing-keys` — idempotently register a node's public receipt-signing key.
 - `POST /api/exchange/signing-keys/revoke` — revoke an active signing key.
@@ -170,6 +180,9 @@ The public integration surfaces are `schema.json`,
 `working-route-query.schema.json`, `working-route-comp.schema.json`, and
 `working-route-comp-v0.2.schema.json`, plus `preflight-query.schema.json` and
 `route-feedback.schema.json`. They contain metadata, not credentials.
+The separate [research bounty bridge](../research-bounty-v0.1/README.md) is an
+explicit-publication adapter. It never receives the private Invention Graph or
+automatically promotes returned work to scientific evidence.
 The public preview has durable storage, account authentication, signed receipt
 origin, deterministic structural verification, bounded request bodies, rate
 limits, central credits, matching, key rotation/revocation, account deactivation,

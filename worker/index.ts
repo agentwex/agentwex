@@ -12,6 +12,7 @@ interface Env {
   AWE_OWNER_NODE_ALIASES?: string;
   AWE_RATE_LIMIT_SALT?: string;
   GA4_API_SECRET?: string;
+  AWE_COMMUNITY_BOUNTIES_ENABLED?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -74,15 +75,17 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
-    if (["/api/exchange/signup", "/api/exchange/account", "/api/exchange/ledger", "/api/exchange/preflight", "/api/exchange/alerts", "/api/exchange/route-feedback", "/api/exchange/signing-keys", "/api/exchange/signing-keys/revoke", "/api/exchange/api-keys/rotate", "/api/exchange/contributions", "/api/exchange/queries", "/api/exchange/working-route-comps", "/api/exchange/bounties", "/api/exchange/unlock", "/api/exchange/coverage", "/api/exchange/acquisition-events", "/api/exchange/lifecycle-events", "/api/exchange/internal/accept", "/api/exchange/internal/lab-enroll", "/api/exchange/internal/owner-snapshot", "/api/exchange/internal/stats"].includes(url.pathname)
+    if (["/api/exchange/signup", "/api/exchange/account", "/api/exchange/ledger", "/api/exchange/preflight", "/api/exchange/alerts", "/api/exchange/route-feedback", "/api/exchange/signing-keys", "/api/exchange/signing-keys/revoke", "/api/exchange/api-keys/rotate", "/api/exchange/contributions", "/api/exchange/queries", "/api/exchange/working-route-comps", "/api/exchange/bounties", "/api/exchange/research-bounties", "/api/exchange/unlock", "/api/exchange/coverage", "/api/exchange/acquisition-events", "/api/exchange/lifecycle-events", "/api/exchange/internal/accept", "/api/exchange/internal/research-bounty-funding/verify", "/api/exchange/internal/research-bounties/moderate", "/api/exchange/internal/lab-enroll", "/api/exchange/internal/owner-snapshot", "/api/exchange/internal/stats"].includes(url.pathname)
       || url.pathname.startsWith("/api/exchange/contributions/")
-      || url.pathname.startsWith("/api/exchange/queries/")) {
+      || url.pathname.startsWith("/api/exchange/queries/")
+      || url.pathname.startsWith("/api/exchange/research-bounties/")) {
       return handleExchangeApi(request, env.DB, {
         verifierToken: env.AWE_VERIFIER_TOKEN,
         adminToken: env.AWE_ADMIN_TOKEN,
         ownerEmail: env.AWE_OWNER_EMAIL,
         ownerAliases: ownerAliases(env.AWE_OWNER_NODE_ALIASES),
         clientFingerprint: ["/api/exchange/signup", "/api/exchange/acquisition-events"].includes(url.pathname) ? await signupFingerprint(request, env.AWE_RATE_LIMIT_SALT) : null,
+        communityBountiesEnabled: env.AWE_COMMUNITY_BOUNTIES_ENABLED === "enabled",
         requireClientFingerprint: true,
         forwardConversion: (eventName: string, acquisitionId: string, parameters: Record<string, unknown>) =>
           forwardGa4Conversion(ctx, env, eventName, acquisitionId, parameters),

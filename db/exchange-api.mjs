@@ -1,7 +1,17 @@
 import { acceptContribution, authenticateAgent, consumeRateLimit, createRouteQuery, deactivateAgent, enrollLabParticipant, ensureExchangeSchema, getAgentAccount, getContributionStatus, getCreditLedger, getOwnerSnapshot, getPublicCoverage, getRouteQueryStatus, listAgentContributions, listOpenRouteBounties, listReliabilityAlerts, recordAgentLifecycleEvent, recordPublicAcquisitionEvent, registerAgentSigningKey, reserveResultAccess, revokeAgentSigningKey, rotateAgentApiKey, runPreflight, signupAgent, submitContribution, submitRouteFeedback, submitWorkingRouteComp } from "./exchange-store.mjs";
+import { createResearchBountyFundingIntent, getResearchBountyQuality, listResearchBounties, moderateResearchBounty, publishResearchBounty, submitResearchBountyResult, verifyResearchBountyFunding } from "./research-bounties.mjs";
 
 const json = (body, status = 200, headers = {}) => Response.json(body, { status, headers: { "cache-control": "no-store", ...headers } });
 const maximumJsonBytes = 65_536;
+
+const communityBountyComingSoon = () => json({
+  error: "community_bounty_funding_coming_soon",
+  status: "coming_soon",
+  acceptingCommunityBounties: false,
+  acceptingFunds: false,
+  paidClaimsAvailable: false,
+  escrowReleaseAvailable: false,
+}, 503, { "retry-after": "86400" });
 
 async function boundedJson(request) {
   const declared = Number(request.headers.get("content-length"));
@@ -77,6 +87,26 @@ export async function handleExchangeApi(request, db, options = {}) {
     return json(await getPublicCoverage(db), 200, { "cache-control": "public, max-age=300" });
   }
 
+  if (url.pathname === "/api/exchange/research-bounties" && request.method === "GET") {
+    const communityBountiesEnabled = options.communityBountiesEnabled === true;
+    const listed = await listResearchBounties(db, { limit: url.searchParams.get("limit") ?? 50 });
+    return json({
+      schema: "agentwex.research-bounty-list.v0.1",
+      bounties: communityBountiesEnabled
+        ? listed
+        : listed.filter((bounty) => bounty.sourceSystem !== "agentwex-community"),
+      communityBountyFunding: {
+        status: communityBountiesEnabled ? "enabled" : "coming_soon",
+        acceptingCommunityBounties: communityBountiesEnabled,
+        acceptingFunds: communityBountiesEnabled,
+        paidClaimsAvailable: false,
+        escrowReleaseAvailable: false,
+      },
+      privateGraphExposed: false,
+      authorityGranted: false,
+    }, 200, { "cache-control": "public, max-age=60" });
+  }
+
   if (url.pathname === "/api/exchange/signup" && request.method === "POST") {
     if (options.requireClientFingerprint && !options.clientFingerprint) return json({ error: "signup_rate_limit_unconfigured" }, 503);
     if (options.clientFingerprint) {
@@ -110,6 +140,36 @@ export async function handleExchangeApi(request, db, options = {}) {
       reason: body.reason,
     });
     return json(result.ok ? result : { error: result.error }, result.status);
+  }
+
+  if (url.pathname === "/api/exchange/internal/research-bounty-funding/verify"
+    && request.method === "POST") {
+    if (!options.verifierToken) return json({ error: "exchange_verifier_unconfigured" }, 503);
+    const bearer = request.headers.get("authorization")?.startsWith("Bearer ")
+      ? request.headers.get("authorization").slice(7).trim()
+      : "";
+    if (!(await secureTokenEqual(bearer, options.verifierToken))) {
+      return json({ error: "invalid_verifier_token" }, 401);
+    }
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    const result = await verifyResearchBountyFunding(db, body);
+    return json(result.ok ? result.verification : { error: result.error }, result.status);
+  }
+
+  if (url.pathname === "/api/exchange/internal/research-bounties/moderate"
+    && request.method === "POST") {
+    if (!options.adminToken) return json({ error: "exchange_admin_unconfigured" }, 503);
+    const bearer = request.headers.get("authorization")?.startsWith("Bearer ")
+      ? request.headers.get("authorization").slice(7).trim()
+      : "";
+    if (!(await secureTokenEqual(bearer, options.adminToken))) {
+      return json({ error: "invalid_admin_token" }, 401);
+    }
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    const result = await moderateResearchBounty(db, body);
+    return json(result.ok ? result.moderation : { error: result.error }, result.status);
   }
 
   if (url.pathname === "/api/exchange/internal/lab-enroll" && request.method === "POST") {
@@ -246,6 +306,57 @@ export async function handleExchangeApi(request, db, options = {}) {
 
   if (url.pathname === "/api/exchange/bounties" && request.method === "GET") {
     return json({ bounties: await listOpenRouteBounties(db), authorityGranted: false });
+  }
+
+  if (url.pathname === "/api/exchange/research-bounties" && request.method === "POST") {
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    if (body?.schema === "agentwex.community-research-bounty.v0.1") {
+      if (options.communityBountiesEnabled !== true) return communityBountyComingSoon();
+      const publicationRate = await consumeRateLimit(
+        db, `community-bounty:${agent.id}`, 10, 86_400,
+      );
+      if (!publicationRate.allowed) {
+        return json({ error: "community_bounty_rate_limit_exceeded" }, 429, {
+          "retry-after": String(publicationRate.retryAfter),
+        });
+      }
+    }
+    const result = await publishResearchBounty(db, agent.id, body);
+    return json(result.ok ? result.bounty : { error: result.error }, result.status);
+  }
+
+  const researchQualityMatch = url.pathname.match(/^\/api\/exchange\/research-bounties\/(researchbounty_[a-f0-9]{32})\/quality$/);
+  if (researchQualityMatch && request.method === "GET") {
+    const quality = await getResearchBountyQuality(db, agent.id, researchQualityMatch[1]);
+    return json(quality ?? { error: "research_bounty_not_found" }, quality ? 200 : 404);
+  }
+
+  const researchSubmissionMatch = url.pathname.match(/^\/api\/exchange\/research-bounties\/(researchbounty_[a-f0-9]{32})\/submissions$/);
+  if (researchSubmissionMatch && request.method === "POST") {
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    const result = await submitResearchBountyResult(db, agent.id, researchSubmissionMatch[1], body);
+    return json(result.ok ? result.submission : { error: result.error }, result.status);
+  }
+
+  const researchFundingMatch = url.pathname.match(/^\/api\/exchange\/research-bounties\/(researchbounty_[a-f0-9]{32})\/funding-intents$/);
+  if (researchFundingMatch && request.method === "POST") {
+    if (options.communityBountiesEnabled !== true) return communityBountyComingSoon();
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    const fundingRate = await consumeRateLimit(
+      db, `bounty-funding:${agent.id}`, 30, 3_600,
+    );
+    if (!fundingRate.allowed) {
+      return json({ error: "bounty_funding_rate_limit_exceeded" }, 429, {
+        "retry-after": String(fundingRate.retryAfter),
+      });
+    }
+    const result = await createResearchBountyFundingIntent(
+      db, agent.id, researchFundingMatch[1], body,
+    );
+    return json(result.ok ? result.intent : { error: result.error }, result.status);
   }
 
   if (url.pathname === "/api/exchange/unlock" && request.method === "POST") {

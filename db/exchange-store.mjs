@@ -259,6 +259,10 @@ export async function ensureExchangeSchema(db) {
       capability_id: "TEXT",
       effect_class: "TEXT",
     },
+    exchange_research_bounties: {
+      funding_goal_microunits: "INTEGER NOT NULL DEFAULT 0",
+      settlement_rail: "TEXT",
+    },
   };
   for (const [table, columns] of Object.entries(upgrades)) {
     const tableInfo = await db.prepare(`PRAGMA table_info(${table})`).all();

@@ -57,7 +57,10 @@ test("Codex, Claude, Gemini, and Grok discovery packages share the approval boun
 });
 
 test("machine discovery advertises agent install context without granting authority", async () => {
-  const manifest = await readJson("public/exchange/agent.json");
+  const [manifest, worker] = await Promise.all([
+    readJson("public/exchange/agent.json"),
+    read("worker/index.ts"),
+  ]);
 
   assert.equal(manifest.documentation.forAgents, "https://agentwex.xyz/for-agents");
   assert.equal(manifest.documentation.llmsFull, "https://agentwex.xyz/llms-full.txt");
@@ -70,4 +73,34 @@ test("machine discovery advertises agent install context without granting author
   assert.equal(manifest.runtimeAdapters.openInference.acceptedSpanKind, "TOOL");
   assert.equal(manifest.runtimeAdapters.openInference.requiresExplicitCompatibilityMapping, true);
   assert.equal(manifest.runtimeAdapters.openInference.unmappedToolsRemainLocal, true);
+  assert.equal(manifest.researchBountyBridge.privateGraphReceived, false);
+  assert.equal(manifest.researchBountyBridge.privateExperimentDigestReceived, false);
+  assert.equal(manifest.researchBountyBridge.existingCompatibilityBountiesAutomaticallyLinked, false);
+  assert.equal(manifest.researchBountyBridge.scientificValidityAutomaticallyEstablished, false);
+  assert.deepEqual(manifest.researchBountyBridge.publishers, ["invention-graph"]);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.mode, "quality-gated-continuous");
+  assert.equal(manifest.researchBountyBridge.publicationCadence.automaticSchedule, false);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.artificialVolumeCap, false);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.publishEveryQualifiedApprovedExperiment, true);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.minimumQualityScore, 90);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.perBountyLocalApprovalRequired, true);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.duplicateSuppressionRequired, true);
+  assert.equal(manifest.researchBountyBridge.publicationCadence.qualificationGates.includes("local_approval_receipt"), true);
+  assert.equal(manifest.communityBountyFunding.status, "coming-soon");
+  assert.equal(manifest.communityBountyFunding.acceptingCommunityBounties, false);
+  assert.equal(manifest.communityBountyFunding.acceptingFunds, false);
+  assert.equal(manifest.communityBountyFunding.paidClaimsAvailable, false);
+  assert.equal(manifest.communityBountyFunding.escrowReleaseAvailable, false);
+  assert.equal(manifest.capabilities.includes("authenticated_community_bounty_publishing"), false);
+  assert.equal(manifest.capabilities.includes("verified_external_usdc_funding"), false);
+  assert.match(worker, /\/api\/exchange\/research-bounties/);
+});
+
+test("Sites packages the canonical community bounty migration", async () => {
+  const [canonicalMigration, hostedMigration] = await Promise.all([
+    read("migrations/0012_community_bounty_funding.sql"),
+    read("drizzle/0012_community_bounty_funding.sql"),
+  ]);
+
+  assert.equal(hostedMigration, canonicalMigration);
 });
