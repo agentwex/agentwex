@@ -1159,6 +1159,28 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
 .awe-money-boundary>div:last-child { background:var(--awe-signal-soft); }
 
 .awe-background,.awe-join { background:#fffdf9a6; }
+
+.owner-campaign-list { margin-top:28px; display:grid; gap:1px; background:#32382f; }
+.owner-campaign-list>p,.owner-campaign-list>article { margin:0; padding:18px; background:#11150f; }
+.owner-campaign-list>article { display:grid; grid-template-columns:minmax(220px,1fr) 1.5fr; gap:24px; align-items:center; }
+.owner-campaign-list b,.owner-campaign-list span { display:block; }
+.owner-campaign-list b { color:#dbe7dd; font-size:15px; }
+.owner-campaign-list span { margin-top:5px; color:#89948b; font-size:12px; }
+.owner-campaign-list dl { margin:0; display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.owner-campaign-list dl div { display:grid; gap:4px; }
+.owner-campaign-list dt { color:#6f7a71; font-size:10px; text-transform:uppercase; }
+.owner-campaign-list dd { margin:0; color:#7cf0bd; font-size:20px; font-weight:700; }
+@media(max-width:760px){.owner-campaign-list>article{grid-template-columns:1fr}.owner-campaign-list dl{grid-template-columns:repeat(2,1fr)}}
+
+.awe-consent { position:fixed; z-index:1000; left:18px; right:18px; bottom:18px; max-width:880px; margin:0 auto; display:flex; align-items:center; gap:22px; padding:16px 18px; border:1px solid rgba(116,255,186,.42); background:rgba(4,8,6,.96); box-shadow:0 18px 70px rgba(0,0,0,.42); color:#d9e2dd; font:500 14px/1.5 ui-sans-serif,system-ui,sans-serif; backdrop-filter:blur(16px); }
+.awe-consent p { margin:0; }
+.awe-consent b,.awe-consent a { color:#74ffba; }
+.awe-consent a { text-decoration:underline; text-underline-offset:3px; }
+.awe-consent div { flex:0 0 auto; display:flex; gap:8px; }
+.awe-consent button { min-height:42px; padding:0 14px; border:1px solid #526159; background:transparent; color:#e6eee9; font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace; cursor:pointer; }
+.awe-consent button:last-child { border-color:#74ffba; background:#74ffba; color:#041008; }
+.awe-consent button:focus-visible { outline:3px solid rgba(116,255,186,.35); outline-offset:2px; }
+@media(max-width:700px){.awe-consent{align-items:stretch;flex-direction:column;gap:14px}.awe-consent div{display:grid;grid-template-columns:1fr 1fr}.awe-consent button{min-height:46px}}
 .awe-protocol { background:#eae5dc; }
 .awe-background-copy,.awe-site .witness-signup form { background:#f7f3ed; }
 .awe-background-copy>span,.awe-background-rules b { color:var(--awe-signal); }

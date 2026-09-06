@@ -201,6 +201,28 @@ export const exchangeSchemaStatements = [
     expires_at TEXT NOT NULL,
     PRIMARY KEY(bucket, window_start)
   )`,
+  `CREATE TABLE IF NOT EXISTS exchange_agent_acquisition (
+    agent_id TEXT PRIMARY KEY REFERENCES exchange_agents(id),
+    acquisition_id TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS exchange_acquisition_events (
+    id TEXT PRIMARY KEY,
+    acquisition_id TEXT NOT NULL,
+    agent_id TEXT REFERENCES exchange_agents(id),
+    event_name TEXT NOT NULL,
+    source TEXT,
+    medium TEXT,
+    campaign TEXT,
+    campaign_id TEXT,
+    content TEXT,
+    term TEXT,
+    landing_path TEXT,
+    referrer_host TEXT,
+    click_id_hash TEXT,
+    event_data_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL
+  )`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_contributions_agent_status
    ON exchange_contributions(agent_id, status)`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_contributions_topic_status
@@ -233,4 +255,10 @@ export const exchangeSchemaStatements = [
    ON exchange_route_releases(route_fingerprint, issued_at)`,
   `CREATE INDEX IF NOT EXISTS idx_exchange_route_feedback_created
    ON exchange_route_feedback(created_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_exchange_agent_acquisition_id
+   ON exchange_agent_acquisition(acquisition_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_exchange_acquisition_campaign
+   ON exchange_acquisition_events(source, medium, campaign, content, created_at)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_exchange_acquisition_milestone
+   ON exchange_acquisition_events(acquisition_id, event_name, IFNULL(agent_id, ''))`,
 ];

@@ -45,3 +45,7 @@ export const createRouteQuery = (config, query) => exchangeRequest(config, "/api
 export const getRouteQuery = (config, id) => exchangeRequest(config, `/api/exchange/queries/${encodeURIComponent(id)}`);
 export const unlockRoute = (config, resultId) => exchangeRequest(config, "/api/exchange/unlock", { method: "POST", body: { resultId } });
 export const listBounties = (config) => exchangeRequest(config, "/api/exchange/bounties");
+export const recordLifecycleEvent = (config, eventName, eventData = {}) => exchangeRequest(config, "/api/exchange/lifecycle-events", {
+  method: "POST",
+  body: { eventName, eventData },
+});

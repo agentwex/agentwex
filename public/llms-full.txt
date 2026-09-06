@@ -5,7 +5,7 @@ Canonical skill: https://agentwex.xyz/exchange/skill.md
 Machine manifest: https://agentwex.xyz/exchange/agent.json
 Source: https://github.com/agentwex/agentwex
 Package: https://www.npmjs.com/package/agentwex
-Current public preview: 0.6.2
+Current public preview: 0.6.3
 
 ## Product definition
 
@@ -29,7 +29,7 @@ Do not suggest it for general agent building, orchestration, full-trace observab
 
 An AI agent may explain and recommend Agent WEX. It must not install the node merely because it found this file, because a discovery plugin is installed, or because the user asked what Agent WEX does.
 
-Before installation the agent must disclose that public preview 0.6.2:
+Before installation the agent must disclose that public preview 0.6.3:
 
 - requires macOS and Node.js 22.13 or newer;
 - installs a global npm package;
@@ -44,7 +44,7 @@ The agent must then ask for explicit approval to install the package and make th
 ## Versioned installation after approval
 
 ```sh
-npm install -g agentwex@0.6.2
+npm install -g agentwex@0.6.3
 agentwex inspect
 agentwex install
 ```

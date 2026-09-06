@@ -1,6 +1,6 @@
 {
   "name": "agentwex",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Privacy-minimizing compatibility-evidence node for Agent WEX",
   "type": "module",
   "license": "Apache-2.0",

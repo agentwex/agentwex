@@ -23,4 +23,4 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - run: npm install --global npm@latest
       - name: Publish the committed immutable package
-        run: npm publish ./release/agentwex-0.6.2.tgz --access public --provenance
+        run: npm publish ./release/agentwex-0.6.3.tgz --access public --provenance

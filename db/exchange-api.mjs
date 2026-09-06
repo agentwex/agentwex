@@ -1,4 +1,4 @@
-import { acceptContribution, authenticateAgent, consumeRateLimit, createRouteQuery, deactivateAgent, enrollLabParticipant, ensureExchangeSchema, getAgentAccount, getContributionStatus, getCreditLedger, getOwnerSnapshot, getPublicCoverage, getRouteQueryStatus, listAgentContributions, listOpenRouteBounties, listReliabilityAlerts, registerAgentSigningKey, reserveResultAccess, revokeAgentSigningKey, rotateAgentApiKey, runPreflight, signupAgent, submitContribution, submitRouteFeedback, submitWorkingRouteComp } from "./exchange-store.mjs";
+import { acceptContribution, authenticateAgent, consumeRateLimit, createRouteQuery, deactivateAgent, enrollLabParticipant, ensureExchangeSchema, getAgentAccount, getContributionStatus, getCreditLedger, getOwnerSnapshot, getPublicCoverage, getRouteQueryStatus, listAgentContributions, listOpenRouteBounties, listReliabilityAlerts, recordAgentLifecycleEvent, recordPublicAcquisitionEvent, registerAgentSigningKey, reserveResultAccess, revokeAgentSigningKey, rotateAgentApiKey, runPreflight, signupAgent, submitContribution, submitRouteFeedback, submitWorkingRouteComp } from "./exchange-store.mjs";
 
 const json = (body, status = 200, headers = {}) => Response.json(body, { status, headers: { "cache-control": "no-store", ...headers } });
 const maximumJsonBytes = 65_536;
@@ -51,6 +51,28 @@ export async function handleExchangeApi(request, db, options = {}) {
   await ensureExchangeSchema(db);
   const url = new URL(request.url);
 
+  if (url.pathname === "/api/exchange/acquisition-events") {
+    const requestOrigin = request.headers.get("origin") ?? "";
+    const allowedOrigin = ["https://agentwex.xyz", "https://www.agentwex.xyz", "https://bounties.agentwex.xyz"].includes(requestOrigin)
+      || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(requestOrigin);
+    const corsHeaders = allowedOrigin ? {
+      "access-control-allow-origin": requestOrigin,
+      "access-control-allow-methods": "POST, OPTIONS",
+      "access-control-allow-headers": "content-type",
+      vary: "Origin",
+    } : {};
+    if (request.method === "OPTIONS") return new Response(null, { status: allowedOrigin ? 204 : 403, headers: corsHeaders });
+    if (request.method !== "POST" || !allowedOrigin) return json({ error: "acquisition_event_forbidden" }, 403);
+    if (options.clientFingerprint) {
+      const rate = await consumeRateLimit(db, `acquisition:${options.clientFingerprint}`, 30, 60);
+      if (!rate.allowed) return json({ error: "acquisition_rate_limit_exceeded" }, 429, { ...corsHeaders, "retry-after": String(rate.retryAfter) });
+    }
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    const result = await recordPublicAcquisitionEvent(db, body);
+    return json(result.ok ? result : { error: result.error }, result.status, corsHeaders);
+  }
+
   if (url.pathname === "/api/exchange/coverage" && request.method === "GET") {
     return json(await getPublicCoverage(db), 200, { "cache-control": "public, max-age=300" });
   }
@@ -64,6 +86,9 @@ export async function handleExchangeApi(request, db, options = {}) {
     const body = await limitedJson(request);
     if (body instanceof Response) return body;
     const result = await signupAgent(db, body);
+    if (result.ok && result.acquisitionId && options.forwardConversion) {
+      options.forwardConversion("sign_up", result.acquisitionId, { method: "agent_cli" });
+    }
     return json(result.ok ? result.account : { error: result.error }, result.status);
   }
 
@@ -116,6 +141,19 @@ export async function handleExchangeApi(request, db, options = {}) {
   if (url.pathname === "/api/exchange/account" && request.method === "GET") {
     const account = await getAgentAccount(db, agent.id);
     return json(account ?? { error: "agent_not_found" }, account ? 200 : 404);
+  }
+
+  if (url.pathname === "/api/exchange/lifecycle-events" && request.method === "POST") {
+    const body = await limitedJson(request);
+    if (body instanceof Response) return body;
+    const result = await recordAgentLifecycleEvent(db, agent.id, body);
+    if (result.ok && result.attributed && result.acquisitionId && options.forwardConversion) {
+      options.forwardConversion(result.eventName, result.acquisitionId, body.eventData ?? {});
+      if (result.eventName === "node_install_complete") {
+        options.forwardConversion("tutorial_complete", result.acquisitionId, body.eventData ?? {});
+      }
+    }
+    return json(result.ok ? result : { error: result.error }, result.status);
   }
 
   if (url.pathname === "/api/exchange/ledger" && request.method === "GET") {

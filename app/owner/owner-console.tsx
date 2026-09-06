@@ -18,8 +18,11 @@ type Activity = {
 };
 type Query = { ownerLabel: string; toolId: string; operation: string; status: string; minimumIndependentRoots: number; createdAt: string };
 type Recovery = { ownerLabel: string; outcome: string; attemptsAvoided: number; createdAt: string };
+type AcquisitionSummary = { joinViews: number; instructionCopies: number; registrations: number; installs: number; readyNodes: number };
+type AcquisitionCampaign = AcquisitionSummary & { source: string; medium: string; campaign: string; content: string };
 type Snapshot = {
   asOf: string; summary: Summary; nodes: NodeRecord[]; activity: Activity[]; queries: Query[]; recoveries: Recovery[];
+  acquisition: { summary: AcquisitionSummary; campaigns: AcquisitionCampaign[] };
   evidence: { cells: unknown[]; labCells: unknown[]; boundaries: { controllerIndependenceVerified: boolean } };
 };
 
@@ -82,6 +85,23 @@ export function OwnerConsole() {
       <article><span>Physical participants</span><strong>{snapshot.summary.participants}</strong><small>reproduction surfaces</small></article>
       <article><span>Controller votes</span><strong>{snapshot.summary.controllerGroups}</strong><small>independence unit</small></article>
       <article><span>Recoveries</span><strong>{snapshot.summary.successfulRecoveries}</strong><small>confirmed successful</small></article>
+    </section>
+
+    <section className="owner-section owner-acquisition">
+      <div className="owner-section-heading"><p>PAID ACQUISITION</p><h2>Clicks are not conversions.</h2><span>This first-party funnel follows one anonymous campaign reference from the setup page into a registered, working AgentWEX node.</span></div>
+      <div className="owner-funnel">
+        <article><strong>{snapshot.acquisition.summary.joinViews}</strong><span>setup views</span></article><i>→</i>
+        <article><strong>{snapshot.acquisition.summary.instructionCopies}</strong><span>instructions copied</span></article><i>→</i>
+        <article><strong>{snapshot.acquisition.summary.registrations}</strong><span>agents registered</span></article><i>→</i>
+        <article><strong>{snapshot.acquisition.summary.installs}</strong><span>installs completed</span></article><i>→</i>
+        <article className="owner-funnel-final"><strong>{snapshot.acquisition.summary.readyNodes}</strong><span>ready passive nodes</span></article>
+      </div>
+      <div className="owner-campaign-list">
+        {snapshot.acquisition.campaigns.length === 0 ? <p>No attributed campaign visits yet.</p> : snapshot.acquisition.campaigns.map((campaign) => <article key={`${campaign.source}-${campaign.medium}-${campaign.campaign}-${campaign.content}`}>
+          <div><b>{campaign.content}</b><span>{campaign.source} / {campaign.medium} · {campaign.campaign}</span></div>
+          <dl><div><dt>Views</dt><dd>{campaign.joinViews}</dd></div><div><dt>Copies</dt><dd>{campaign.instructionCopies}</dd></div><div><dt>Registered</dt><dd>{campaign.registrations}</dd></div><div><dt>Ready</dt><dd>{campaign.readyNodes}</dd></div></dl>
+        </article>)}
+      </div>
     </section>
 
     <section className="owner-collapse">

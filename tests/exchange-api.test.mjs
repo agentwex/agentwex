@@ -109,8 +109,61 @@ test("signup issues immutable genesis and the private owner snapshot explains fl
   assert.equal(snapshot.boundaries.genesisProvesConsciousness, false);
   assert.equal(snapshot.boundaries.genesisProvesIndependentControl, false);
   assert.equal(snapshot.boundaries.authorityGranted, false);
+  assert.deepEqual(snapshot.acquisition.summary, { joinViews: 0, instructionCopies: 0, registrations: 0, installs: 0, readyNodes: 0 });
+  assert.equal(snapshot.acquisition.boundaries.firstPartySourceOfTruth, true);
   const serialized = JSON.stringify(snapshot);
   assert.doesNotMatch(serialized, /api_key_hash|public_key_spki|provenance_root_id|signature/i);
+});
+
+test("campaign attribution survives the browser-to-agent handoff and records conversion milestones", async () => {
+  const db = d1TestDatabase();
+  const acquisitionId = `awx_${"a".repeat(32)}`;
+  const landing = await handleExchangeApi(apiRequest("/api/exchange/acquisition-events", {
+    method: "POST",
+    headers: { origin: "https://bounties.agentwex.xyz" },
+    body: {
+      acquisitionId,
+      eventName: "join_view",
+      source: "instagram",
+      medium: "paid_social",
+      campaign: "agentwex_pilot_2026_09",
+      content: "a_research_original",
+      landingPath: "/join",
+      clickId: "private-platform-click-id",
+    },
+  }), db);
+  assert.equal(landing.status, 202);
+  assert.equal(landing.headers.get("access-control-allow-origin"), "https://bounties.agentwex.xyz");
+
+  const signupResponse = await handleExchangeApi(apiRequest("/api/exchange/signup", {
+    method: "POST",
+    body: {
+      acquisitionRef: acquisitionId,
+      agent: { name: "Attributed Node", identityProvider: "custom", externalSubject: "attributed-node" },
+      participation: { heartbeatMinutes: 15, deliveryChannel: "nexus-api", dailyCreditSpendLimit: 10 },
+    },
+  }), db);
+  assert.equal(signupResponse.status, 201);
+  const signup = await signupResponse.json();
+
+  const lifecycle = await handleExchangeApi(apiRequest("/api/exchange/lifecycle-events", {
+    method: "POST",
+    token: signup.apiKey,
+    body: { eventName: "node_install_complete", eventData: { installStatus: "INSTALLED_RESTART_REQUIRED" } },
+  }), db);
+  assert.equal(lifecycle.status, 202);
+  assert.equal((await lifecycle.json()).attributed, true);
+
+  const events = await db.prepare(`SELECT event_name AS eventName, source, content, click_id_hash AS clickIdHash
+    FROM exchange_acquisition_events WHERE acquisition_id = ? ORDER BY rowid`).bind(acquisitionId).all();
+  assert.deepEqual(events.results.map((event) => event.eventName), ["join_view", "sign_up", "node_install_complete"]);
+  assert.equal(events.results[0].source, "instagram");
+  assert.equal(events.results[0].content, "a_research_original");
+  assert.match(events.results[0].clickIdHash, /^[a-f0-9]{64}$/);
+  assert.notEqual(events.results[0].clickIdHash, "private-platform-click-id");
+  const mapping = await db.prepare("SELECT acquisition_id AS acquisitionId FROM exchange_agent_acquisition WHERE agent_id = ?")
+    .bind(signup.agentId).first();
+  assert.equal(mapping.acquisitionId, acquisitionId);
 });
 
 test("first node can submit idempotently, await verification, and earn durable credits", async () => {

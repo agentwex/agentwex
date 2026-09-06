@@ -21,14 +21,14 @@ jobs:
       - name: Install package without lifecycle scripts
         run: |
           install_dir="$(mktemp -d)"
-          npm install --prefix "$install_dir" ./release/agentwex-0.6.2.tgz --ignore-scripts
+          npm install --prefix "$install_dir" ./release/agentwex-0.6.3.tgz --ignore-scripts
           "$install_dir/node_modules/.bin/agentwex" --version
           "$install_dir/node_modules/.bin/awe" --version
       - name: Rebuild and compare package contents
         run: |
-          cp release/agentwex-0.6.2.tgz /tmp/agentwex-committed.tgz
+          cp release/agentwex-0.6.3.tgz /tmp/agentwex-committed.tgz
           npm run release
           mkdir /tmp/agentwex-committed /tmp/agentwex-rebuilt
           tar -xzf /tmp/agentwex-committed.tgz -C /tmp/agentwex-committed
-          tar -xzf release/agentwex-0.6.2.tgz -C /tmp/agentwex-rebuilt
+          tar -xzf release/agentwex-0.6.3.tgz -C /tmp/agentwex-rebuilt
           diff --recursive --unified /tmp/agentwex-committed /tmp/agentwex-rebuilt

@@ -19,6 +19,9 @@ const workingRouteCompFields = new Set(["schema", "queryId", "toolRegistry", "to
 const preflightFields = new Set(["schema", "toolRegistry", "toolId", "toolVersion", "clientId", "clientVersion", "environment", "authMode", "operation", "capabilityId", "effectClass", "alternativePolicy", "maxAgeDays", "minimumIndependentRoots", "unlock"]);
 const routeFeedbackFields = new Set(["schema", "resultId", "outcome", "failureClass", "attemptsAvoided", "estimatedTokensAvoided", "estimatedLatencyMsAvoided"]);
 const labEnrollmentFields = new Set(["agentId", "controllerGroupId", "participantId"]);
+const publicAcquisitionEvents = new Set(["join_view", "copy_agent_instruction", "copy_install_command"]);
+const lifecycleEvents = new Set(["node_install_complete", "ready_passive"]);
+const acquisitionRefPattern = /^awx_[a-f0-9]{32}$/;
 
 const now = () => new Date().toISOString();
 const newId = (prefix) => `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`;
@@ -63,6 +66,57 @@ function validateSigningKey(value) {
 
 function labIdentifier(value) {
   return typeof value === "string" && /^[a-z0-9][a-z0-9._-]{2,79}$/.test(value) ? value : null;
+}
+
+function cleanAttribution(value, maximum) {
+  return typeof value === "string" ? value.trim().slice(0, maximum) || null : null;
+}
+
+function acquisitionId(value) {
+  return typeof value === "string" && acquisitionRefPattern.test(value) ? value : null;
+}
+
+function safeEventData(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const allowed = new Set(["installStatus", "runtimeCount", "sourceSurface"]);
+  return Object.fromEntries(Object.entries(value)
+    .filter(([key, entry]) => allowed.has(key) && ["string", "number", "boolean"].includes(typeof entry))
+    .map(([key, entry]) => [key, typeof entry === "string" ? entry.slice(0, 120) : entry]));
+}
+
+async function acquisitionEventStatement(db, body, eventName, agentId = null) {
+  const reference = acquisitionId(body?.acquisitionId);
+  if (!reference) return null;
+  const clickId = cleanAttribution(body.clickId, 500);
+  const clickIdHash = clickId ? await sha256(clickId) : null;
+  return db.prepare(`INSERT OR IGNORE INTO exchange_acquisition_events
+    (id, acquisition_id, agent_id, event_name, source, medium, campaign, campaign_id,
+      content, term, landing_path, referrer_host, click_id_hash, event_data_json, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(newId("acqevt"), reference, agentId, eventName,
+      cleanAttribution(body.source, 100), cleanAttribution(body.medium, 100),
+      cleanAttribution(body.campaign, 160), cleanAttribution(body.campaignId, 160),
+      cleanAttribution(body.content, 160), cleanAttribution(body.term, 160),
+      cleanAttribution(body.landingPath, 300), cleanAttribution(body.referrerHost, 180),
+      clickIdHash, JSON.stringify(safeEventData(body.eventData)), now());
+}
+
+export async function recordPublicAcquisitionEvent(db, body) {
+  if (!publicAcquisitionEvents.has(body?.eventName)) return { ok: false, status: 400, error: "invalid_acquisition_event" };
+  const statement = await acquisitionEventStatement(db, body, body.eventName);
+  if (!statement) return { ok: false, status: 400, error: "invalid_acquisition_reference" };
+  await statement.run();
+  return { ok: true, status: 202, acquisitionId: body.acquisitionId, eventName: body.eventName };
+}
+
+export async function recordAgentLifecycleEvent(db, agentId, body) {
+  if (!lifecycleEvents.has(body?.eventName)) return { ok: false, status: 400, error: "invalid_lifecycle_event" };
+  const mapping = await db.prepare("SELECT acquisition_id AS acquisitionId FROM exchange_agent_acquisition WHERE agent_id = ?")
+    .bind(agentId).first();
+  if (!mapping?.acquisitionId) return { ok: true, status: 202, attributed: false, eventName: body.eventName };
+  const statement = await acquisitionEventStatement(db, { ...body, acquisitionId: mapping.acquisitionId }, body.eventName, agentId);
+  await statement.run();
+  return { ok: true, status: 202, attributed: true, acquisitionId: mapping.acquisitionId, eventName: body.eventName };
 }
 
 export async function enrollLabParticipant(db, body) {
@@ -340,7 +394,7 @@ function ownerAlias(aliases, participantId, agentId) {
 }
 
 export async function getOwnerSnapshot(db, aliases = {}, at = Date.now()) {
-  const [summary, nodeRows, activityRows, queryRows, feedbackRows, coverage] = await Promise.all([
+  const [summary, nodeRows, activityRows, queryRows, feedbackRows, coverage, acquisitionSummary, acquisitionCampaignRows] = await Promise.all([
     db.prepare(`SELECT
         (SELECT COUNT(*) FROM exchange_agents a WHERE a.status = 'active'
           AND NOT EXISTS (SELECT 1 FROM exchange_agent_labels l WHERE l.agent_id = a.id AND l.label = 'test')) AS activeNodes,
@@ -413,6 +467,28 @@ export async function getOwnerSnapshot(db, aliases = {}, at = Date.now()) {
       LEFT JOIN exchange_agent_controller_groups cg ON cg.agent_id = f.agent_id
       ORDER BY f.created_at DESC LIMIT 20`).all(),
     getPublicCoverage(db, at),
+    db.prepare(`SELECT
+        COUNT(DISTINCT CASE WHEN event_name = 'join_view' THEN acquisition_id END) AS joinViews,
+        COUNT(DISTINCT CASE WHEN event_name IN ('copy_agent_instruction', 'copy_install_command') THEN acquisition_id END) AS instructionCopies,
+        COUNT(DISTINCT CASE WHEN event_name = 'sign_up' THEN acquisition_id END) AS registrations,
+        COUNT(DISTINCT CASE WHEN event_name = 'node_install_complete' THEN acquisition_id END) AS installs,
+        COUNT(DISTINCT CASE WHEN event_name = 'ready_passive' THEN acquisition_id END) AS readyNodes
+      FROM exchange_acquisition_events`).first(),
+    db.prepare(`SELECT
+        COALESCE(source, 'direct') AS source,
+        COALESCE(medium, 'none') AS medium,
+        COALESCE(campaign, 'direct') AS campaign,
+        COALESCE(content, 'unspecified') AS content,
+        COUNT(DISTINCT CASE WHEN event_name = 'join_view' THEN acquisition_id END) AS joinViews,
+        COUNT(DISTINCT CASE WHEN event_name IN ('copy_agent_instruction', 'copy_install_command') THEN acquisition_id END) AS instructionCopies,
+        COUNT(DISTINCT CASE WHEN event_name = 'sign_up' THEN acquisition_id END) AS registrations,
+        COUNT(DISTINCT CASE WHEN event_name = 'node_install_complete' THEN acquisition_id END) AS installs,
+        COUNT(DISTINCT CASE WHEN event_name = 'ready_passive' THEN acquisition_id END) AS readyNodes
+      FROM exchange_acquisition_events
+      WHERE source IS NOT NULL
+      GROUP BY source, medium, campaign, content
+      ORDER BY registrations DESC, instructionCopies DESC, joinViews DESC
+      LIMIT 50`).all(),
   ]);
 
   const mapAlias = (row) => ({ ...row, ownerLabel: ownerAlias(aliases, row.participantId, row.agentId) });
@@ -447,6 +523,28 @@ export async function getOwnerSnapshot(db, aliases = {}, at = Date.now()) {
       estimatedTokensAvoided: Number(row.estimatedTokensAvoided ?? 0),
       estimatedLatencyMsAvoided: Number(row.estimatedLatencyMsAvoided ?? 0),
     })),
+    acquisition: {
+      summary: {
+        joinViews: Number(acquisitionSummary?.joinViews ?? 0),
+        instructionCopies: Number(acquisitionSummary?.instructionCopies ?? 0),
+        registrations: Number(acquisitionSummary?.registrations ?? 0),
+        installs: Number(acquisitionSummary?.installs ?? 0),
+        readyNodes: Number(acquisitionSummary?.readyNodes ?? 0),
+      },
+      campaigns: (acquisitionCampaignRows?.results ?? []).map((row) => ({
+        ...row,
+        joinViews: Number(row.joinViews ?? 0),
+        instructionCopies: Number(row.instructionCopies ?? 0),
+        registrations: Number(row.registrations ?? 0),
+        installs: Number(row.installs ?? 0),
+        readyNodes: Number(row.readyNodes ?? 0),
+      })),
+      boundaries: {
+        firstPartySourceOfTruth: true,
+        platformClickIdsStoredRaw: false,
+        privateWorkContentStored: false,
+      },
+    },
     evidence: coverage,
     boundaries: {
       privateOwnerView: true,
@@ -470,6 +568,7 @@ export function validateSignup(body) {
   if (!Number.isInteger(participation.dailyCreditSpendLimit) || participation.dailyCreditSpendLimit < 0) return null;
   const signingKey = agent.signingKey == null ? null : validateSigningKey(agent.signingKey);
   if (agent.signingKey != null && !signingKey) return null;
+  if (body.acquisitionRef != null && !acquisitionId(body.acquisitionRef)) return null;
   return {
     name: agent.name.trim().slice(0, 120),
     identityProvider: agent.identityProvider,
@@ -478,6 +577,7 @@ export function validateSignup(body) {
     deliveryChannel: participation.deliveryChannel,
     dailyCreditSpendLimit: participation.dailyCreditSpendLimit,
     signingKey,
+    acquisitionRef: body.acquisitionRef == null ? null : acquisitionId(body.acquisitionRef),
   };
 }
 
@@ -518,6 +618,15 @@ export async function signupAgent(db, body) {
         VALUES (?, ?, ?, ?, 'active', ?)`)
         .bind(input.signingKey.keyId, agentId, input.signingKey.algorithm, input.signingKey.publicKeySpki, createdAt));
     }
+    if (input.acquisitionRef) {
+      statements.push(db.prepare(`INSERT INTO exchange_agent_acquisition (agent_id, acquisition_id, created_at)
+        VALUES (?, ?, ?)`).bind(agentId, input.acquisitionRef, createdAt));
+      const signupEvent = await acquisitionEventStatement(db, {
+        acquisitionId: input.acquisitionRef,
+        eventData: { sourceSurface: "agent_signup" },
+      }, "sign_up", agentId);
+      statements.push(signupEvent);
+    }
     statements.push(await genesisInsert(db, genesisRecord));
     await db.batch(statements);
   } catch (error) {
@@ -528,6 +637,7 @@ export async function signupAgent(db, body) {
   return {
     ok: true,
     status: 201,
+    acquisitionId: input.acquisitionRef,
     account: {
       agentId,
       name: input.name,

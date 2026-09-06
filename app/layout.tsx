@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import MarketingAnalytics from "./marketing-analytics";
 
 const title = "Agent WEX — Runtime reliability network for AI agent tools";
 const description = "Install a local reliability node beside an AI agent runtime. Check shared MCP and agent-tool compatibility evidence before retries, without exporting prompts or tool output.";
@@ -79,5 +80,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
     {children}
+    <MarketingAnalytics />
   </body></html>;
 }

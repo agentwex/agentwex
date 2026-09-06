@@ -11,6 +11,7 @@ interface Env {
   AWE_OWNER_EMAIL?: string;
   AWE_OWNER_NODE_ALIASES?: string;
   AWE_RATE_LIMIT_SALT?: string;
+  GA4_API_SECRET?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -40,6 +41,24 @@ async function signupFingerprint(request: Request, salt?: string): Promise<strin
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function forwardGa4Conversion(ctx: ExecutionContext, env: Env, eventName: string, acquisitionId: string, parameters: Record<string, unknown>) {
+  if (!env.GA4_API_SECRET) return;
+  const endpoint = new URL("https://www.google-analytics.com/mp/collect");
+  endpoint.searchParams.set("measurement_id", "G-D91GKT9Y5H");
+  endpoint.searchParams.set("api_secret", env.GA4_API_SECRET);
+  const safeParameters = Object.fromEntries(Object.entries(parameters)
+    .filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))
+    .map(([key, value]) => [key.slice(0, 40), typeof value === "string" ? value.slice(0, 100) : value]));
+  ctx.waitUntil(fetch(endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      client_id: acquisitionId,
+      events: [{ name: eventName, params: { ...safeParameters, engagement_time_msec: 1 } }],
+    }),
+  }).then(() => undefined).catch(() => undefined));
+}
+
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
@@ -55,7 +74,7 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
-    if (["/api/exchange/signup", "/api/exchange/account", "/api/exchange/ledger", "/api/exchange/preflight", "/api/exchange/alerts", "/api/exchange/route-feedback", "/api/exchange/signing-keys", "/api/exchange/signing-keys/revoke", "/api/exchange/api-keys/rotate", "/api/exchange/contributions", "/api/exchange/queries", "/api/exchange/working-route-comps", "/api/exchange/bounties", "/api/exchange/unlock", "/api/exchange/coverage", "/api/exchange/internal/accept", "/api/exchange/internal/lab-enroll", "/api/exchange/internal/owner-snapshot", "/api/exchange/internal/stats"].includes(url.pathname)
+    if (["/api/exchange/signup", "/api/exchange/account", "/api/exchange/ledger", "/api/exchange/preflight", "/api/exchange/alerts", "/api/exchange/route-feedback", "/api/exchange/signing-keys", "/api/exchange/signing-keys/revoke", "/api/exchange/api-keys/rotate", "/api/exchange/contributions", "/api/exchange/queries", "/api/exchange/working-route-comps", "/api/exchange/bounties", "/api/exchange/unlock", "/api/exchange/coverage", "/api/exchange/acquisition-events", "/api/exchange/lifecycle-events", "/api/exchange/internal/accept", "/api/exchange/internal/lab-enroll", "/api/exchange/internal/owner-snapshot", "/api/exchange/internal/stats"].includes(url.pathname)
       || url.pathname.startsWith("/api/exchange/contributions/")
       || url.pathname.startsWith("/api/exchange/queries/")) {
       return handleExchangeApi(request, env.DB, {
@@ -63,8 +82,10 @@ const worker = {
         adminToken: env.AWE_ADMIN_TOKEN,
         ownerEmail: env.AWE_OWNER_EMAIL,
         ownerAliases: ownerAliases(env.AWE_OWNER_NODE_ALIASES),
-        clientFingerprint: url.pathname === "/api/exchange/signup" ? await signupFingerprint(request, env.AWE_RATE_LIMIT_SALT) : null,
+        clientFingerprint: ["/api/exchange/signup", "/api/exchange/acquisition-events"].includes(url.pathname) ? await signupFingerprint(request, env.AWE_RATE_LIMIT_SALT) : null,
         requireClientFingerprint: true,
+        forwardConversion: (eventName: string, acquisitionId: string, parameters: Record<string, unknown>) =>
+          forwardGa4Conversion(ctx, env, eventName, acquisitionId, parameters),
       });
     }
 

@@ -57,7 +57,7 @@ export default function ExchangePage() {
         <Link href="/for-agents">For agents</Link>
         <Link href="/exchange/protocol">Protocol</Link>
       </div>
-      <a className="awe-global-nav-cta" href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_campaign=ecosystem&utm_content=nav">Set up AgentWEX <span>→</span></a>
+      <a className="awe-global-nav-cta" href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_medium=owned&utm_campaign=ecosystem&utm_content=nav">Set up AgentWEX <span>→</span></a>
     </nav>
     <header className="awe-hero" id="top">
       <div className="awe-hero-signal-field" aria-hidden="true">
@@ -72,8 +72,8 @@ export default function ExchangePage() {
         <p className="awe-kicker">RUNTIME RELIABILITY NETWORK FOR AGENT TOOLS</p>
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
         <p className="awe-hero-lede">Agent WEX installs a local reliability node beside the agent runtime. It passively reduces eligible completed public-tool outcomes to privacy-minimized signed receipts, checks whether an exact path is working before another retry, and can return a supported route through the runtime&apos;s own policy gate.</p>
-        <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.2 && agentwex install'} />
-        <div className="awe-actions"><a href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_campaign=ecosystem&utm_content=hero">Set up AgentWEX once <span>→</span></a><a href="https://bounties.agentwex.xyz/">Explore optional bounties <span>↗</span></a></div>
+        <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.6.3 && agentwex install'} />
+        <div className="awe-actions"><a href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_medium=owned&utm_campaign=ecosystem&utm_content=hero">Set up AgentWEX once <span>→</span></a><a href="https://bounties.agentwex.xyz/">Explore optional bounties <span>↗</span></a></div>
         <p className="awe-preview-note">Public preview: macOS, Node.js 22.13+, and public tools only. The local service integrates with Claude Code, Codex, Gemini CLI, compatible OTLP/HTTP JSON runtimes, and explicitly mapped OpenInference TOOL spans; it never overwrites an existing telemetry exporter.</p>
       </div>
       <aside className="awe-hero-offer" aria-label="Agent WEX exchange value">
@@ -102,7 +102,7 @@ export default function ExchangePage() {
           <h3>Improve routes passively.</h3>
           <p>Share privacy-minimized success and failure receipts from supported public tools. Additive outcomes earn WEX credits; prompts and tool output stay local.</p>
           <dl><div><dt>You provide</dt><dd>Bounded route outcomes</dd></div><div><dt>You earn</dt><dd>WEX access credits</dd></div></dl>
-          <a href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_campaign=ecosystem&utm_content=participate">Set up AgentWEX once <span>→</span></a>
+          <a href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_medium=owned&utm_campaign=ecosystem&utm_content=participate">Set up AgentWEX once <span>→</span></a>
         </article>
         <article>
           <header><span>02 · RESEARCH</span><b>FUNDING PENDING</b></header>

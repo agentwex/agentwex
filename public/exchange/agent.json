@@ -17,22 +17,45 @@
     "source": "https://github.com/agentwex/agentwex"
   },
   "positioning": {
-    "aliases": ["Agent WEX", "AgentWEX", "agentwex"],
+    "aliases": [
+      "Agent WEX",
+      "AgentWEX",
+      "agentwex"
+    ],
     "category": "AI agent runtime reliability",
-    "relatedCategories": ["AI agent observability", "MCP monitoring", "AI gateway", "OpenTelemetry", "OpenInference", "agent plugin marketplace"],
-    "complements": ["LangSmith", "Portkey", "OpenTelemetry collectors", "OpenInference instrumentation", "MCP registries"],
-    "notAReplacementFor": ["full-trace observability", "model gateway routing", "agent hosting", "authorization", "security certification"],
+    "relatedCategories": [
+      "AI agent observability",
+      "MCP monitoring",
+      "AI gateway",
+      "OpenTelemetry",
+      "OpenInference",
+      "agent plugin marketplace"
+    ],
+    "complements": [
+      "LangSmith",
+      "Portkey",
+      "OpenTelemetry collectors",
+      "OpenInference instrumentation",
+      "MCP registries"
+    ],
+    "notAReplacementFor": [
+      "full-trace observability",
+      "model gateway routing",
+      "agent hosting",
+      "authorization",
+      "security certification"
+    ],
     "comparisonUrl": "https://agentwex.xyz/compare"
   },
   "distribution": {
     "sourceAvailable": true,
     "publicNpmPackageReleased": true,
     "npmPackage": "agentwex",
-    "npmVersion": "0.6.2",
-    "npmInstallCommand": "npm install -g agentwex@0.6.2 && agentwex install",
+    "npmVersion": "0.6.3",
+    "npmInstallCommand": "npm install -g agentwex@0.6.3 && agentwex install",
     "directPackageReleased": true,
-    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.2.tgz",
-    "directPackageSha256": "5c6c52a902fbb360cd4706791d0769b7ef57309948ecc447bc7ccb58a2d3f0c9",
+    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.3.tgz",
+    "directPackageSha256": "ffe5f08a04a6190b21a61d1948f7ecae23e4ca2625eeea0f1813d2a60eb388a3",
     "checksumUrl": "https://agentwex.xyz/exchange/SHA256SUMS",
     "hostedExchangeReleased": true,
     "hostedExchangeStage": "public-preview",
@@ -83,12 +106,21 @@
     "aggregateAssessmentCostCredits": 0,
     "latestOutcomePerSignedNode": true,
     "confidenceIsHeuristic": true,
-    "possibleAlerts": ["REGRESSION", "POSSIBLE_OUTAGE"],
+    "possibleAlerts": [
+      "REGRESSION",
+      "POSSIBLE_OUTAGE"
+    ],
     "currentRoutingScope": "tool and client version plus resolution kind within one exact compatibility cell",
     "unrestrictedCrossToolProviderAuthRuntimeRoutingClaimed": false
   },
   "impactMeasurement": {
-    "feedbackFields": ["outcome", "failureClass", "attemptsAvoided", "estimatedTokensAvoided", "estimatedLatencyMsAvoided"],
+    "feedbackFields": [
+      "outcome",
+      "failureClass",
+      "attemptsAvoided",
+      "estimatedTokensAvoided",
+      "estimatedLatencyMsAvoided"
+    ],
     "freeTextAccepted": false,
     "selfReportedEstimates": true,
     "verifiedSavingsClaimed": false,
@@ -132,7 +164,19 @@
       "preservesExistingExporter": true,
       "unmappedToolsRemainLocal": true,
       "nonToolSpansRemainLocal": true,
-      "forbiddenFields": ["input.value", "output.value", "tool.arguments", "tool.results", "messages", "metadata", "urls", "exception.message", "exception.stacktrace", "resource.attributes", "span.id"]
+      "forbiddenFields": [
+        "input.value",
+        "output.value",
+        "tool.arguments",
+        "tool.results",
+        "messages",
+        "metadata",
+        "urls",
+        "exception.message",
+        "exception.stacktrace",
+        "resource.attributes",
+        "span.id"
+      ]
     },
     "bernstein": {
       "status": "alpha",
@@ -141,8 +185,19 @@
       "configurationCommand": "agentwex adapter bernstein --task-role <bernstein-role> --tool <bounded-route-name> --tool-registry <registry> --tool-version <version> --auth-mode <mode>",
       "requiresExplicitCompatibilityMapping": true,
       "requiresLocalRoleFilter": true,
-      "observes": ["task_completed", "task_failed"],
-      "forbiddenFields": ["task_title", "result_summary", "error_text", "prompt", "result", "diff", "source_code"]
+      "observes": [
+        "task_completed",
+        "task_failed"
+      ],
+      "forbiddenFields": [
+        "task_title",
+        "result_summary",
+        "error_text",
+        "prompt",
+        "result",
+        "diff",
+        "source_code"
+      ]
     }
   },
   "modelCompatibility": {

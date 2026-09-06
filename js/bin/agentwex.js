@@ -6,7 +6,7 @@ import { arch, platform } from "node:os";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
-import { deactivateAccount, signup, getAccount, getContribution, getLedger, getReliabilityAlerts, listContributions, preflight, registerSigningKey, revokeSigningKey, rotateApiKey, submitFeedback } from "../lib/client.mjs";
+import { deactivateAccount, signup, getAccount, getContribution, getLedger, getReliabilityAlerts, listContributions, preflight, recordLifecycleEvent, registerSigningKey, revokeSigningKey, rotateApiKey, submitFeedback } from "../lib/client.mjs";
 import { defaultConfigPath, readConfig, validateBaseUrl, writePrivateJson, writePrivateText } from "../lib/config.mjs";
 import { runDaemon } from "../lib/daemon.mjs";
 import { installBackgroundService, uninstallBackgroundService } from "../lib/service.mjs";
@@ -35,7 +35,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  process.stdout.write(`Agent WEX node v0.6.2\n\nCommands:\n  install [--url URL] [--port 4318] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-independent-roots 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  inspect [--config PATH]\n  doctor [--config PATH]\n\nUse --capability and --effect together to let Navigator compare evidence-backed alternatives across tools without confusing a read route with a write or execution route. Similarity alone never counts as support.\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Run inspect before or after installation to see the exact outbound schema without contacting the exchange. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
+  process.stdout.write(`Agent WEX node v0.6.3\n\nCommands:\n  install [--url URL] [--port 4318] [--ref CAMPAIGN_REFERENCE] [--no-service]\n  uninstall --yes [--keep-account] [--keep-local] [--config PATH]\n  rotate-keys [--config PATH]\n  runtimes [--config PATH]\n  adapter claude-code --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter codex --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter gemini-cli --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  adapter bernstein --task-role ROLE --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n  daemon [--config PATH]\n  status [--config PATH]\n  credits [--config PATH]\n  ledger [--config PATH]\n  contributions [--limit 25] [--offset 0] [--config PATH]\n  contribution ID [--config PATH]\n  preflight --tool TOOL --tool-registry REGISTRY --tool-version VERSION --client CLIENT --client-version VERSION --environment ENV --auth-mode MODE --operation NAME [--max-age-days 7] [--minimum-independent-roots 2] [--unlock]\n  alerts [--limit 50] [--config PATH]\n  feedback --result RESULT --outcome succeeded|failed|not-attempted [--failure-class authentication|compatibility|timeout|rate-limit|network|unavailable|policy|other] [--attempts-avoided N] [--estimated-tokens-avoided N] [--estimated-latency-ms-avoided N]\n  routes [--config PATH]\n  inspect [--config PATH]\n  doctor [--config PATH]\n\nUse --capability and --effect together to let Navigator compare evidence-backed alternatives across tools without confusing a read route with a write or execution route. Similarity alone never counts as support.\n\nInstall is idempotent. It creates a pseudonymous signing identity, detects and safely connects supported runtimes, starts the local node, and verifies readiness. Run inspect before or after installation to see the exact outbound schema without contacting the exchange. Accepted contributions earn route-access credits automatically; there is no Agent WEX fee or purchase path. A signed node is not proof of an independently controlled operator or genuine execution.\n`);
   process.stdout.write("\nOpenInference adapter:\n  agentwex adapter openinference --client CLIENT --client-version VERSION --tool TOOL --tool-registry REGISTRY --tool-version VERSION --auth-mode MODE [--operation NAME] [--capability ID --effect CLASS]\n");
 }
 
@@ -199,6 +199,9 @@ async function localJson(config, path) {
 
 async function install(options) {
   const configPath = resolve(options.config ?? defaultConfigPath());
+  if (options.ref && !/^awx_[a-f0-9]{32}$/.test(options.ref)) {
+    throw new Error("Campaign reference must match awx_ followed by 32 lowercase hexadecimal characters");
+  }
   let config = null;
   let account = null;
   let existingIdentity = false;
@@ -220,6 +223,7 @@ async function install(options) {
     account = await signup(baseUrl, {
       agent: { name: displayName, identityProvider: "custom", externalSubject: randomUUID(), signingKey: publicSigningIdentity(signing) },
       participation: { heartbeatMinutes: 15, deliveryChannel: "nexus-api", dailyCreditSpendLimit: 10 },
+      ...(options.ref ? { acquisitionRef: options.ref } : {}),
     });
     config = {
       schema: "minority-prophet.awe-node-config.v0.1",
@@ -289,6 +293,11 @@ async function install(options) {
           ? "INSTALLED_RESTART_REQUIRED"
           : "BACKGROUND_SERVICE_UNAVAILABLE";
   const accountAgentId = account.agentId ?? account.id ?? config.agentId;
+  await recordLifecycleEvent(config, "node_install_complete", {
+    installStatus,
+    runtimeCount: detectedRuntimes.length,
+    sourceSurface: options.ref ? "attributed_install" : "direct_install",
+  }).catch(() => null);
   process.stdout.write(`Agent WEX node ${existingIdentity ? "rechecked" : "installed"}.\nIdentity: ${accountAgentId}\nCollector: http://127.0.0.1:${port}/v1/traces\nCredits: ${account.creditBalance}\nAccepted contributions earn credits automatically; route access costs credits, never money.\nRaw prompts, arguments, results, credentials, URLs, and trace IDs are not submitted.\n`);
   if (service) process.stdout.write(`Background service: ${service.label}\n`);
   else process.stdout.write(`Start locally: agentwex daemon --config ${configPath}\n`);
@@ -356,6 +365,12 @@ async function status(configPath) {
   try { local = await localJson(config, "/awe/status"); } catch {}
   const account = await getAccount(config);
   const unconfigured = await unconfiguredRuntimes(config);
+  if (local?.lastRuntimeOutcomeAt) {
+    await recordLifecycleEvent(config, "ready_passive", {
+      runtimeCount: Object.values(config.adapters ?? {}).filter((adapter) => adapter?.enabled === true).length,
+      sourceSurface: "status_check",
+    }).catch(() => null);
+  }
   process.stdout.write(`${JSON.stringify({
     agentId: config.agentId,
     backgroundNode: local ? "running" : "not_reachable",
@@ -498,7 +513,7 @@ async function main() {
   const { command, options, positional } = parseArgs(process.argv.slice(2));
   const configPath = resolve(options.config ?? defaultConfigPath());
   if (command === "help" || command === "--help" || command === "-h") return printHelp();
-  if (command === "--version" || command === "-v" || command === "version") return process.stdout.write("agentwex 0.6.2\n");
+  if (command === "--version" || command === "-v" || command === "version") return process.stdout.write("agentwex 0.6.3\n");
   if (command === "install") return install(options);
   if (command === "uninstall") return uninstall(configPath, options);
   if (command === "rotate-keys") return rotateKeys(configPath);
