@@ -12,6 +12,7 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "test": "node --test tests/*.test.mjs",
     "verify": "npm run lint && npm test && npm run build",
+    "verify:release": "node scripts/release-metadata.mjs --verify",
     "demo": "node exchange/knowledge-exchange-v0.1/demo.mjs",
     "release": "node scripts/build-release.mjs",
     "smoke:production": "node scripts/smoke-production.mjs",

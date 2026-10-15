@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { synchronizeReleaseMetadata, verifyReleaseMetadata } from "./release-metadata.mjs";
 
 const execFileAsync = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
@@ -49,6 +50,8 @@ try {
     lifecycleScripts: false,
   };
   await writeFile(discoveryPath, `${JSON.stringify(discovery, null, 2)}\n`);
+  await synchronizeReleaseMetadata(root, { version: manifest.version, filename, sha256, size: bytes.byteLength });
+  await verifyReleaseMetadata(root);
   process.stdout.write(`${filename} ${sha256}\n`);
 } finally {
   await rm(stagingRoot, { recursive: true, force: true });

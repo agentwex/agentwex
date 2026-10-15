@@ -1,9 +1,38 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { resolve } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const readJson = async (path) => JSON.parse(await read(path));
+const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
+
+test("release verification accepts one canonical version and truthful publication states", async () => {
+  const { verifyReleaseMetadata } = await import("../scripts/release-metadata.mjs");
+  const verified = await verifyReleaseMetadata(repositoryRoot);
+
+  assert.equal(verified.version, "0.6.3");
+  assert.ok(verified.checked.includes(".claude-plugin/plugin.json"));
+  assert.ok(verified.checked.includes("distribution/publication-status.json"));
+});
+
+test("release verification rejects one stale discovery manifest", async (context) => {
+  const directory = await mkdtemp(resolve(tmpdir(), "agentwex-release-metadata-"));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  await cp(repositoryRoot, directory, {
+    recursive: true,
+    filter: (source) => ![".git", ".worktrees", ".superpowers", "node_modules", ".next", ".vinext", ".wrangler", "dist"].includes(source.split("/").at(-1)),
+  });
+  const claudePath = resolve(directory, ".claude-plugin", "plugin.json");
+  const claude = JSON.parse(await readFile(claudePath, "utf8"));
+  claude.version = "0.0.0";
+  await writeFile(claudePath, `${JSON.stringify(claude, null, 2)}\n`);
+
+  const { verifyReleaseMetadata } = await import("../scripts/release-metadata.mjs");
+  await assert.rejects(() => verifyReleaseMetadata(directory), /version drift.*\.claude-plugin\/plugin\.json/i);
+});
 
 test("search crawlers receive a canonical sitemap and indexable routes", async () => {
   const [robots, sitemap, layout, agentPage, comparePage] = await Promise.all([
