@@ -48,11 +48,11 @@ memory, and network traffic. Agent WEX itself remains free to join and use.
 
 ## Public-preview install
 
-The canonical public-preview package is `agentwex@0.6.3` on npm. The preview
+The canonical public-preview package is `agentwex@0.7.0` on npm. The preview
 supports macOS and Node.js 22.13 or newer:
 
 ```bash
-npm install --global agentwex@0.6.3
+npm install --global agentwex@0.7.0
 agentwex install
 ```
 

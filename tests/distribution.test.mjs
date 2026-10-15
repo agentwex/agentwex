@@ -13,7 +13,7 @@ test("release verification accepts one canonical version and truthful publicatio
   const { verifyReleaseMetadata } = await import("../scripts/release-metadata.mjs");
   const verified = await verifyReleaseMetadata(repositoryRoot);
 
-  assert.equal(verified.version, "0.6.3");
+  assert.equal(verified.version, "0.7.0");
   assert.ok(verified.checked.includes(".claude-plugin/plugin.json"));
   assert.ok(verified.checked.includes("distribution/publication-status.json"));
 });
@@ -107,7 +107,10 @@ test("public discovery reports verified listings separately from prepared packag
     readJson("openai-plugin/discovery-evals.json"),
   ]);
 
-  assert.equal(publication.channels.npm.status, "listed");
+  assert.ok(["prepared", "listed"].includes(publication.channels.npm.status));
+  if (publication.channels.npm.status === "listed") {
+    assert.match(publication.channels.npm.verificationUrl, /\/agentwex\/v\/0\.7\.0$/);
+  }
   for (const channel of ["codex-openai", "claude", "gemini"]) assert.equal(publication.channels[channel].status, "prepared");
   assert.deepEqual(manifest.agentDiscovery.publicationStatus, publication.channels);
   assert.match(agentPage, /VERIFIED LISTING/i);
@@ -168,4 +171,29 @@ test("Sites packages the canonical community bounty migration", async () => {
   ]);
 
   assert.equal(hostedMigration, canonicalMigration);
+});
+
+test("release smoke covers live metadata, evidence layers, and the complete activation loop", async () => {
+  const [productionSmoke, lifecycleSmoke] = await Promise.all([
+    read("scripts/smoke-production.mjs"),
+    read("scripts/smoke-live-lifecycle.mjs"),
+  ]);
+
+  assert.match(productionSmoke, /AGENTWEX_EXPECTED_VERSION/);
+  assert.match(productionSmoke, /\/for-agents/);
+  assert.match(productionSmoke, /\/coverage/);
+  assert.match(productionSmoke, /publicationStatus/);
+  assert.match(productionSmoke, /PREPARED · NOT YET VERIFIED LISTED/);
+  assert.match(productionSmoke, /Private local recall/);
+  assert.match(productionSmoke, /First-party lab reproduction/);
+  assert.match(productionSmoke, /Network-supported evidence/);
+
+  assert.match(lifecycleSmoke, /node_install_complete/);
+  assert.match(lifecycleSmoke, /ready_passive/);
+  assert.match(lifecycleSmoke, /localOutcomeFromReceipt/);
+  assert.match(lifecycleSmoke, /runLayeredPreflight/);
+  assert.match(lifecycleSmoke, /contribution_accepted/);
+  assert.match(lifecycleSmoke, /credit_earned/);
+  assert.match(lifecycleSmoke, /route_unlocked/);
+  assert.match(lifecycleSmoke, /route_outcome_reported/);
 });

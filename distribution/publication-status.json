@@ -1,11 +1,10 @@
 {
   "schema": "agentwex.publication-status.v1",
-  "releaseVersion": "0.6.3",
+  "releaseVersion": "0.7.0",
   "channels": {
     "npm": {
-      "status": "listed",
-      "verifiedAt": "2026-10-15T00:00:00.000Z",
-      "verificationUrl": "https://www.npmjs.com/package/agentwex/v/0.6.3"
+      "status": "prepared",
+      "artifactPath": "release/agentwex-0.7.0.tgz"
     },
     "codex-openai": {
       "status": "prepared",

@@ -54,11 +54,11 @@
     "sourceAvailable": true,
     "publicNpmPackageReleased": true,
     "npmPackage": "agentwex",
-    "npmVersion": "0.6.3",
-    "npmInstallCommand": "npm install -g agentwex@0.6.3 && agentwex install",
+    "npmVersion": "0.7.0",
+    "npmInstallCommand": "npm install -g agentwex@0.7.0 && agentwex install",
     "directPackageReleased": true,
-    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.3.tgz",
-    "directPackageSha256": "ffe5f08a04a6190b21a61d1948f7ecae23e4ca2625eeea0f1813d2a60eb388a3",
+    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.7.0.tgz",
+    "directPackageSha256": "ecf5973b440afdf93731628ed98d0a65adac40b12834ddbbd9b4811355cc571d",
     "checksumUrl": "https://agentwex.xyz/exchange/SHA256SUMS",
     "hostedExchangeReleased": true,
     "hostedExchangeStage": "public-preview",
@@ -71,9 +71,8 @@
     "discoveryPluginInstallIsNodeInstallApproval": false,
     "publicationStatus": {
       "npm": {
-        "status": "listed",
-        "verifiedAt": "2026-10-15T00:00:00.000Z",
-        "verificationUrl": "https://www.npmjs.com/package/agentwex/v/0.6.3"
+        "status": "prepared",
+        "artifactPath": "release/agentwex-0.7.0.tgz"
       },
       "codex-openai": {
         "status": "prepared",
@@ -113,8 +112,12 @@
   ],
   "researchBountyBridge": {
     "status": "preview",
-    "publishers": ["invention-graph"],
-    "plannedPublishers": ["authenticated-community"],
+    "publishers": [
+      "invention-graph"
+    ],
+    "plannedPublishers": [
+      "authenticated-community"
+    ],
     "publicationRequiresLocalApprovalReceipt": true,
     "publicationCadence": {
       "mode": "quality-gated-continuous",
@@ -159,7 +162,10 @@
     "escrowReleaseAvailable": false,
     "currency": "USDC",
     "network": "eip155:8453",
-    "settlementRails": ["taskmarket_escrow", "x402_direct"],
+    "settlementRails": [
+      "taskmarket_escrow",
+      "x402_direct"
+    ],
     "plannedPublicationEndpoint": "POST /api/exchange/research-bounties",
     "plannedFundingIntentEndpointTemplate": "POST /api/exchange/research-bounties/{bountyId}/funding-intents",
     "fundsCustodiedByAgentWex": false,
