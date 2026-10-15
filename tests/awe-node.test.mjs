@@ -171,6 +171,8 @@ test("signed receipts reject tampering and one node cannot manufacture independe
   const { account, signing } = await signupSigned(exchange.baseUrl,
     { name: "Signed node", identityProvider: "custom", externalSubject: "signed-node" });
   const receiptRuntimePath = await import("../js/lib/receipt.mjs");
+  const freshObservationBase = Date.now() - 120_000;
+  const freshObservedAt = (offsetMs) => new Date(freshObservationBase + offsetMs).toISOString();
   const makeReceipt = (traceId, observedAt) => {
     const unsigned = receiptRuntimePath.adaptOtelSpanToRouteOutcome(
       toolSpan({ traceId, outcome: "success", toolVersion: "3.2.0", clientVersion: "1.8.0", resolutionKind: "upgrade-client-and-tool" }),
@@ -180,13 +182,13 @@ test("signed receipts reject tampering and one node cannot manufacture independe
   };
 
   const first = await exchangeJson(exchange.baseUrl, "/api/exchange/working-route-comps", {
-    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-a", "2026-08-16T10:00:00.000Z"),
+    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-a", freshObservedAt(0)),
   });
   assert.equal(first.status, "accepted");
   assert.equal(first.creditsAwarded, 2);
 
   const second = await exchangeJson(exchange.baseUrl, "/api/exchange/working-route-comps", {
-    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-b", "2026-08-16T10:01:00.000Z"),
+    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-b", freshObservedAt(30_000)),
   });
   assert.equal(second.status, "accepted");
   assert.equal(second.creditsAwarded, 0);
@@ -197,7 +199,7 @@ test("signed receipts reject tampering and one node cannot manufacture independe
     WHERE agent_id = ? AND status = 'accepted'`).bind(account.agentId).first();
   assert.equal(Number(acceptedSupport.count), 1);
 
-  const tampered = { ...makeReceipt("signed-root-c", "2026-08-16T10:02:00.000Z"), toolVersion: "9.9.9" };
+  const tampered = { ...makeReceipt("signed-root-c", freshObservedAt(60_000)), toolVersion: "9.9.9" };
   const response = await fetch(`${exchange.baseUrl}/api/exchange/working-route-comps`, {
     method: "POST",
     headers: { authorization: `Bearer ${account.apiKey}`, "content-type": "application/json" },
