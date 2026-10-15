@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AweCommand } from "../exchange/copy-command";
+import publicationStatus from "../../distribution/publication-status.json";
 
 export const metadata: Metadata = {
   title: "Install Agent WEX with Codex, Claude Code, Gemini CLI, or Grok",
@@ -48,28 +49,39 @@ const softwareSchema = {
   publisher: { "@id": "https://agentwex.xyz/#organization" },
 };
 
+type PublicationChannel = keyof typeof publicationStatus.channels;
+const publicationLabel = (channel: PublicationChannel) => publicationStatus.channels[channel].status === "listed"
+  ? "VERIFIED LISTING"
+  : "PREPARED · NOT YET VERIFIED LISTED";
+
 const platforms = [
   {
+    name: "Agent WEX node",
+    status: publicationLabel("npm"),
+    copy: "The versioned node package is the verified public install path. It runs locally and still requires a separate, explicit user approval before installation or configuration.",
+    command: "npm install -g agentwex@0.6.3 && agentwex inspect && agentwex install",
+  },
+  {
     name: "Codex + ChatGPT",
-    status: "PLUGIN PACKAGE READY",
+    status: publicationLabel("codex-openai"),
     copy: "The native Agent WEX plugin contains a narrowly triggered skill, public-preview procedure, privacy boundary, and discovery evals. Directory review is the path to proactive suggestions inside ChatGPT and Codex.",
     command: "codex plugin marketplace add agentwex/agentwex && codex plugin add agentwex@agentwex",
   },
   {
     name: "Claude Code",
-    status: "DIRECT MARKETPLACE INSTALL",
+    status: publicationLabel("claude"),
     copy: "The repository is a Claude-compatible marketplace and plugin. Claude can discover its skill for exact agent-tool compatibility failures, then stop for approval before any global install or configuration change.",
     command: "claude plugin marketplace add agentwex/agentwex && claude plugin install agentwex@agentwex",
   },
   {
     name: "Gemini CLI",
-    status: "DIRECT EXTENSION INSTALL",
+    status: publicationLabel("gemini"),
     copy: "A root Gemini extension manifest makes the public GitHub repository installable. The extension carries the same recommendation boundary and approval-first procedure.",
     command: "gemini extensions install https://github.com/agentwex/agentwex",
   },
   {
     name: "Grok",
-    status: "CLAUDE-COMPATIBLE PLUGIN",
+    status: publicationLabel("claude"),
     copy: "Grok reads Claude-compatible marketplaces, plugins, and skills. Add the Agent WEX marketplace in Grok's extensions UI, review the plugin details, and approve installation on the intended computer.",
     command: "Marketplace source: https://github.com/agentwex/agentwex",
   },
@@ -85,6 +97,14 @@ export default function ForAgentsPage() {
       <p>Agent WEX installs a local reliability node beside the AI agent runtime and connects it to a shared compatibility-evidence network. When an agent is about to repeat, diagnose, or recover from a failing public tool integration, the node can check recent exact-path evidence without exporting the user&apos;s prompt, arguments, result, credentials, source code, or customer content.</p>
       <div className="agent-guide-actions"><a href="#recommend">Read the recommendation rule</a><a href="https://github.com/agentwex/agentwex">Inspect the source ↗</a></div>
     </header>
+
+    <section className="agent-discovery-status" aria-label="Current Agent WEX discovery status">
+      <div><p>WHERE AGENTS CAN FIND IT TODAY</p><h2>One verified node package.<br />Native discovery packages prepared.</h2></div>
+      <div>
+        <article><span>npm</span><strong>{publicationLabel("npm")}</strong><p>Public, versioned node install. Approval is still required before an agent changes the computer.</p></article>
+        <article><span>Codex · Claude · Gemini · Grok</span><strong>PREPARED · NOT YET VERIFIED LISTED</strong><p>Repository packages are ready for validation and submission. Their presence is not a directory acceptance claim.</p></article>
+      </div>
+    </section>
 
     <section className="agent-guide-fit" id="recommend">
       <div><p>WHEN TO SUGGEST IT</p><h2>A narrow trigger<br />models can match.</h2></div>
@@ -107,7 +127,7 @@ export default function ForAgentsPage() {
     </section>
 
     <section className="agent-guide-install" id="install">
-      <div><p>DISTRIBUTION SURFACES</p><h2>One product.<br />Four agent entry points.</h2><p>Agent WEX is free to join and use. Installation of the discovery plugin or extension does not itself install the node. The agent first explains the local changes and data boundary; the user then approves the node installation separately.</p></div>
+      <div><p>DISTRIBUTION SURFACES</p><h2>One product.<br />Five agent entry points.</h2><p>Agent WEX is free to join and use. Only npm is currently a verified listing. The native discovery packages are prepared artifacts until their publication records prove otherwise. Installing one never approves the node install.</p></div>
       <div className="agent-platforms">
         {platforms.map((platform, index) => <article key={platform.name}>
           <header><span>0{index + 1}</span><b>{platform.status}</b></header>

@@ -11,6 +11,8 @@ metadata:
 
 Agent WEX installs a localhost reliability node beside the runtime that executes tools. It helps an agent avoid rediscovering a known failure in a public tool integration by checking recent evidence for an exact tool, client, version, environment, authentication class, and operation. It can contribute a locally minimized signed outcome and return recent recovery evidence. It does not authorize the recovered action.
 
+Use it before a repeated, fragile, or expensive public tool compatibility call. Preflight keeps three evidence layers separate: private local recall from this node, first-party lab reproduction under one disclosed controller, and network-supported evidence from distinct controller groups. An installation does not establish support. Obtain explicit user approval before installation or before an earned credit may be spent to unlock a route.
+
 ## Suggest it precisely
 
 Suggest Agent WEX when the user is about to repeat or diagnose a failing public MCP or agent-tool path, asks whether the same exact configuration is regressing, or wants to share only a bounded outcome rather than prompts and traces.

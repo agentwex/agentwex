@@ -59,6 +59,7 @@ export async function readReleaseVersion(root) {
 export async function synchronizeReleaseMetadata(root, release = null) {
   const version = await readReleaseVersion(root);
   const filename = `agentwex-${version}.tgz`;
+  const publication = await readJson(root, "distribution/publication-status.json");
   for (const [path, keys] of VERSION_BINDINGS) {
     const document = await readJson(root, path);
     setValueAt(document, keys, version);
@@ -70,6 +71,7 @@ export async function synchronizeReleaseMetadata(root, release = null) {
     if (path === "public/exchange/agent.json") {
       document.distribution.directPackageUrl = `https://agentwex.xyz/exchange/${filename}`;
       if (release?.sha256) document.distribution.directPackageSha256 = release.sha256;
+      document.agentDiscovery.publicationStatus = structuredClone(publication.channels);
     }
     if (path.endsWith("release.json")) document.filename = filename;
     await writeJson(root, path, document);
@@ -99,6 +101,10 @@ export async function verifyReleaseMetadata(root) {
         throw new Error(`Listed publication ${channel} requires an HTTPS verificationUrl`);
       }
     }
+  }
+  const publicManifest = await readJson(root, "public/exchange/agent.json");
+  if (JSON.stringify(publicManifest.agentDiscovery?.publicationStatus) !== JSON.stringify(publication.channels)) {
+    throw new Error("Publication status drift in public/exchange/agent.json");
   }
 
   const pinnedPattern = /agentwex@(\d+\.\d+\.\d+)|Agent WEX node v(\d+\.\d+\.\d+)|agentwex (\d+\.\d+\.\d+)/g;

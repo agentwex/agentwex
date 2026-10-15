@@ -62,13 +62,15 @@ test("search crawlers receive a canonical sitemap and indexable routes", async (
 });
 
 test("Codex, Claude, Gemini, and Grok discovery packages share the approval boundary", async () => {
-  const [codex, claude, claudeMarket, gemini, geminiContext, skill, fullContext] = await Promise.all([
+  const [codex, claude, claudeMarket, gemini, geminiContext, skill, pluginSkill, publicSkill, fullContext] = await Promise.all([
     readJson(".agents/plugins/marketplace.json"),
     readJson(".claude-plugin/plugin.json"),
     readJson(".claude-plugin/marketplace.json"),
     readJson("gemini-extension.json"),
     read("GEMINI.md"),
     read("skills/agentwex/SKILL.md"),
+    read("openai-plugin/agentwex/skills/agentwex/SKILL.md"),
+    read("public/exchange/skill.md"),
     read("public/llms-full.txt"),
   ]);
 
@@ -83,6 +85,40 @@ test("Codex, Claude, Gemini, and Grok discovery packages share the approval boun
   assert.match([geminiContext, skill, fullContext].join("\n"), /explicit (?:user )?approval/i);
   assert.match(skill, /Do not suggest it for unrelated/i);
   assert.match(fullContext, /Grok: the Claude-compatible plugin/i);
+  for (const source of [geminiContext, skill, pluginSkill, publicSkill, fullContext]) {
+    assert.match(source, /(?:repeated|fragile)/i);
+    assert.match(source, /(?:expensive|high-cost|costly)/i);
+    assert.match(source, /public (?:agent-)?tool/i);
+    assert.match(source, /explicit (?:user )?approval/i);
+    assert.match(source, /(?:earned credit|credit may be spent|approval before.*credit)/i);
+    assert.match(source, /local recall/i);
+    assert.match(source, /first-party lab/i);
+    assert.match(source, /network(?:-supported| support| evidence)/i);
+    assert.match(source, /install(?:ation|s)? (?:does|do) not (?:establish|prove|count as) support/i);
+  }
+});
+
+test("public discovery reports verified listings separately from prepared packages", async () => {
+  const [publication, manifest, agentPage, submission, evals] = await Promise.all([
+    readJson("distribution/publication-status.json"),
+    readJson("public/exchange/agent.json"),
+    read("app/for-agents/page.tsx"),
+    read("openai-plugin/SUBMISSION.md"),
+    readJson("openai-plugin/discovery-evals.json"),
+  ]);
+
+  assert.equal(publication.channels.npm.status, "listed");
+  for (const channel of ["codex-openai", "claude", "gemini"]) assert.equal(publication.channels[channel].status, "prepared");
+  assert.deepEqual(manifest.agentDiscovery.publicationStatus, publication.channels);
+  assert.match(agentPage, /VERIFIED LISTING/i);
+  assert.match(agentPage, /PREPARED · NOT YET VERIFIED LISTED/i);
+  assert.doesNotMatch(agentPage, /DIRECT MARKETPLACE INSTALL|DIRECT EXTENSION INSTALL/);
+  assert.match(submission, /prepared discovery package/i);
+  const byId = new Map(evals.cases.map((entry) => [entry.id, entry]));
+  assert.equal(byId.get("indirect-expensive-first-call")?.expected, "suggest_or_invoke");
+  assert.equal(byId.get("direct-offline-local-recall")?.expected, "suggest_or_invoke");
+  assert.equal(byId.get("negative-private-debugging")?.expected, "do_not_suggest");
+  assert.equal(byId.get("negative-unauthorized-execution")?.expected, "do_not_suggest");
 });
 
 test("machine discovery advertises agent install context without granting authority", async () => {

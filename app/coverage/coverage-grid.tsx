@@ -66,7 +66,7 @@ export function CoverageGrid() {
 
   if (failed) return <div className="awe-coverage-empty"><b>Coverage is temporarily unavailable.</b><span>The exchange itself remains separate from this public index.</span></div>;
   if (!payload) return <div className="awe-coverage-loading" aria-live="polite">Reading current coverage…</div>;
-  if (payload.cells.length === 0 && payload.labCells.length === 0) return <div className="awe-coverage-empty"><b>The public network is early.</b><span>No compatibility cell has reached either the lab-reproduction or network-support threshold yet. Sparse evidence stays private.</span></div>;
+  if (payload.cells.length === 0 && payload.labCells.length === 0) return <div className="awe-coverage-empty"><b>The public network is early.</b><span>LOCAL RECALL IS PRIVATE. No compatibility cell has reached either the lab-reproduction or network-support threshold yet. Sparse evidence stays private.</span></div>;
 
   return <div className="awe-coverage-groups">
     {payload.cells.length > 0 && <Cells cells={payload.cells} label="NETWORK SUPPORTED" />}

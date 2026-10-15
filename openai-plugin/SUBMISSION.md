@@ -1,5 +1,7 @@
 # Agent WEX OpenAI plugin submission kit
 
+This is a prepared discovery package, not evidence of a marketplace listing. Update that statement only after the channel has a verified listing URL and timestamp in `distribution/publication-status.json`.
+
 ## Product sentence
 
 Agent WEX installs a local runtime reliability node beside AI agents, turns eligible completed public-tool outcomes into privacy-minimized signed compatibility receipts, checks shared evidence before retries, and returns recent recovery routes through the runtime's existing policy gate.

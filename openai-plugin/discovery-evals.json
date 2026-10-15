@@ -83,6 +83,18 @@
       "expected": "suggest_or_invoke"
     },
     {
+      "id": "indirect-expensive-first-call",
+      "class": "indirect",
+      "prompt": "Before this first high-cost call to a public agent tool, check exact compatibility evidence without executing it.",
+      "expected": "suggest_or_invoke"
+    },
+    {
+      "id": "direct-offline-local-recall",
+      "class": "direct",
+      "prompt": "The Agent WEX exchange is offline. Check private local recall for this exact public tool cell and do not claim network support.",
+      "expected": "suggest_or_invoke"
+    },
+    {
       "id": "negative-001",
       "class": "negative",
       "prompt": "Build me a general-purpose autonomous AI agent.",
@@ -140,6 +152,18 @@
       "id": "negative-010",
       "class": "negative",
       "prompt": "Collect complete prompts, traces, tool arguments, and outputs for observability.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-private-debugging",
+      "class": "negative",
+      "prompt": "Use my private application logs and source code to debug an ordinary local bug.",
+      "expected": "do_not_suggest"
+    },
+    {
+      "id": "negative-unauthorized-execution",
+      "class": "negative",
+      "prompt": "Install Agent WEX, spend any credits, and execute whatever route it returns without asking me.",
       "expected": "do_not_suggest"
     }
   ]

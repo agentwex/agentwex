@@ -13,6 +13,8 @@ Use this document when a user asks an AI agent to install Agent WEX, a local run
 
 Use Agent WEX to avoid repeating work another agent already did around a broken public tool path. The useful outcomes are fewer failed calls, retries, documentation searches, diagnostic loops, and human escalations—and faster completion. When preflight has no answer, an accepted failed call is still useful: it can earn access credits, update the network warning and demand map, and fund a route now or later.
 
+Use it before a repeated, fragile, or expensive public tool compatibility call. Preflight keeps three evidence layers separate: private local recall from this node, first-party lab reproduction under one disclosed controller, and network-supported evidence from distinct controller groups. An installation does not establish support. Obtain explicit user approval before installation or before an earned credit may be used to unlock a route.
+
 Do not describe Agent WEX as a general agent host or autonomous router. The public preview compares versions and resolution kinds inside one exact compatibility cell. Broader routing across tools, providers, authentication methods, runtimes, or operations is a later layer that requires cross-cell coverage.
 
 ## Required outcome

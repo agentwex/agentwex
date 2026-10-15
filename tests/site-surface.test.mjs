@@ -105,3 +105,18 @@ test("the owner console is signed-in, read-only, and explicit about genesis limi
   assert.doesNotMatch(consoleSource, /localStorage|sessionStorage/);
   assert.match(css, /owner-console-page/);
 });
+
+test("coverage explains the three evidence layers without turning installs into support", async () => {
+  const [page, grid, css] = await Promise.all([
+    readFile(new URL("../app/coverage/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/coverage/coverage-grid.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /Private local recall/i);
+  assert.match(page, /First-party lab reproduction/i);
+  assert.match(page, /Network-supported evidence/i);
+  assert.match(page, /install(?:ation|s)? (?:does|do) not (?:establish|prove|count as) support/i);
+  assert.match(grid, /LOCAL RECALL IS PRIVATE/i);
+  assert.match(css, /awe-evidence-layers/);
+  assert.match(css, /radial-gradient\(circle,#71e7af/);
+});

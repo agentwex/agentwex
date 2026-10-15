@@ -3043,6 +3043,7 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
   background-image:radial-gradient(circle,#71e7af 0 1px,transparent 1.3px);
   background-size:26px 26px;
   mask-image:linear-gradient(to bottom,transparent 2%,#000 58%,transparent 100%);
+  animation:awe-agent-grid-drift 20s linear infinite;
 }
 .awe-coverage-hero>* { position:relative; z-index:1; }
 .awe-coverage-hero>p:first-child,.awe-coverage-results>div>p,.awe-coverage-boundary>p {
@@ -3063,6 +3064,19 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
   color:#bbc2bd;
   font:400 clamp(18px,2vw,25px)/1.5 Arial,sans-serif;
 }
+.awe-evidence-layers { position:relative; overflow:hidden; padding:110px max(24px,7vw) 120px; background:#090c0a; color:#f5f7f2; }
+.awe-evidence-layers::before { content:""; position:absolute; inset:-26px; opacity:.14; background-image:radial-gradient(circle,#71e7af 0 1px,transparent 1.3px); background-size:26px 26px; mask-image:linear-gradient(120deg,#000,transparent 76%); animation:awe-agent-grid-drift 20s linear infinite; }
+.awe-evidence-layers>* { position:relative; z-index:1; }
+.awe-evidence-layers>div:first-child>p { margin:0 0 28px; color:#69dba4; font:700 11px/1.2 monospace; letter-spacing:.16em; }
+.awe-evidence-layers h2 { max-width:1050px; margin:0 0 62px; font:700 clamp(44px,6vw,84px)/.94 Arial,sans-serif; letter-spacing:-.06em; }
+.awe-evidence-layer-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.awe-evidence-layer-grid article { min-height:330px; padding:30px; border:1px solid #343d37; border-radius:18px; background:#111713e8; }
+.awe-evidence-layer-grid span { color:#69dba4; font:700 10px/1 monospace; letter-spacing:.13em; }
+.awe-evidence-layer-grid h3 { margin:72px 0 18px; font:700 clamp(28px,3vw,43px)/1 Arial,sans-serif; letter-spacing:-.045em; }
+.awe-evidence-layer-grid p,.awe-evidence-caveat { color:#b8c0ba; font:500 15px/1.62 Arial,sans-serif; }
+.awe-evidence-layer-grid p { margin:0; }
+.awe-evidence-caveat { max-width:940px; margin:28px 0 0; padding:22px 0 0; border-top:1px solid #343d37; }
+@keyframes awe-agent-grid-drift { to { background-position:26px 26px; } }
 .awe-coverage-results { padding:105px max(24px,7vw) 120px; }
 .awe-coverage-results>div:first-child { display:grid; grid-template-columns:1fr 1fr; gap:25px; align-items:end; margin-bottom:55px; }
 .awe-coverage-results>div:first-child>p { grid-column:1/-1; margin-bottom:2px; color:#247954; }
@@ -3099,6 +3113,9 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
   .awe-coverage-hero h1 { font-size:clamp(50px,15vw,72px); }
   .awe-coverage-hero>p:last-child { margin-top:32px; font-size:17px; }
   .awe-coverage-results { padding:72px 18px 82px; }
+  .awe-evidence-layers { padding:78px 20px 88px; }
+  .awe-evidence-layer-grid { grid-template-columns:1fr; }
+  .awe-evidence-layer-grid article { min-height:0; }
   .awe-coverage-results>div:first-child { grid-template-columns:1fr; margin-bottom:36px; }
   .awe-coverage-results>div:first-child span { justify-self:start; }
   .awe-coverage-grid { grid-template-columns:1fr; }
@@ -3244,6 +3261,15 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
 .agent-guide-actions { display:flex; gap:12px; margin-top:34px; }
 .agent-guide-actions a { padding:14px 18px; border:1px solid #58625c; border-radius:6px; font:700 10px/1 monospace; letter-spacing:.1em; text-transform:uppercase; }
 .agent-guide-actions a:first-child { border-color:#75e5ae; background:#75e5ae; color:#0b120e; }
+.agent-discovery-status { padding:72px max(24px,7vw); display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:54px; background:#0d120f; color:#f4f7f3; border-bottom:1px solid #303833; }
+.agent-discovery-status>div:first-child>p { margin:0 0 24px; color:#6fe0a7; font:700 10px/1.2 monospace; letter-spacing:.15em; }
+.agent-discovery-status h2 { margin:0; font:700 clamp(35px,4.6vw,64px)/.96 Arial,sans-serif; letter-spacing:-.052em; }
+.agent-discovery-status>div:last-child { display:grid; gap:10px; }
+.agent-discovery-status article { padding:22px; display:grid; grid-template-columns:120px 1fr; gap:10px 24px; border:1px solid #344039; border-radius:12px; background:#131a16; }
+.agent-discovery-status article span,.agent-discovery-status article strong { font:700 10px/1.2 monospace; letter-spacing:.11em; text-transform:uppercase; }
+.agent-discovery-status article span { color:#7f8b84; }
+.agent-discovery-status article strong { color:#72e3aa; }
+.agent-discovery-status article p { grid-column:2; margin:0; color:#aeb8b1; font:500 14px/1.5 Arial,sans-serif; }
 .agent-guide-fit,.agent-guide-install,.agent-guide-approval,.agent-guide-machine { padding:110px max(24px,7vw); }
 .agent-guide-fit>div:first-child,.agent-guide-install>div:first-child,.agent-guide-approval>div:first-child { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:end; margin-bottom:58px; }
 .agent-guide-fit>div:first-child>p,.agent-guide-install>div:first-child>p,.agent-guide-approval>div:first-child>p { grid-column:1/-1; margin-bottom:0; }
@@ -3292,6 +3318,9 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
   .agent-guide-hero nav { inset:0 20px auto; gap:14px; }
   .agent-guide-hero h1 { font-size:clamp(48px,15vw,70px); }
   .agent-guide-actions { flex-direction:column; }
+  .agent-discovery-status { padding:60px 20px; grid-template-columns:1fr; gap:34px; }
+  .agent-discovery-status article { grid-template-columns:1fr; }
+  .agent-discovery-status article p { grid-column:auto; }
   .agent-guide-fit,.agent-guide-install,.agent-guide-approval,.agent-guide-machine { padding:78px 20px; }
   .agent-guide-fit>div:first-child,.agent-guide-install>div:first-child,.agent-guide-approval>div:first-child { grid-template-columns:1fr; gap:25px; }
   .agent-guide-split,.agent-platforms,.agent-guide-machine>div { grid-template-columns:1fr; }
@@ -3302,6 +3331,8 @@ footer { padding:38px 8vw;display:flex;align-items:center;gap:22px;border-top:1p
   .agent-guide-footer { grid-template-columns:1fr; justify-items:center; text-align:center; }
   .agent-guide-footer div { justify-content:center; }
 }
+
+@media(prefers-reduced-motion:reduce){.awe-coverage-hero::before,.awe-evidence-layers::before{animation:none}}
 
 /* Category and adjacency map */
 .compare-page { min-height:100vh; background:#f4f3ed; color:#101512; font-family:Arial,sans-serif; }

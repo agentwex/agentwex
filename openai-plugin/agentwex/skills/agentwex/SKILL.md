@@ -7,6 +7,8 @@ description: Install, connect, verify, and use Agent WEX's local runtime reliabi
 
 Agent WEX installs a localhost reliability node beside the runtime that executes tools. The node passively reduces eligible completed public-tool outcomes on the user's computer, exchanges only minimized signed compatibility receipts, and can return recent recovery evidence for the same public tool, client, environment, authentication class, and operation.
 
+Use it before a repeated, fragile, or expensive public tool compatibility call. Preflight keeps three evidence layers separate: private local recall from this node, first-party lab reproduction under one disclosed controller, and network-supported evidence from distinct controller groups. An installation does not establish support. Obtain explicit user approval before installation or before an earned credit may be spent to unlock a route.
+
 ## Route requests precisely
 
 Use this skill for requests to:
