@@ -6,7 +6,7 @@ import { arch, platform } from "node:os";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
-import { deactivateAccount, signup, getAccount, getContribution, getLedger, getReliabilityAlerts, listContributions, preflight, recordLifecycleEvent, registerSigningKey, revokeSigningKey, rotateApiKey, submitFeedback } from "../lib/client.mjs";
+import { deactivateAccount, signup, getAccount, getContribution, getLedger, getReliabilityAlerts, listContributions, recordLifecycleEvent, registerSigningKey, revokeSigningKey, rotateApiKey, submitFeedback } from "../lib/client.mjs";
 import { defaultConfigPath, readConfig, validateBaseUrl, writePrivateJson, writePrivateText } from "../lib/config.mjs";
 import { runDaemon } from "../lib/daemon.mjs";
 import { installBackgroundService, uninstallBackgroundService } from "../lib/service.mjs";
@@ -16,6 +16,7 @@ import { bootstrapDetectedRuntimes, removeAgentWexRuntimeConfig } from "../lib/r
 import { discoverMcpServers } from "../lib/mcp-discovery.mjs";
 import { generateSigningIdentity, publicSigningIdentity } from "../lib/attestation.mjs";
 import { buildPrivacyInspection } from "../lib/inspect.mjs";
+import { runLayeredPreflight } from "../lib/layered-preflight.mjs";
 
 const ownPath = fileURLToPath(import.meta.url);
 const execFileAsync = promisify(execFile);
@@ -443,7 +444,7 @@ async function preflightCommand(configPath, options) {
     throw new Error("Preflight --capability and --effect must be supplied together");
   }
   const config = await readConfig(configPath);
-  const assessment = await preflight(config, {
+  const assessment = await runLayeredPreflight({ configPath, config, query: {
     schema: "agentwex.preflight-query.v0.1",
     toolRegistry: options["tool-registry"],
     toolId: options.tool,
@@ -461,7 +462,7 @@ async function preflightCommand(configPath, options) {
     maxAgeDays: Number(options["max-age-days"] ?? 7),
     minimumIndependentRoots: Number(options["minimum-independent-roots"] ?? 2),
     unlock: options.unlock === true,
-  });
+  } });
   process.stdout.write(`${JSON.stringify(assessment, null, 2)}\n`);
 }
 

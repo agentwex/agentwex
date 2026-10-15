@@ -554,9 +554,10 @@ test("localhost collector authenticates intake and queues exchange work off the 
     "--auth-mode", "oauth-pkce", "--operation", "repository-search", "--config", configPath,
   ]);
   const preflight = JSON.parse(preflightCommand.stdout);
-  assert.equal(preflight.schema, "agentwex.preflight-assessment.v0.1");
-  assert.equal(preflight.currentRoute.distinctSignedNodeCount, 1);
-  assert.equal(preflight.evidenceConfidence.level, "insufficient");
+  assert.equal(preflight.schema, "agentwex.layered-preflight-assessment.v0.1");
+  assert.equal(preflight.localRecall.establishesNetworkSupport, false);
+  assert.equal(preflight.exchangeAssessment.currentRoute.distinctSignedNodeCount, 1);
+  assert.equal(preflight.exchangeAssessment.evidenceConfidence.level, "insufficient");
   assert.equal(preflight.recommendation.gateRequired, true);
   assert.equal(JSON.stringify(preflight).includes("routeFingerprint"), false);
 

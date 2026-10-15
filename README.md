@@ -100,10 +100,12 @@ history—including pending, accepted, and collapsed records—while
 arguments or results, credentials, source code, private URLs, provenance roots,
 route fingerprints, or raw trace identifiers.
 
-`preflight` is a free aggregate check. It uses the latest accepted outcome per
-controller group to report current-route reliability, a bounded evidence-confidence
-label, and 24-hour regression/outage alerts. When a supported alternative
-exists, its actionable route remains sealed; adding `--unlock` deliberately
+`preflight` checks private local recall first, then shared exchange evidence.
+Its layered response keeps local history, first-party lab reproduction, and
+network-supported evidence separate. Local recall works when the exchange is
+offline, costs no credits, and can never establish network support or unlock a
+route. When a lab-observed or network-supported alternative exists on the
+exchange, its actionable route remains sealed; adding `--unlock` deliberately
 uses one earned credit and returns the route to the caller's policy Gate.
 After trying it, report only the bounded outcome and optional savings counters:
 
