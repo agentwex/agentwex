@@ -187,6 +187,7 @@ test("release smoke covers live metadata, evidence layers, and the complete acti
   assert.match(productionSmoke, /Private local recall/);
   assert.match(productionSmoke, /First-party lab reproduction/);
   assert.match(productionSmoke, /Network-supported evidence/);
+  assert.match(productionSmoke, /signup_rate_limit_exceeded/);
 
   assert.match(lifecycleSmoke, /node_install_complete/);
   assert.match(lifecycleSmoke, /ready_passive/);

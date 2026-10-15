@@ -60,6 +60,13 @@ const invalidSignup = await fetch(`${agentWex}/api/exchange/signup`, {
   body: "{}",
   signal: AbortSignal.timeout(15_000),
 });
-assert.equal(invalidSignup.status, 400, `invalid signup returned ${invalidSignup.status}`);
+const invalidSignupBody = await invalidSignup.json().catch(() => ({}));
+if (invalidSignup.status === 429) {
+  assert.equal(invalidSignupBody.error, "signup_rate_limit_exceeded");
+  assert.match(invalidSignup.headers.get("retry-after") ?? "", /^\d+$/);
+} else {
+  assert.equal(invalidSignup.status, 400, `invalid signup returned ${invalidSignup.status}`);
+  assert.equal(invalidSignupBody.error, "invalid_signup");
+}
 
-console.log(`Production smoke passed for Agent WEX ${expectedVersion}: domains, release metadata, discovery status, evidence layers, coverage, and signup are healthy.`);
+console.log(`Production smoke passed for Agent WEX ${expectedVersion}: domains, release metadata, discovery status, evidence layers, coverage, and signup boundary are healthy.`);
