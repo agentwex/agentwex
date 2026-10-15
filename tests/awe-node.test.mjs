@@ -9,7 +9,7 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { handleExchangeApi } from "../db/exchange-api.mjs";
 import { getAccount, signup } from "../js/lib/client.mjs";
-import { writePrivateJson } from "../js/lib/config.mjs";
+import { readState, writePrivateJson } from "../js/lib/config.mjs";
 import { createNodeRuntime, runDaemon } from "../js/lib/daemon.mjs";
 import { generateSigningIdentity, publicSigningIdentity, signRouteReceipt } from "../js/lib/attestation.mjs";
 
@@ -207,6 +207,34 @@ test("signed receipts reject tampering and one node cannot manufacture independe
   });
   assert.equal(response.status, 401);
   assert.deepEqual(await response.json(), { error: "invalid_route_receipt_signature" });
+});
+
+test("a minimized local outcome survives when the exchange is unavailable", async (context) => {
+  const directory = await mkdtemp(resolve(tmpdir(), "awe-local-recall-offline-"));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  const configPath = resolve(directory, "config.json");
+  await writePrivateJson(configPath, {
+    schema: "minority-prophet.awe-node-config.v0.1",
+    baseUrl: "http://127.0.0.1:9",
+    agentId: "agent_00000000000000000000000000000000",
+    apiKey: "offline-test-key",
+    signing: generateSigningIdentity(),
+    policy: { shareToolOutcomes: true, shareRawTraces: false },
+    collector: { host: "127.0.0.1", port: 4318, token: "local-test-token" },
+    pollSeconds: 60,
+  });
+  const runtime = await createNodeRuntime(configPath);
+
+  await assert.rejects(() => runtime.ingest({ spans: [toolSpan({ traceId: "PRIVATE-OFFLINE-TRACE", outcome: "failure" })] }));
+
+  const state = await readState(configPath);
+  assert.equal(state.localOutcomes.length, 1);
+  assert.equal(state.localOutcomes[0].outcome, "failure");
+  assert.equal(state.creditBalance, 0);
+  const serialized = JSON.stringify(state);
+  for (const forbidden of ["PRIVATE-OFFLINE-TRACE", "PRIVATE-HOST", "PRIVATE/REPOSITORY", "PRIVATE-TOKEN", "PRIVATE-RESULT", "PRIVATE-PROMPT", "routeFingerprint", "provenanceRootId", "attestation"]) {
+    assert.doesNotMatch(serialized, new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
 });
 
 test("one zero-fill install command creates a generated private node identity without printing its credential", async (context) => {

@@ -10,6 +10,7 @@ import { signRouteReceipt } from "./attestation.mjs";
 import { createRouteQuery, getAccount, getContribution, getRouteQuery, unlockRoute } from "./client.mjs";
 import { createExporters, exportReceipt } from "./exporters.mjs";
 import { defaultConfigPath, readConfig, readState, writeState } from "./config.mjs";
+import { rememberLocalOutcome } from "./local-recall.mjs";
 
 const MAX_BODY_BYTES = 1_048_576;
 
@@ -69,6 +70,7 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
   // runtime is silent or every event is being dropped. Older state files
   // predate this, so it is filled in rather than assumed.
   state.observation ??= { received: 0, contributed: 0, ignored: 0, lastObservedAt: null };
+  state.localOutcomes = Array.isArray(state.localOutcomes) ? state.localOutcomes : [];
   let operation = Promise.resolve();
 
   const exporters = createExporters(config);
@@ -120,6 +122,8 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
           agentId: config.agentId,
         });
         if (adapted.status !== "READY_TO_SUBMIT") { summary.ignored += 1; continue; }
+        state.localOutcomes = rememberLocalOutcome(state.localOutcomes, adapted.receipt);
+        await persist();
         const signedReceipt = signRouteReceipt(adapted.receipt, config.signing);
         // One emit, many listeners. The hosted exchange is the primary
         // destination when configured; a file listener receives the identical
@@ -205,13 +209,15 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
 
   function enqueue(task) {
     state.localQueueDepth = Number(state.localQueueDepth ?? 0) + 1;
-    const queued = serialized(task);
-    void queued
-      .catch((error) => { state.lastBackgroundError = error.message; })
-      .finally(async () => {
+    const queued = serialized(async () => {
+      try {
+        return await task();
+      } finally {
         state.localQueueDepth = Math.max(0, Number(state.localQueueDepth ?? 1) - 1);
         await persist().catch(() => {});
-      });
+      }
+    });
+    void queued.catch((error) => { state.lastBackgroundError = error.message; });
     return { accepted: true, queued: 1 };
   }
 

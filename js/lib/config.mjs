@@ -65,6 +65,7 @@ export async function writeState(configPath, state) {
     pendingContributions: [],
     queries: [],
     routes: [],
+    localOutcomes: [],
     creditBalance: 0,
     ...state,
     updatedAt: new Date().toISOString(),
