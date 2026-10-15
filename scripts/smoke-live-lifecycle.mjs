@@ -21,12 +21,13 @@ const localDirectory = await mkdtemp(resolve(tmpdir(), "agentwex-live-lifecycle-
 const localConfigPath = resolve(localDirectory, "config.json");
 const sha = (value) => `sha256:${createHash("sha256").update(value).digest("hex")}`;
 
-async function request(path, { method = "GET", account, body } = {}) {
+async function request(path, { method = "GET", account, body, headers = {} } = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
     method,
     headers: {
       ...(account ? { authorization: `Bearer ${account.apiKey}` } : {}),
       ...(body ? { "content-type": "application/json" } : {}),
+      ...headers,
     },
     body: body ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(20_000),
@@ -65,7 +66,9 @@ async function lifecycle(account, eventName, eventData = {}) {
 }
 
 function receipt(account, { queryId, outcome, toolVersion, clientVersion, resolutionKind, suffix }) {
-  const observedAt = new Date().toISOString();
+  // Keep synthetic receipts just behind the edge clock so strict evidence-window
+  // checks are not tripped by harmless workstation/Cloudflare clock skew.
+  const observedAt = new Date(Date.now() - 5_000).toISOString();
   return signRouteReceipt({
     ...(queryId ? { queryId } : {}),
     toolRegistry: "mcp",
@@ -89,14 +92,15 @@ function receipt(account, { queryId, outcome, toolVersion, clientVersion, resolu
 try {
   await request("/api/exchange/acquisition-events", {
     method: "POST",
+    headers: { origin: new URL(baseUrl).origin },
     body: {
       acquisitionId, eventName: "join_view", source: "external-pilot",
       medium: "controlled-smoke", campaign: "agentwex_0_7_launch", content: "lifecycle",
       landingPath: "/for-agents",
     },
   });
-  const [requester, first, second] = await Promise.all([
-    signup("requester", acquisitionId), signup("contributor-a"), signup("contributor-b"),
+  const [requester, second] = await Promise.all([
+    signup("requester", acquisitionId), signup("contributor-b"),
   ]);
   assert.equal((await lifecycle(requester, "node_install_complete", {
     installStatus: "INSTALLED_RESTART_REQUIRED", runtimeCount: 1, sourceSurface: "attributed_install",
@@ -161,7 +165,8 @@ try {
     `unexpected initial query status: ${query.status}`,
   );
 
-  for (const [account, suffix] of [[first, "success-a"], [second, "success-b"]]) {
+  const support = [];
+  for (const [account, suffix] of [[requester, "success-a"], [second, "success-b"]]) {
     const contribution = await request("/api/exchange/working-route-comps", {
       method: "POST",
       account,
@@ -172,10 +177,11 @@ try {
       }),
     });
     assert.equal(contribution.status, "accepted");
+    support.push(contribution);
   }
 
   const completed = await request(`/api/exchange/queries/${query.queryId}`, { account: requester });
-  assert.equal(completed.status, "RESULT_AVAILABLE");
+  assert.equal(completed.status, "RESULT_AVAILABLE", JSON.stringify({ completed, support }));
   assert.equal(completed.evidence.distinctSignedNodeSupport, 2);
 
   const access = await request("/api/exchange/unlock", {
