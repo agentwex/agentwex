@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
 import { deactivateAccount, signup, getAccount, getContribution, getLedger, getReliabilityAlerts, listContributions, recordLifecycleEvent, registerSigningKey, revokeSigningKey, rotateApiKey, submitFeedback } from "../lib/client.mjs";
-import { defaultConfigPath, readConfig, validateBaseUrl, writePrivateJson, writePrivateText } from "../lib/config.mjs";
+import { defaultConfigPath, readConfig, readState, validateBaseUrl, writePrivateJson, writePrivateText, writeState } from "../lib/config.mjs";
 import { runDaemon } from "../lib/daemon.mjs";
 import { installBackgroundService, uninstallBackgroundService } from "../lib/service.mjs";
 import { bernsteinPluginSource } from "../lib/bernstein.mjs";
@@ -17,6 +17,7 @@ import { discoverMcpServers } from "../lib/mcp-discovery.mjs";
 import { generateSigningIdentity, publicSigningIdentity } from "../lib/attestation.mjs";
 import { buildPrivacyInspection } from "../lib/inspect.mjs";
 import { runLayeredPreflight } from "../lib/layered-preflight.mjs";
+import { emitLifecycleMilestone } from "../lib/lifecycle-milestones.mjs";
 
 const ownPath = fileURLToPath(import.meta.url);
 const execFileAsync = promisify(execFile);
@@ -474,7 +475,7 @@ async function alerts(configPath, options) {
 async function feedback(configPath, options) {
   if (!options.result || !options.outcome) throw new Error("Feedback requires --result and --outcome");
   const config = await readConfig(configPath);
-  process.stdout.write(`${JSON.stringify(await submitFeedback(config, {
+  const result = await submitFeedback(config, {
     schema: "agentwex.route-feedback.v0.1",
     resultId: options.result,
     outcome: options.outcome,
@@ -482,7 +483,15 @@ async function feedback(configPath, options) {
     attemptsAvoided: Number(options["attempts-avoided"] ?? 0),
     estimatedTokensAvoided: Number(options["estimated-tokens-avoided"] ?? 0),
     estimatedLatencyMsAvoided: Number(options["estimated-latency-ms-avoided"] ?? 0),
-  }), null, 2)}\n`);
+  });
+  let state = {};
+  try { state = await readState(configPath) ?? {}; } catch {}
+  const changed = await emitLifecycleMilestone(
+    state, "route_outcome_reported",
+    (eventName, eventData) => recordLifecycleEvent(config, eventName, eventData),
+  );
+  if (changed) await writeState(configPath, state);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
 
 async function doctor(configPath) {

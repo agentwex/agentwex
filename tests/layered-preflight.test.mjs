@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { writePrivateJson, writeState } from "../js/lib/config.mjs";
+import { readState, writePrivateJson, writeState } from "../js/lib/config.mjs";
 import { runLayeredPreflight } from "../js/lib/layered-preflight.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -90,6 +90,34 @@ test("layered preflight keeps local recall separate from an empty network assess
   assert.equal(result.creditUtility.routeAvailable, false);
   assert.equal(result.creditUtility.canUnlock, false);
   assert.equal(result.authorityGranted, false);
+});
+
+test("layered preflight records bounded milestones once without sending query content", async (context) => {
+  const configPath = await stateDirectory(context, { localOutcomes: [localOutcome], creditBalance: 3 });
+  const sent = [];
+  const options = {
+    configPath,
+    config: { apiKey: "test", baseUrl: "https://example.test" },
+    query,
+    evaluatedAt,
+    remotePreflight: async () => exchangeAssessment(),
+    remoteAccount: async () => ({ creditBalance: 3 }),
+    remoteRecordLifecycle: async (_config, eventName, eventData) => {
+      sent.push({ eventName, eventData });
+      return { attributed: true };
+    },
+  };
+
+  await runLayeredPreflight(options);
+  await runLayeredPreflight(options);
+
+  assert.deepEqual(sent, [
+    { eventName: "preflight_run", eventData: {} },
+    { eventName: "local_recall_hit", eventData: {} },
+  ]);
+  const state = await readState(configPath);
+  assert.deepEqual(state.sentMilestones, ["preflight_run", "local_recall_hit"]);
+  assert.doesNotMatch(JSON.stringify(sent), /toolId|operation|repository-search|github-mcp/);
 });
 
 test("layered preflight labels lab-only evidence without promoting it to network support", async (context) => {

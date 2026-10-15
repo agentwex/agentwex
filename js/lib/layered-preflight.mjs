@@ -1,5 +1,6 @@
-import { getAccount, preflight } from "./client.mjs";
-import { readState } from "./config.mjs";
+import { getAccount, preflight, recordLifecycleEvent } from "./client.mjs";
+import { readState, writeState } from "./config.mjs";
+import { emitLifecycleMilestone } from "./lifecycle-milestones.mjs";
 import { assessLocalRecall } from "./local-recall.mjs";
 
 function evidenceFromExchange(assessment, query) {
@@ -41,6 +42,7 @@ export async function runLayeredPreflight({
   query,
   remotePreflight = preflight,
   remoteAccount = getAccount,
+  remoteRecordLifecycle = recordLifecycleEvent,
   evaluatedAt = new Date().toISOString(),
 }) {
   let state = null;
@@ -68,6 +70,24 @@ export async function runLayeredPreflight({
     gateRequired: true,
     authorityGranted: false,
   };
+  const milestoneState = state ?? {};
+  let milestonesChanged = await emitLifecycleMilestone(
+    milestoneState, "preflight_run",
+    (eventName, eventData) => remoteRecordLifecycle(config, eventName, eventData),
+  );
+  if (localRecall.sampleCount > 0) {
+    milestonesChanged = await emitLifecycleMilestone(
+      milestoneState, "local_recall_hit",
+      (eventName, eventData) => remoteRecordLifecycle(config, eventName, eventData),
+    ) || milestonesChanged;
+  }
+  if (exchangeAssessment?.routeAccess?.routeReceipt) {
+    milestonesChanged = await emitLifecycleMilestone(
+      milestoneState, "route_unlocked",
+      (eventName, eventData) => remoteRecordLifecycle(config, eventName, eventData),
+    ) || milestonesChanged;
+  }
+  if (milestonesChanged) await writeState(configPath, milestoneState);
 
   return {
     schema: "agentwex.layered-preflight-assessment.v0.1",

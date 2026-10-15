@@ -163,6 +163,9 @@ test("install-once runtime contributes privately, earns credit, and retrieves a 
   assert.equal(state.routes[0].gateRequired, true);
   assert.equal(state.routes[0].workingRoute.toolVersion, "3.2.0");
   assert.equal(state.routes[0].evidence.successfulIndependentRoots, 2);
+  assert.ok(state.sentMilestones.includes("contribution_accepted"));
+  assert.ok(state.sentMilestones.includes("credit_earned"));
+  assert.ok(state.sentMilestones.includes("route_unlocked"));
 });
 
 test("signed receipts reject tampering and one node cannot manufacture independent support", async (context) => {

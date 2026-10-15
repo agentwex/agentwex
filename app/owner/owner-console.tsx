@@ -18,7 +18,11 @@ type Activity = {
 };
 type Query = { ownerLabel: string; toolId: string; operation: string; status: string; minimumIndependentRoots: number; createdAt: string };
 type Recovery = { ownerLabel: string; outcome: string; attemptsAvoided: number; createdAt: string };
-type AcquisitionSummary = { joinViews: number; instructionCopies: number; registrations: number; installs: number; readyNodes: number };
+type AcquisitionSummary = {
+  joinViews: number; instructionCopies: number; registrations: number; installs: number; readyNodes: number;
+  preflights: number; localRecallHits: number; contributors: number; creditEarners: number;
+  routeUnlockers: number; routeOutcomes: number;
+};
 type AcquisitionCampaign = AcquisitionSummary & { source: string; medium: string; campaign: string; content: string };
 type Snapshot = {
   asOf: string; summary: Summary; nodes: NodeRecord[]; activity: Activity[]; queries: Query[]; recoveries: Recovery[];
@@ -96,10 +100,18 @@ export function OwnerConsole() {
         <article><strong>{snapshot.acquisition.summary.installs}</strong><span>installs completed</span></article><i>→</i>
         <article className="owner-funnel-final"><strong>{snapshot.acquisition.summary.readyNodes}</strong><span>ready passive nodes</span></article>
       </div>
+      <div className="owner-funnel owner-funnel-utility">
+        <article><strong>{snapshot.acquisition.summary.preflights}</strong><span>preflights run</span></article><i>→</i>
+        <article><strong>{snapshot.acquisition.summary.localRecallHits}</strong><span>local recall hits</span></article><i>→</i>
+        <article><strong>{snapshot.acquisition.summary.contributors}</strong><span>verified contributors</span></article><i>→</i>
+        <article><strong>{snapshot.acquisition.summary.creditEarners}</strong><span>credits earned</span></article><i>→</i>
+        <article><strong>{snapshot.acquisition.summary.routeUnlockers}</strong><span>routes unlocked</span></article><i>→</i>
+        <article className="owner-funnel-final"><strong>{snapshot.acquisition.summary.routeOutcomes}</strong><span>outcomes reported</span></article>
+      </div>
       <div className="owner-campaign-list">
         {snapshot.acquisition.campaigns.length === 0 ? <p>No attributed campaign visits yet.</p> : snapshot.acquisition.campaigns.map((campaign) => <article key={`${campaign.source}-${campaign.medium}-${campaign.campaign}-${campaign.content}`}>
           <div><b>{campaign.content}</b><span>{campaign.source} / {campaign.medium} · {campaign.campaign}</span></div>
-          <dl><div><dt>Views</dt><dd>{campaign.joinViews}</dd></div><div><dt>Copies</dt><dd>{campaign.instructionCopies}</dd></div><div><dt>Registered</dt><dd>{campaign.registrations}</dd></div><div><dt>Ready</dt><dd>{campaign.readyNodes}</dd></div></dl>
+          <dl><div><dt>Views</dt><dd>{campaign.joinViews}</dd></div><div><dt>Registered</dt><dd>{campaign.registrations}</dd></div><div><dt>Ready</dt><dd>{campaign.readyNodes}</dd></div><div><dt>Preflights</dt><dd>{campaign.preflights}</dd></div><div><dt>Contributors</dt><dd>{campaign.contributors}</dd></div><div><dt>Outcomes</dt><dd>{campaign.routeOutcomes}</dd></div></dl>
         </article>)}
       </div>
     </section>

@@ -97,6 +97,11 @@ test("the owner console is signed-in, read-only, and explicit about genesis limi
   assert.match(consoleSource, /An identity origin—not consciousness/);
   assert.match(consoleSource, /No action authority/);
   assert.match(consoleSource, /AUTO-REFRESH 30S/);
+  assert.match(consoleSource, /preflights run/i);
+  assert.match(consoleSource, /local recall hits/i);
+  assert.match(consoleSource, /credits earned/i);
+  assert.match(consoleSource, /routes unlocked/i);
+  assert.match(consoleSource, /outcomes reported/i);
   assert.doesNotMatch(consoleSource, /localStorage|sessionStorage/);
   assert.match(css, /owner-console-page/);
 });
