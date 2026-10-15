@@ -257,7 +257,6 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
 
 export async function runDaemon(configPath = defaultConfigPath()) {
   const runtime = await createNodeRuntime(configPath);
-  await runtime.reconcile();
   const host = "127.0.0.1";
   const port = runtime.config.collector.port;
   const server = createServer(async (request, response) => {
@@ -304,6 +303,7 @@ export async function runDaemon(configPath = defaultConfigPath()) {
     server.listen(port, host, resolve);
   });
   process.stdout.write(`Agent WEX node listening on http://${host}:${server.address().port}\n`);
+  void runtime.reconcile().catch(() => {});
   const close = () => new Promise((resolve) => {
     clearInterval(timer);
     process.off("SIGINT", shutdown);

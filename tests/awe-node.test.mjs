@@ -67,6 +67,14 @@ async function startExchange() {
   };
 }
 
+async function reservePort() {
+  const server = createServer();
+  await new Promise((resolveListening) => server.listen(0, "127.0.0.1", resolveListening));
+  const port = server.address().port;
+  await new Promise((resolveClose) => server.close(resolveClose));
+  return port;
+}
+
 async function exchangeJson(baseUrl, path, { method = "GET", token, body } = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
     method,
@@ -112,6 +120,53 @@ async function signupSigned(baseUrl, agent) {
   });
   return { account, signing };
 }
+
+test("daemon accepts local health checks while startup reconciliation is still pending", async (context) => {
+  const exchange = await startExchange();
+  const directory = await mkdtemp(resolve(tmpdir(), "awe-node-startup-test-"));
+  let node;
+  context.after(async () => {
+    if (node) await node.close();
+    await new Promise((resolveClose) => exchange.server.close(resolveClose));
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  const { account, signing } = await signupSigned(exchange.baseUrl,
+    { name: "Startup node", identityProvider: "custom", externalSubject: "startup-node" });
+  const port = await reservePort();
+  const configPath = resolve(directory, "config.json");
+  await writePrivateJson(configPath, {
+    schema: "minority-prophet.awe-node-config.v0.1",
+    baseUrl: exchange.baseUrl,
+    agentId: account.agentId,
+    apiKey: account.apiKey,
+    signing,
+    policy: { shareToolOutcomes: true, shareRawTraces: false },
+    collector: { host: "127.0.0.1", port, token: "startup-local-token" },
+    pollSeconds: 60,
+  });
+
+  const releaseExchange = exchange.blockRequests();
+  const daemonPromise = runDaemon(configPath);
+  let healthResponse;
+  let healthError;
+  try {
+    await new Promise((resolveWait) => setTimeout(resolveWait, 50));
+    healthResponse = await fetch(`http://127.0.0.1:${port}/health`, {
+      headers: { authorization: "Bearer startup-local-token" },
+      signal: AbortSignal.timeout(500),
+    });
+  } catch (error) {
+    healthError = error;
+  } finally {
+    releaseExchange();
+  }
+  node = await daemonPromise;
+
+  assert.ifError(healthError);
+  assert.equal(healthResponse.status, 200);
+  assert.deepEqual(await healthResponse.json(), { status: "ok", agentId: account.agentId, authorityGranted: false });
+});
 
 test("install-once runtime contributes privately, earns credit, and retrieves a Gate-bound route", async (context) => {
   const exchange = await startExchange();
