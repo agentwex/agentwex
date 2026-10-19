@@ -8,12 +8,12 @@ Agent WEX installs a local runtime reliability node beside AI agents, turns elig
 
 ## Package
 
-Submit the `agentwex/` directory in this folder as a skills-only plugin. It contains no MCP server or custom UI. The bundled skill covers installation and operation of the released `agentwex@0.7.0` npm package.
+Submit the `agentwex/` directory in this folder as a skills-only, Desktop only plugin. It contains no MCP server or custom UI. The manifest declares `requires_local_executor: true` because the bundled skill installs and operates the released `agentwex@0.7.0` npm package on the user's computer.
 
 ## Directory copy
 
 - **Name:** Agent WEX
-- **Subtitle:** Runtime reliability network for agent tools
+- **Subtitle:** AI agent runtime reliability
 - **Category:** Developer Tools
 - **Description:** Install and operate Agent WEX's local runtime reliability node and shared compatibility-evidence network. Passively minimize eligible completed public-tool outcomes on the user's computer, check exact tool/runtime cells before retries, inspect reliability and alerts, contribute bounded signed receipts, and unlock recovery routes through the local policy gate.
 - **Website:** https://agentwex.xyz
@@ -25,6 +25,7 @@ Submit the `agentwex/` directory in this folder as a skills-only plugin. It cont
 ## Reviewer notes
 
 - The plugin is an instructional, skills-only package. It does not itself execute an MCP server or render custom UI.
+- The plugin is intentionally marked Desktop only because its core benefit comes from a local reliability node beside the user's agents.
 - The npm installer creates a pseudonymous signing identity, starts a loopback collector, contacts the hosted Agent WEX exchange, and configures a supported runtime only when its telemetry destination is unclaimed.
 - The skill requires explicit authorization before global installation or configuration changes and preserves existing telemetry exporters.
 - The node minimizes locally before upload and excludes prompts, tool arguments, tool results, credentials, source code, customer content, private URLs, exception text, raw spans, and raw trace IDs.

@@ -15,6 +15,7 @@ test("OpenAI plugin metadata matches the released Agent WEX package", () => {
   const repository = readJson("package.json");
   const release = readJson("public/exchange/release.json");
   const plugin = readJson("openai-plugin/agentwex/.codex-plugin/plugin.json");
+  const submission = fs.readFileSync(path.join(root, "openai-plugin", "SUBMISSION.md"), "utf8");
 
   assert.equal(plugin.name, "agentwex");
   assert.equal(plugin.version, repository.version);
@@ -24,9 +25,17 @@ test("OpenAI plugin metadata matches the released Agent WEX package", () => {
     plugin.interface.termsOfServiceURL,
     "https://agentwex.xyz/exchange/terms",
   );
+  assert.equal(
+    plugin.interface.supportURL,
+    "https://github.com/agentwex/agentwex/issues",
+  );
   assert.equal(plugin.skills, "./skills/");
   assert.equal("mcpServers" in plugin, false);
   assert.equal("apps" in plugin, false);
+  assert.equal(plugin.requires_local_executor, true);
+  assert.equal(plugin.interface.shortDescription.length <= 30, true);
+  assert.match(submission, /\*\*Subtitle:\*\* AI agent runtime reliability/);
+  assert.match(submission, /Desktop only/i);
   assert.equal(plugin.interface.capabilities.includes("OpenInference TOOL-span normalization"), true);
 
   for (const asset of [plugin.interface.composerIcon, plugin.interface.logo]) {

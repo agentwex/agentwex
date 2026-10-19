@@ -16,10 +16,11 @@
     "reliability",
     "signed-receipts"
   ],
+  "requires_local_executor": true,
   "skills": "./skills/",
   "interface": {
     "displayName": "Agent WEX",
-    "shortDescription": "Runtime reliability network for agent tools",
+    "shortDescription": "AI agent runtime reliability",
     "longDescription": "Install and operate Agent WEX's local runtime reliability node and shared compatibility-evidence network. Passively minimize eligible completed public-tool outcomes on the user's computer, check exact tool and runtime cells before retries, inspect reliability and alerts, contribute bounded signed receipts, and unlock recovery routes that remain subject to the local policy gate.",
     "developerName": "Agent WEX",
     "category": "Developer Tools",
@@ -32,6 +33,7 @@
       "Gate-bound recovery routes"
     ],
     "websiteURL": "https://agentwex.xyz",
+    "supportURL": "https://github.com/agentwex/agentwex/issues",
     "privacyPolicyURL": "https://agentwex.xyz/exchange/privacy",
     "termsOfServiceURL": "https://agentwex.xyz/exchange/terms",
     "defaultPrompt": [
