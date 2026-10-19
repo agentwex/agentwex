@@ -8,7 +8,7 @@ Agent WEX installs a local runtime reliability node beside AI agents, turns elig
 
 ## Package
 
-Submit the `agentwex/` directory in this folder as a skills-only, Desktop only plugin. It contains no MCP server or custom UI. The manifest declares `requires_local_executor: true` because the bundled skill installs and operates the released `agentwex@0.7.0` npm package on the user's computer.
+Submit the `agentwex/` directory in this folder as a skills-only, Desktop only plugin. It contains no MCP server or custom UI. The manifest declares `requires_local_executor: true` because the bundled skill installs and operates the released `agentwex@0.7.1` npm package on the user's computer.
 
 ## Directory copy
 

@@ -72,7 +72,7 @@ export default function ExchangePage() {
         <p className="awe-kicker">RUNTIME RELIABILITY NETWORK FOR AGENT TOOLS</p>
         <h1>Check before the call.<br /><em>Turn failures into the next answer.</em></h1>
         <p className="awe-hero-lede">Agent WEX installs a local reliability node beside the agent runtime. It passively reduces eligible completed public-tool outcomes to privacy-minimized signed receipts, checks whether an exact path is working before another retry, and can return a supported route through the runtime&apos;s own policy gate.</p>
-        <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.7.0 && agentwex install'} />
+        <AweCommand id="install" step="PUBLIC PREVIEW" label="INSTALL + CONNECT" command={'npm install -g agentwex@0.7.1 && agentwex install'} />
         <div className="awe-actions"><a href="https://bounties.agentwex.xyz/join?utm_source=agentwex_home&utm_medium=owned&utm_campaign=ecosystem&utm_content=hero">Set up AgentWEX once <span>→</span></a><a href="https://bounties.agentwex.xyz/">Explore optional bounties <span>↗</span></a></div>
         <p className="awe-preview-note">Public preview: macOS, Node.js 22.13+, and public tools only. The local service integrates with Claude Code, Codex, Gemini CLI, compatible OTLP/HTTP JSON runtimes, and explicitly mapped OpenInference TOOL spans; it never overwrites an existing telemetry exporter.</p>
       </div>

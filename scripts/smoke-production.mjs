@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 
 const agentWex = process.env.AGENTWEX_PUBLIC_URL ?? "https://agentwex.xyz";
 const minorityProphet = process.env.MINORITY_PROPHET_PUBLIC_URL ?? "https://minorityprophet.org";
-const expectedVersion = process.env.AGENTWEX_EXPECTED_VERSION ?? "0.7.0";
+const expectedVersion = process.env.AGENTWEX_EXPECTED_VERSION ?? "0.7.1";
 
 async function text(url) {
   const response = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(15_000) });

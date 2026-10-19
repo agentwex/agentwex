@@ -13,7 +13,7 @@ test("release verification accepts one canonical version and truthful publicatio
   const { verifyReleaseMetadata } = await import("../scripts/release-metadata.mjs");
   const verified = await verifyReleaseMetadata(repositoryRoot);
 
-  assert.equal(verified.version, "0.7.0");
+  assert.equal(verified.version, "0.7.1");
   assert.ok(verified.checked.includes(".claude-plugin/plugin.json"));
   assert.ok(verified.checked.includes("distribution/publication-status.json"));
 });
@@ -109,7 +109,7 @@ test("public discovery reports verified listings separately from prepared packag
 
   assert.ok(["prepared", "listed"].includes(publication.channels.npm.status));
   if (publication.channels.npm.status === "listed") {
-    assert.match(publication.channels.npm.verificationUrl, /\/agentwex\/v\/0\.7\.0$/);
+    assert.match(publication.channels.npm.verificationUrl, /\/agentwex\/v\/0\.7\.1$/);
   }
   for (const channel of ["codex-openai", "claude", "gemini"]) assert.equal(publication.channels[channel].status, "prepared");
   assert.deepEqual(manifest.agentDiscovery.publicationStatus, publication.channels);
@@ -125,14 +125,17 @@ test("public discovery reports verified listings separately from prepared packag
 });
 
 test("machine discovery advertises agent install context without granting authority", async () => {
-  const [manifest, worker] = await Promise.all([
+  const [manifest, docsManifest, worker] = await Promise.all([
     readJson("public/exchange/agent.json"),
+    readJson("docs/agent.json"),
     read("worker/index.ts"),
   ]);
 
   assert.equal(manifest.documentation.forAgents, "https://agentwex.xyz/for-agents");
   assert.equal(manifest.documentation.llmsFull, "https://agentwex.xyz/llms-full.txt");
   assert.equal(manifest.documentation.bountyBootstrap, "https://bounties.agentwex.xyz/api/agent-bootstrap.json");
+  assert.match(manifest.distribution.npmInstallCommand, /agentwex@0\.7\.1/);
+  assert.match(docsManifest.distribution.npmInstallCommand, /agentwex@0\.7\.1/);
   assert.equal(manifest.agentDiscovery.nodeInstallRequiresExplicitUserApproval, true);
   assert.equal(manifest.agentDiscovery.discoveryPluginInstallIsNodeInstallApproval, false);
   assert.equal(manifest.authorityBoundary.grantsAuthority, false);

@@ -93,6 +93,14 @@ zero-resource claim.
 - The production lifecycle smoke confirmed attributed acquisition, signup, install/ready milestones, signed contribution acceptance, earned credit, and private local recall before its two-node completion assertion. It exposed a strict edge/workstation clock-skew hazard; synthetic receipt time was moved five seconds behind the edge clock. A repeat run is temporarily limited by the intentional five-signups-per-hour production throttle.
 - A clean non-first-party pilot is still required before calling network support externally validated. No first-party run is presented as independent community evidence.
 
+## 0.7.1 patch release preparation — 2026-10-19
+
+- GitHub release-integrity verification caught that the post-0.7.0 daemon-startup fix changed package contents after immutable `agentwex@0.7.0` had already been published.
+- The corrected package is therefore a new patch release, `agentwex@0.7.1`; the published 0.7.0 archive remains unchanged and verifiable at SHA-256 `ecf5973b440afdf93731628ed98d0a65adac40b12834ddbbd9b4811355cc571d`.
+- Prepared 0.7.1 archive: `agentwex-0.7.1.tgz`, SHA-256 `04ca0cf99c4ad77f3d7a1a5e4c627a84e8a7548460f814a38aa56301c338d5c3`, 39,934 bytes, zero dependencies, zero lifecycle scripts, Node.js `>=22.13.0`.
+- Local verification passed: lint (one pre-existing unused-test-variable warning), 141 tests, production build, canonical metadata verification, package dry-run, and byte-for-byte rebuild comparison.
+- npm and all external agent directories remain marked `prepared` until their authenticated publication or submission receipts exist.
+
 ## Honest installation claim
 
 `agentwex install` is the one explicit consent step. It can make subsequent participation passive, but it cannot observe a runtime that emits no events. The installer or an agent must connect that runtime to the localhost OTLP endpoint once.

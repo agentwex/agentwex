@@ -23,10 +23,10 @@ The route is advice, not authority. It must return through the caller's Gate or 
 
 ## Public-preview node install
 
-Install the canonical dependency-free Node.js package, version `0.7.0`:
+Install the canonical dependency-free Node.js package, version `0.7.1`:
 
 ```sh
-npm install --global agentwex@0.7.0
+npm install --global agentwex@0.7.1
 agentwex install
 ```
 

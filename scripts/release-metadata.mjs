@@ -66,9 +66,11 @@ export async function synchronizeReleaseMetadata(root, release = null) {
     if (path === "docs/agent.json") {
       document.distribution.filename = filename;
       document.distribution.directPackageUrl = `https://agentwex.xyz/exchange/${filename}`;
+      document.distribution.npmInstallCommand = `npm install -g agentwex@${version} && agentwex install`;
       if (release?.sha256) document.distribution.sha256 = release.sha256;
     }
     if (path === "public/exchange/agent.json") {
+      document.distribution.npmInstallCommand = `npm install -g agentwex@${version} && agentwex install`;
       document.distribution.directPackageUrl = `https://agentwex.xyz/exchange/${filename}`;
       if (release?.sha256) document.distribution.directPackageSha256 = release.sha256;
       document.agentDiscovery.publicationStatus = structuredClone(publication.channels);
