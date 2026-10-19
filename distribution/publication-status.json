@@ -3,8 +3,10 @@
   "releaseVersion": "0.7.1",
   "channels": {
     "npm": {
-      "status": "prepared",
-      "artifactPath": "release/agentwex-0.7.1.tgz"
+      "status": "listed",
+      "artifactPath": "release/agentwex-0.7.1.tgz",
+      "verifiedAt": "2026-10-19T22:10:00Z",
+      "verificationUrl": "https://www.npmjs.com/package/agentwex/v/0.7.1"
     },
     "codex-openai": {
       "status": "prepared",
