@@ -207,7 +207,7 @@ export async function handleExchangeApi(request, db, options = {}) {
     const body = await limitedJson(request);
     if (body instanceof Response) return body;
     const result = await recordAgentLifecycleEvent(db, agent.id, body);
-    if (result.ok && result.attributed && result.acquisitionId && options.forwardConversion) {
+    if (result.ok && result.attributed && !result.idempotentReplay && result.acquisitionId && options.forwardConversion) {
       options.forwardConversion(result.eventName, result.acquisitionId, body.eventData ?? {});
       if (result.eventName === "node_install_complete") {
         options.forwardConversion("tutorial_complete", result.acquisitionId, body.eventData ?? {});

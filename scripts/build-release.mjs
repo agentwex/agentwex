@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { synchronizeReleaseMetadata, verifyReleaseMetadata } from "./release-metadata.mjs";
 
 const execFileAsync = promisify(execFile);
 const root = resolve(import.meta.dirname, "..");
@@ -24,8 +25,8 @@ try {
   await cp(resolve(staging, packed.filename), destination);
   const bytes = await readFile(destination);
   const sha256 = createHash("sha256").update(bytes).digest("hex");
-  await writeFile(resolve(output, "SHA256SUMS"), `${sha256}  ${filename}\n`);
-  await writeFile(resolve(output, "release.json"), `${JSON.stringify({
+  const sums = `${sha256}  ${filename}\n`;
+  const release = {
     package: manifest.name,
     version: manifest.version,
     filename,
@@ -35,7 +36,15 @@ try {
     dependencies: 0,
     lifecycleScripts: false,
     source: "https://github.com/agentwex/agentwex",
-  }, null, 2)}\n`);
+  };
+  const releaseJson = `${JSON.stringify(release, null, 2)}\n`;
+  await writeFile(resolve(output, "SHA256SUMS"), sums);
+  await writeFile(resolve(output, "release.json"), releaseJson);
+  const publicOutput = resolve(root, "public", "exchange");
+  await mkdir(publicOutput, { recursive: true });
+  await cp(destination, resolve(publicOutput, filename));
+  await writeFile(resolve(publicOutput, "SHA256SUMS"), sums);
+  await writeFile(resolve(publicOutput, "release.json"), releaseJson);
   const discoveryPath = resolve(root, "docs", "agent.json");
   const discovery = JSON.parse(await readFile(discoveryPath, "utf8"));
   discovery.distribution = {
@@ -49,6 +58,8 @@ try {
     lifecycleScripts: false,
   };
   await writeFile(discoveryPath, `${JSON.stringify(discovery, null, 2)}\n`);
+  await synchronizeReleaseMetadata(root, { version: manifest.version, filename, sha256, size: bytes.byteLength });
+  await verifyReleaseMetadata(root);
   process.stdout.write(`${filename} ${sha256}\n`);
 } finally {
   await rm(stagingRoot, { recursive: true, force: true });

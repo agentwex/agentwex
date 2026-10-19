@@ -13,7 +13,7 @@ test("the standalone site makes prevention, failure value, and scope explicit", 
   ]);
 
   assert.match(page, /Check before the call/);
-  assert.match(page, /npm install -g agentwex@0\.6\.3/);
+  assert.match(page, /npm install -g agentwex@0\.7\.1/);
   assert.doesNotMatch(page, /className="awe-nav"/);
   assert.match(page, /className="awe-global-nav"/);
   assert.match(page, /https:\/\/bounties\.agentwex\.xyz\//);
@@ -48,7 +48,7 @@ test("machine discovery and the downloadable package are aligned", async () => {
   const [manifestSource, releaseSource, archive] = await Promise.all([
     readFile(new URL("../public/exchange/agent.json", import.meta.url), "utf8"),
     readFile(new URL("../public/exchange/release.json", import.meta.url), "utf8"),
-    readFile(new URL("../public/exchange/agentwex-0.6.3.tgz", import.meta.url)),
+    readFile(new URL("../public/exchange/agentwex-0.7.1.tgz", import.meta.url)),
   ]);
   const manifest = JSON.parse(manifestSource);
   const release = JSON.parse(releaseSource);
@@ -59,8 +59,8 @@ test("machine discovery and the downloadable package are aligned", async () => {
   assert.equal(manifest.economics.walletRequiredToJoin, false);
   assert.equal(manifest.distribution.publicNpmPackageReleased, true);
   assert.equal(manifest.distribution.npmPackage, "agentwex");
-  assert.equal(manifest.distribution.npmVersion, "0.6.3");
-  assert.match(manifest.distribution.npmInstallCommand, /npm install -g agentwex@0\.6\.3/);
+  assert.equal(manifest.distribution.npmVersion, "0.7.1");
+  assert.match(manifest.distribution.npmInstallCommand, /npm install -g agentwex@0\.7\.1/);
   assert.equal(manifest.preflight.aggregateAssessmentCostCredits, 0);
   assert.equal(manifest.preflight.unrestrictedCrossToolProviderAuthRuntimeRoutingClaimed, false);
   assert.equal(digest, release.sha256);
@@ -97,6 +97,26 @@ test("the owner console is signed-in, read-only, and explicit about genesis limi
   assert.match(consoleSource, /An identity origin—not consciousness/);
   assert.match(consoleSource, /No action authority/);
   assert.match(consoleSource, /AUTO-REFRESH 30S/);
+  assert.match(consoleSource, /preflights run/i);
+  assert.match(consoleSource, /local recall hits/i);
+  assert.match(consoleSource, /credits earned/i);
+  assert.match(consoleSource, /routes unlocked/i);
+  assert.match(consoleSource, /outcomes reported/i);
   assert.doesNotMatch(consoleSource, /localStorage|sessionStorage/);
   assert.match(css, /owner-console-page/);
+});
+
+test("coverage explains the three evidence layers without turning installs into support", async () => {
+  const [page, grid, css] = await Promise.all([
+    readFile(new URL("../app/coverage/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/coverage/coverage-grid.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /Private local recall/i);
+  assert.match(page, /First-party lab reproduction/i);
+  assert.match(page, /Network-supported evidence/i);
+  assert.match(page, /install(?:ation|s)? (?:does|do) not (?:establish|prove|count as) support/i);
+  assert.match(grid, /LOCAL RECALL IS PRIVATE/i);
+  assert.match(css, /awe-evidence-layers/);
+  assert.match(css, /radial-gradient\(circle,#71e7af/);
 });

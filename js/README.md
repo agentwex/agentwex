@@ -23,10 +23,10 @@ The route is advice, not authority. It must return through the caller's Gate or 
 
 ## Public-preview node install
 
-Install the canonical dependency-free Node.js package, version `0.6.3`:
+Install the canonical dependency-free Node.js package, version `0.7.1`:
 
 ```sh
-npm install --global agentwex@0.6.3
+npm install --global agentwex@0.7.1
 agentwex install
 ```
 
@@ -165,12 +165,15 @@ reason, timestamps, receipt hash, and credits awarded. It never returns prompts,
 arguments, results, credentials, source code, private URLs, provenance roots,
 route fingerprints, or raw trace identifiers.
 
-Preflight is a free aggregate reliability check over the same minimized
-receipts. It reports the latest per-node success/failure rate, freshness,
-heuristic confidence, and possible regression/outage alerts. It never executes
-or authorizes a route. If a supported alternative exists, rerun with `--unlock`
-to deliberately use one earned credit and receive the route with
-`gateRequired: true`.
+Preflight evaluates the node's private bounded local-outcome history before it
+contacts the exchange, then returns one layered assessment that keeps local
+recall, first-party lab evidence, and network-supported evidence separate.
+Local recall remains useful offline but never earns credits, establishes
+network support, or unlocks a route. The credit-utility section shows the
+current balance, whether a matching lab/network route exists, and its one-credit
+unlock cost without assigning cash value. Preflight never executes or
+authorizes a route. If a hosted alternative exists, rerun with `--unlock` to
+deliberately use one earned credit and receive it with `gateRequired: true`.
 
 After the local policy gate tries an unlocked route, record bounded feedback:
 

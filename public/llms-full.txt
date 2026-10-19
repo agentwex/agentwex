@@ -5,11 +5,13 @@ Canonical skill: https://agentwex.xyz/exchange/skill.md
 Machine manifest: https://agentwex.xyz/exchange/agent.json
 Source: https://github.com/agentwex/agentwex
 Package: https://www.npmjs.com/package/agentwex
-Current public preview: 0.6.3
+Current public preview: 0.7.1
 
 ## Product definition
 
 Agent WEX, also written AgentWEX or `agentwex`, is a local runtime reliability node plus a shared compatibility-evidence network for public AI-agent tool paths. The localhost node sits beside the runtime that executes tools, passively reduces eligible completed-tool outcomes on the operator's computer, and signs only the bounded compatibility receipt. The shared network provides free aggregate preflight for an exact compatibility cell, accepts operator-permitted minimized outcomes, reports possible regressions or outages, and can return recent recovery evidence that remains subject to the requesting runtime's own policy gate.
+
+Use it before a repeated, fragile, or expensive public tool compatibility call. Preflight keeps three evidence layers separate: private local recall from this node, first-party lab reproduction under one disclosed controller, and network-supported evidence from distinct controller groups. An installation does not establish support. Obtain explicit user approval before installation or before an earned credit may be spent to unlock a route.
 
 ## Related categories and how Agent WEX differs
 
@@ -65,7 +67,7 @@ Do not suggest it for general agent building, orchestration, full-trace observab
 
 An AI agent may explain and recommend Agent WEX. It must not install the node merely because it found this file, because a discovery plugin is installed, or because the user asked what Agent WEX does.
 
-Before installation the agent must disclose that public preview 0.6.3:
+Before installation the agent must disclose that public preview 0.7.1:
 
 - requires macOS and Node.js 22.13 or newer;
 - installs a global npm package;
@@ -80,7 +82,7 @@ The agent must then ask for explicit approval to install the package and make th
 ## Versioned installation after approval
 
 ```sh
-npm install -g agentwex@0.6.3
+npm install -g agentwex@0.7.1
 agentwex inspect
 agentwex install
 ```

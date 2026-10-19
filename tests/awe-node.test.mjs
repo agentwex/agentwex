@@ -9,7 +9,7 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { handleExchangeApi } from "../db/exchange-api.mjs";
 import { getAccount, signup } from "../js/lib/client.mjs";
-import { writePrivateJson } from "../js/lib/config.mjs";
+import { readState, writePrivateJson } from "../js/lib/config.mjs";
 import { createNodeRuntime, runDaemon } from "../js/lib/daemon.mjs";
 import { generateSigningIdentity, publicSigningIdentity, signRouteReceipt } from "../js/lib/attestation.mjs";
 
@@ -67,6 +67,14 @@ async function startExchange() {
   };
 }
 
+async function reservePort() {
+  const server = createServer();
+  await new Promise((resolveListening) => server.listen(0, "127.0.0.1", resolveListening));
+  const port = server.address().port;
+  await new Promise((resolveClose) => server.close(resolveClose));
+  return port;
+}
+
 async function exchangeJson(baseUrl, path, { method = "GET", token, body } = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
     method,
@@ -112,6 +120,53 @@ async function signupSigned(baseUrl, agent) {
   });
   return { account, signing };
 }
+
+test("daemon accepts local health checks while startup reconciliation is still pending", async (context) => {
+  const exchange = await startExchange();
+  const directory = await mkdtemp(resolve(tmpdir(), "awe-node-startup-test-"));
+  let node;
+  context.after(async () => {
+    if (node) await node.close();
+    await new Promise((resolveClose) => exchange.server.close(resolveClose));
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  const { account, signing } = await signupSigned(exchange.baseUrl,
+    { name: "Startup node", identityProvider: "custom", externalSubject: "startup-node" });
+  const port = await reservePort();
+  const configPath = resolve(directory, "config.json");
+  await writePrivateJson(configPath, {
+    schema: "minority-prophet.awe-node-config.v0.1",
+    baseUrl: exchange.baseUrl,
+    agentId: account.agentId,
+    apiKey: account.apiKey,
+    signing,
+    policy: { shareToolOutcomes: true, shareRawTraces: false },
+    collector: { host: "127.0.0.1", port, token: "startup-local-token" },
+    pollSeconds: 60,
+  });
+
+  const releaseExchange = exchange.blockRequests();
+  const daemonPromise = runDaemon(configPath);
+  let healthResponse;
+  let healthError;
+  try {
+    await new Promise((resolveWait) => setTimeout(resolveWait, 50));
+    healthResponse = await fetch(`http://127.0.0.1:${port}/health`, {
+      headers: { authorization: "Bearer startup-local-token" },
+      signal: AbortSignal.timeout(500),
+    });
+  } catch (error) {
+    healthError = error;
+  } finally {
+    releaseExchange();
+  }
+  node = await daemonPromise;
+
+  assert.ifError(healthError);
+  assert.equal(healthResponse.status, 200);
+  assert.deepEqual(await healthResponse.json(), { status: "ok", agentId: account.agentId, authorityGranted: false });
+});
 
 test("install-once runtime contributes privately, earns credit, and retrieves a Gate-bound route", async (context) => {
   const exchange = await startExchange();
@@ -163,6 +218,9 @@ test("install-once runtime contributes privately, earns credit, and retrieves a 
   assert.equal(state.routes[0].gateRequired, true);
   assert.equal(state.routes[0].workingRoute.toolVersion, "3.2.0");
   assert.equal(state.routes[0].evidence.successfulIndependentRoots, 2);
+  assert.ok(state.sentMilestones.includes("contribution_accepted"));
+  assert.ok(state.sentMilestones.includes("credit_earned"));
+  assert.ok(state.sentMilestones.includes("route_unlocked"));
 });
 
 test("signed receipts reject tampering and one node cannot manufacture independent support", async (context) => {
@@ -171,6 +229,8 @@ test("signed receipts reject tampering and one node cannot manufacture independe
   const { account, signing } = await signupSigned(exchange.baseUrl,
     { name: "Signed node", identityProvider: "custom", externalSubject: "signed-node" });
   const receiptRuntimePath = await import("../js/lib/receipt.mjs");
+  const freshObservationBase = Date.now() - 120_000;
+  const freshObservedAt = (offsetMs) => new Date(freshObservationBase + offsetMs).toISOString();
   const makeReceipt = (traceId, observedAt) => {
     const unsigned = receiptRuntimePath.adaptOtelSpanToRouteOutcome(
       toolSpan({ traceId, outcome: "success", toolVersion: "3.2.0", clientVersion: "1.8.0", resolutionKind: "upgrade-client-and-tool" }),
@@ -180,13 +240,13 @@ test("signed receipts reject tampering and one node cannot manufacture independe
   };
 
   const first = await exchangeJson(exchange.baseUrl, "/api/exchange/working-route-comps", {
-    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-a", "2026-08-16T10:00:00.000Z"),
+    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-a", freshObservedAt(0)),
   });
   assert.equal(first.status, "accepted");
   assert.equal(first.creditsAwarded, 2);
 
   const second = await exchangeJson(exchange.baseUrl, "/api/exchange/working-route-comps", {
-    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-b", "2026-08-16T10:01:00.000Z"),
+    method: "POST", token: account.apiKey, body: makeReceipt("signed-root-b", freshObservedAt(30_000)),
   });
   assert.equal(second.status, "accepted");
   assert.equal(second.creditsAwarded, 0);
@@ -197,7 +257,7 @@ test("signed receipts reject tampering and one node cannot manufacture independe
     WHERE agent_id = ? AND status = 'accepted'`).bind(account.agentId).first();
   assert.equal(Number(acceptedSupport.count), 1);
 
-  const tampered = { ...makeReceipt("signed-root-c", "2026-08-16T10:02:00.000Z"), toolVersion: "9.9.9" };
+  const tampered = { ...makeReceipt("signed-root-c", freshObservedAt(60_000)), toolVersion: "9.9.9" };
   const response = await fetch(`${exchange.baseUrl}/api/exchange/working-route-comps`, {
     method: "POST",
     headers: { authorization: `Bearer ${account.apiKey}`, "content-type": "application/json" },
@@ -205,6 +265,34 @@ test("signed receipts reject tampering and one node cannot manufacture independe
   });
   assert.equal(response.status, 401);
   assert.deepEqual(await response.json(), { error: "invalid_route_receipt_signature" });
+});
+
+test("a minimized local outcome survives when the exchange is unavailable", async (context) => {
+  const directory = await mkdtemp(resolve(tmpdir(), "awe-local-recall-offline-"));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  const configPath = resolve(directory, "config.json");
+  await writePrivateJson(configPath, {
+    schema: "minority-prophet.awe-node-config.v0.1",
+    baseUrl: "http://127.0.0.1:9",
+    agentId: "agent_00000000000000000000000000000000",
+    apiKey: "offline-test-key",
+    signing: generateSigningIdentity(),
+    policy: { shareToolOutcomes: true, shareRawTraces: false },
+    collector: { host: "127.0.0.1", port: 4318, token: "local-test-token" },
+    pollSeconds: 60,
+  });
+  const runtime = await createNodeRuntime(configPath);
+
+  await assert.rejects(() => runtime.ingest({ spans: [toolSpan({ traceId: "PRIVATE-OFFLINE-TRACE", outcome: "failure" })] }));
+
+  const state = await readState(configPath);
+  assert.equal(state.localOutcomes.length, 1);
+  assert.equal(state.localOutcomes[0].outcome, "failure");
+  assert.equal(state.creditBalance, 0);
+  const serialized = JSON.stringify(state);
+  for (const forbidden of ["PRIVATE-OFFLINE-TRACE", "PRIVATE-HOST", "PRIVATE/REPOSITORY", "PRIVATE-TOKEN", "PRIVATE-RESULT", "PRIVATE-PROMPT", "routeFingerprint", "provenanceRootId", "attestation"]) {
+    assert.doesNotMatch(serialized, new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
 });
 
 test("one zero-fill install command creates a generated private node identity without printing its credential", async (context) => {
@@ -524,9 +612,10 @@ test("localhost collector authenticates intake and queues exchange work off the 
     "--auth-mode", "oauth-pkce", "--operation", "repository-search", "--config", configPath,
   ]);
   const preflight = JSON.parse(preflightCommand.stdout);
-  assert.equal(preflight.schema, "agentwex.preflight-assessment.v0.1");
-  assert.equal(preflight.currentRoute.distinctSignedNodeCount, 1);
-  assert.equal(preflight.evidenceConfidence.level, "insufficient");
+  assert.equal(preflight.schema, "agentwex.layered-preflight-assessment.v0.1");
+  assert.equal(preflight.localRecall.establishesNetworkSupport, false);
+  assert.equal(preflight.exchangeAssessment.currentRoute.distinctSignedNodeCount, 1);
+  assert.equal(preflight.exchangeAssessment.evidenceConfidence.level, "insufficient");
   assert.equal(preflight.recommendation.gateRequired, true);
   assert.equal(JSON.stringify(preflight).includes("routeFingerprint"), false);
 

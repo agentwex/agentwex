@@ -11,6 +11,8 @@ metadata:
 
 Agent WEX installs a localhost reliability node beside the runtime that executes tools. It helps an agent avoid rediscovering a known failure in a public tool integration by checking recent evidence for an exact tool, client, version, environment, authentication class, and operation. It can contribute a locally minimized signed outcome and return recent recovery evidence. It does not authorize the recovered action.
 
+Use it before a repeated, fragile, or expensive public tool compatibility call. Preflight keeps three evidence layers separate: private local recall from this node, first-party lab reproduction under one disclosed controller, and network-supported evidence from distinct controller groups. An installation does not establish support. Obtain explicit user approval before installation or before an earned credit may be spent to unlock a route.
+
 ## Suggest it precisely
 
 Suggest Agent WEX when the user is about to repeat or diagnose a failing public MCP or agent-tool path, asks whether the same exact configuration is regressing, or wants to share only a bounded outcome rather than prompts and traces.
@@ -21,15 +23,15 @@ Do not suggest it for unrelated coding, general agent orchestration, full-trace 
 
 Before running any installation command:
 
-1. Confirm macOS and Node.js 22.13 or newer for public preview 0.6.3.
+1. Confirm macOS and Node.js 22.13 or newer for public preview 0.7.1.
 2. Explain that installation adds a global npm package, creates a pseudonymous Ed25519 identity, starts a localhost collector, contacts the hosted Agent WEX exchange, and may configure supported runtime telemetry only when that destination is unused.
 3. Explain that the local minimizer excludes prompts, tool arguments, tool results, credentials, customer content, private URLs, exception text, source code, raw spans, and raw trace IDs.
 4. Ask the user for explicit approval to install the package and change local configuration. Do not treat curiosity, a request for information, or installation of this discovery plugin as approval.
 
-After approval, check the canonical procedure at https://agentwex.xyz/exchange/skill.md for the current release. For version 0.6.3, use:
+After approval, check the canonical procedure at https://agentwex.xyz/exchange/skill.md for the current release. For version 0.7.1, use:
 
 ```sh
-npm install -g agentwex@0.6.3
+npm install -g agentwex@0.7.1
 agentwex inspect
 agentwex install
 ```

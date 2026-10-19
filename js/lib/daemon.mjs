@@ -7,9 +7,11 @@ import { spansFromCodexLogs } from "./codex.mjs";
 import { spansFromGeminiCliLogs } from "./gemini-cli.mjs";
 import { spansFromBernsteinEvents } from "./bernstein.mjs";
 import { signRouteReceipt } from "./attestation.mjs";
-import { createRouteQuery, getAccount, getContribution, getRouteQuery, unlockRoute } from "./client.mjs";
+import { createRouteQuery, getAccount, getContribution, getRouteQuery, recordLifecycleEvent, unlockRoute } from "./client.mjs";
 import { createExporters, exportReceipt } from "./exporters.mjs";
 import { defaultConfigPath, readConfig, readState, writeState } from "./config.mjs";
+import { rememberLocalOutcome } from "./local-recall.mjs";
+import { emitLifecycleMilestone } from "./lifecycle-milestones.mjs";
 
 const MAX_BODY_BYTES = 1_048_576;
 
@@ -69,6 +71,8 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
   // runtime is silent or every event is being dropped. Older state files
   // predate this, so it is filled in rather than assumed.
   state.observation ??= { received: 0, contributed: 0, ignored: 0, lastObservedAt: null };
+  state.localOutcomes = Array.isArray(state.localOutcomes) ? state.localOutcomes : [];
+  state.sentMilestones = Array.isArray(state.sentMilestones) ? state.sentMilestones : [];
   let operation = Promise.resolve();
 
   const exporters = createExporters(config);
@@ -77,14 +81,25 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
     await writeState(configPath, state);
   }
 
+  async function milestone(eventName) {
+    return emitLifecycleMilestone(
+      state, eventName,
+      (name, eventData) => recordLifecycleEvent(config, name, eventData),
+    );
+  }
+
   async function reconcile() {
+    const previousBalance = Number(state.creditBalance ?? 0);
     const account = await getAccount(config);
     state.creditBalance = account.creditBalance;
+    if (state.creditBalance > previousBalance) await milestone("credit_earned");
     for (const pending of [...state.pendingContributions]) {
       try {
         const contribution = await getContribution(config, pending.contributionId);
         pending.status = contribution.status;
         pending.creditsAwarded = contribution.creditsAwarded;
+        if (contribution.status === "accepted") await milestone("contribution_accepted");
+        if (Number(contribution.creditsAwarded ?? 0) > 0) await milestone("credit_earned");
       } catch (error) {
         pending.lastError = error.message;
       }
@@ -100,6 +115,7 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
           tracked.unlockedAt = new Date().toISOString();
           state.creditBalance = access.creditBalance;
           state.routes.push(access.routeReceipt);
+          await milestone("route_unlocked");
         }
       } catch (error) {
         tracked.lastError = error.message;
@@ -120,12 +136,16 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
           agentId: config.agentId,
         });
         if (adapted.status !== "READY_TO_SUBMIT") { summary.ignored += 1; continue; }
+        state.localOutcomes = rememberLocalOutcome(state.localOutcomes, adapted.receipt);
+        await persist();
         const signedReceipt = signRouteReceipt(adapted.receipt, config.signing);
         // One emit, many listeners. The hosted exchange is the primary
         // destination when configured; a file listener receives the identical
         // signed object and needs no account.
         const delivered = await exportReceipt(exporters, signedReceipt);
         const contribution = delivered.primary ?? { status: "exported" };
+        if (contribution.status === "accepted") await milestone("contribution_accepted");
+        if (Number(contribution.creditsAwarded ?? 0) > 0) await milestone("credit_earned");
         if (contribution.status === "pending" && !state.pendingContributions.some((entry) => entry.contributionId === contribution.contributionId)) {
           state.pendingContributions.push({
             contributionId: contribution.contributionId,
@@ -205,13 +225,15 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
 
   function enqueue(task) {
     state.localQueueDepth = Number(state.localQueueDepth ?? 0) + 1;
-    const queued = serialized(task);
-    void queued
-      .catch((error) => { state.lastBackgroundError = error.message; })
-      .finally(async () => {
+    const queued = serialized(async () => {
+      try {
+        return await task();
+      } finally {
         state.localQueueDepth = Math.max(0, Number(state.localQueueDepth ?? 1) - 1);
         await persist().catch(() => {});
-      });
+      }
+    });
+    void queued.catch((error) => { state.lastBackgroundError = error.message; });
     return { accepted: true, queued: 1 };
   }
 
@@ -235,7 +257,6 @@ export async function createNodeRuntime(configPath = defaultConfigPath()) {
 
 export async function runDaemon(configPath = defaultConfigPath()) {
   const runtime = await createNodeRuntime(configPath);
-  await runtime.reconcile();
   const host = "127.0.0.1";
   const port = runtime.config.collector.port;
   const server = createServer(async (request, response) => {
@@ -282,6 +303,7 @@ export async function runDaemon(configPath = defaultConfigPath()) {
     server.listen(port, host, resolve);
   });
   process.stdout.write(`Agent WEX node listening on http://${host}:${server.address().port}\n`);
+  void runtime.reconcile().catch(() => {});
   const close = () => new Promise((resolve) => {
     clearInterval(timer);
     process.off("SIGINT", shutdown);

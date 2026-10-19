@@ -1,0 +1,22 @@
+{
+  "schema": "agentwex.publication-status.v1",
+  "releaseVersion": "0.7.1",
+  "channels": {
+    "npm": {
+      "status": "prepared",
+      "artifactPath": "release/agentwex-0.7.1.tgz"
+    },
+    "codex-openai": {
+      "status": "prepared",
+      "artifactPath": "openai-plugin/agentwex"
+    },
+    "claude": {
+      "status": "prepared",
+      "artifactPath": ".claude-plugin"
+    },
+    "gemini": {
+      "status": "prepared",
+      "artifactPath": "gemini-extension.json"
+    }
+  }
+}

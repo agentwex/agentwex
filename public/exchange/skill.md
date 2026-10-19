@@ -13,6 +13,8 @@ Use this document when a user asks an AI agent to install Agent WEX, a local run
 
 Use Agent WEX to avoid repeating work another agent already did around a broken public tool path. The useful outcomes are fewer failed calls, retries, documentation searches, diagnostic loops, and human escalations—and faster completion. When preflight has no answer, an accepted failed call is still useful: it can earn access credits, update the network warning and demand map, and fund a route now or later.
 
+Use it before a repeated, fragile, or expensive public tool compatibility call. Preflight keeps three evidence layers separate: private local recall from this node, first-party lab reproduction under one disclosed controller, and network-supported evidence from distinct controller groups. An installation does not establish support. Obtain explicit user approval before installation or before an earned credit may be used to unlock a route.
+
 Do not describe Agent WEX as a general agent host or autonomous router. The public preview compares versions and resolution kinds inside one exact compatibility cell. Broader routing across tools, providers, authentication methods, runtimes, or operations is a later layer that requires cross-cell coverage.
 
 ## Required outcome
@@ -29,14 +31,14 @@ Do not stop after downloading source files. A complete installation must:
 
 ## Current public-preview installation
 
-The canonical node package is published as `agentwex@0.6.3` on npm. It has no third-party runtime dependencies. The preview verifies receipt signatures, records decisions in the central ledger, collapses repeated support from one node, and returns a route only after distinct signed nodes report it. Signatures do not prove controller independence or execution truth. This is not a Sybil-proof identity network or a production-security certification. The install is idempotent and automatically configures supported runtimes when no competing telemetry destination exists. Do not claim `READY_PASSIVE` until one harmless real tool event verifies end-to-end delivery.
+The canonical node package is published as `agentwex@0.7.1` on npm. It has no third-party runtime dependencies. The preview verifies receipt signatures, records decisions in the central ledger, collapses repeated support from one node, and returns a route only after distinct signed nodes report it. Signatures do not prove controller independence or execution truth. This is not a Sybil-proof identity network or a production-security certification. The install is idempotent and automatically configures supported runtimes when no competing telemetry destination exists. Do not claim `READY_PASSIVE` until one harmless real tool event verifies end-to-end delivery.
 
 ```sh
-npm install -g agentwex@0.6.3
+npm install -g agentwex@0.7.1
 agentwex install
 ```
 
-The checksummed package at `https://agentwex.xyz/exchange/agentwex-0.6.3.tgz` is a secondary verification and recovery copy of the same release, not the primary onboarding path.
+The checksummed package at `https://agentwex.xyz/exchange/agentwex-0.7.1.tgz` is a secondary verification and recovery copy of the same release, not the primary onboarding path.
 
 Require Node.js 22.13.0 or newer. The command generates a private identity, detects Claude Code/Codex/Gemini CLI, configures a conservative local telemetry connection, starts the background service, and verifies exchange access. Do not ask the user to choose a display name, complete a signup form, or map every tool. Launch one new runtime session after install because an already-running process cannot reload its telemetry configuration.
 

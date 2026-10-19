@@ -109,7 +109,11 @@ test("signup issues immutable genesis and the private owner snapshot explains fl
   assert.equal(snapshot.boundaries.genesisProvesConsciousness, false);
   assert.equal(snapshot.boundaries.genesisProvesIndependentControl, false);
   assert.equal(snapshot.boundaries.authorityGranted, false);
-  assert.deepEqual(snapshot.acquisition.summary, { joinViews: 0, instructionCopies: 0, registrations: 0, installs: 0, readyNodes: 0 });
+  assert.deepEqual(snapshot.acquisition.summary, {
+    joinViews: 0, instructionCopies: 0, registrations: 0, installs: 0, readyNodes: 0,
+    preflights: 0, localRecallHits: 0, contributors: 0, creditEarners: 0,
+    routeUnlockers: 0, routeOutcomes: 0,
+  });
   assert.equal(snapshot.acquisition.boundaries.firstPartySourceOfTruth, true);
   const serialized = JSON.stringify(snapshot);
   assert.doesNotMatch(serialized, /api_key_hash|public_key_spki|provenance_root_id|signature/i);
@@ -117,6 +121,7 @@ test("signup issues immutable genesis and the private owner snapshot explains fl
 
 test("campaign attribution survives the browser-to-agent handoff and records conversion milestones", async () => {
   const db = d1TestDatabase();
+  const ownerEmail = "owner@example.test";
   const acquisitionId = `awx_${"a".repeat(32)}`;
   const landing = await handleExchangeApi(apiRequest("/api/exchange/acquisition-events", {
     method: "POST",
@@ -154,9 +159,39 @@ test("campaign attribution survives the browser-to-agent handoff and records con
   assert.equal(lifecycle.status, 202);
   assert.equal((await lifecycle.json()).attributed, true);
 
+  for (const eventName of [
+    "ready_passive", "preflight_run", "local_recall_hit", "contribution_accepted",
+    "credit_earned", "route_unlocked", "route_outcome_reported",
+  ]) {
+    const response = await handleExchangeApi(apiRequest("/api/exchange/lifecycle-events", {
+      method: "POST", token: signup.apiKey, body: { eventName },
+    }), db);
+    assert.equal(response.status, 202, eventName);
+  }
+  const replay = await handleExchangeApi(apiRequest("/api/exchange/lifecycle-events", {
+    method: "POST", token: signup.apiKey, body: { eventName: "preflight_run" },
+  }), db);
+  assert.equal(replay.status, 202);
+  assert.equal((await replay.json()).idempotentReplay, true);
+
+  const unknown = await handleExchangeApi(apiRequest("/api/exchange/lifecycle-events", {
+    method: "POST", token: signup.apiKey, body: { eventName: "arbitrary_event" },
+  }), db);
+  assert.equal(unknown.status, 400);
+  assert.equal((await unknown.json()).error, "invalid_lifecycle_event");
+  const privateData = await handleExchangeApi(apiRequest("/api/exchange/lifecycle-events", {
+    method: "POST", token: signup.apiKey,
+    body: { eventName: "preflight_run", eventData: { prompt: "private free text" } },
+  }), db);
+  assert.equal(privateData.status, 400);
+  assert.equal((await privateData.json()).error, "invalid_lifecycle_event_data");
+
   const events = await db.prepare(`SELECT event_name AS eventName, source, content, click_id_hash AS clickIdHash
     FROM exchange_acquisition_events WHERE acquisition_id = ? ORDER BY rowid`).bind(acquisitionId).all();
-  assert.deepEqual(events.results.map((event) => event.eventName), ["join_view", "sign_up", "node_install_complete"]);
+  assert.deepEqual(events.results.map((event) => event.eventName), [
+    "join_view", "sign_up", "node_install_complete", "ready_passive", "preflight_run",
+    "local_recall_hit", "contribution_accepted", "credit_earned", "route_unlocked", "route_outcome_reported",
+  ]);
   assert.equal(events.results[0].source, "instagram");
   assert.equal(events.results[0].content, "a_research_original");
   assert.match(events.results[0].clickIdHash, /^[a-f0-9]{64}$/);
@@ -164,6 +199,19 @@ test("campaign attribution survives the browser-to-agent handoff and records con
   const mapping = await db.prepare("SELECT acquisition_id AS acquisitionId FROM exchange_agent_acquisition WHERE agent_id = ?")
     .bind(signup.agentId).first();
   assert.equal(mapping.acquisitionId, acquisitionId);
+
+  const snapshotResponse = await handleExchangeApi(apiRequest("/api/exchange/internal/owner-snapshot", {
+    headers: { "oai-authenticated-user-email": ownerEmail },
+  }), db, { ownerEmail });
+  assert.equal(snapshotResponse.status, 200);
+  const snapshot = await snapshotResponse.json();
+  assert.deepEqual(snapshot.acquisition.summary, {
+    joinViews: 1, instructionCopies: 0, registrations: 1, installs: 1, readyNodes: 1,
+    preflights: 1, localRecallHits: 1, contributors: 1, creditEarners: 1,
+    routeUnlockers: 1, routeOutcomes: 1,
+  });
+  assert.equal(snapshot.acquisition.campaigns[0].preflights, 1);
+  assert.equal(snapshot.acquisition.campaigns[0].routeOutcomes, 1);
 });
 
 test("first node can submit idempotently, await verification, and earn durable credits", async () => {

@@ -20,7 +20,10 @@ const preflightFields = new Set(["schema", "toolRegistry", "toolId", "toolVersio
 const routeFeedbackFields = new Set(["schema", "resultId", "outcome", "failureClass", "attemptsAvoided", "estimatedTokensAvoided", "estimatedLatencyMsAvoided"]);
 const labEnrollmentFields = new Set(["agentId", "controllerGroupId", "participantId"]);
 const publicAcquisitionEvents = new Set(["join_view", "copy_agent_instruction", "copy_install_command"]);
-const lifecycleEvents = new Set(["node_install_complete", "ready_passive"]);
+const lifecycleEvents = new Set([
+  "node_install_complete", "ready_passive", "preflight_run", "local_recall_hit",
+  "contribution_accepted", "credit_earned", "route_unlocked", "route_outcome_reported",
+]);
 const acquisitionRefPattern = /^awx_[a-f0-9]{32}$/;
 
 const now = () => new Date().toISOString();
@@ -79,14 +82,24 @@ function acquisitionId(value) {
 function safeEventData(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   const allowed = new Set(["installStatus", "runtimeCount", "sourceSurface"]);
-  return Object.fromEntries(Object.entries(value)
-    .filter(([key, entry]) => allowed.has(key) && ["string", "number", "boolean"].includes(typeof entry))
-    .map(([key, entry]) => [key, typeof entry === "string" ? entry.slice(0, 120) : entry]));
+  const installStatuses = new Set([
+    "CONFIGURED_NO_SERVICE", "TELEMETRY_CONFLICT", "RUNTIME_ADAPTER_REQUIRED",
+    "INSTALLED_RESTART_REQUIRED", "BACKGROUND_SERVICE_UNAVAILABLE", "READY_PASSIVE",
+  ]);
+  const sourceSurfaces = new Set(["agent_signup", "attributed_install", "direct_install", "status_check"]);
+  if (Object.keys(value).some((key) => !allowed.has(key))) return null;
+  if (value.installStatus !== undefined && !installStatuses.has(value.installStatus)) return null;
+  if (value.sourceSurface !== undefined && !sourceSurfaces.has(value.sourceSurface)) return null;
+  if (value.runtimeCount !== undefined
+    && (!Number.isInteger(value.runtimeCount) || value.runtimeCount < 0 || value.runtimeCount > 1000)) return null;
+  return { ...value };
 }
 
 async function acquisitionEventStatement(db, body, eventName, agentId = null) {
   const reference = acquisitionId(body?.acquisitionId);
   if (!reference) return null;
+  const eventData = safeEventData(body.eventData);
+  if (eventData === null) return null;
   const clickId = cleanAttribution(body.clickId, 500);
   const clickIdHash = clickId ? await sha256(clickId) : null;
   return db.prepare(`INSERT OR IGNORE INTO exchange_acquisition_events
@@ -98,7 +111,7 @@ async function acquisitionEventStatement(db, body, eventName, agentId = null) {
       cleanAttribution(body.campaign, 160), cleanAttribution(body.campaignId, 160),
       cleanAttribution(body.content, 160), cleanAttribution(body.term, 160),
       cleanAttribution(body.landingPath, 300), cleanAttribution(body.referrerHost, 180),
-      clickIdHash, JSON.stringify(safeEventData(body.eventData)), now());
+      clickIdHash, JSON.stringify(eventData), now());
 }
 
 export async function recordPublicAcquisitionEvent(db, body) {
@@ -111,12 +124,16 @@ export async function recordPublicAcquisitionEvent(db, body) {
 
 export async function recordAgentLifecycleEvent(db, agentId, body) {
   if (!lifecycleEvents.has(body?.eventName)) return { ok: false, status: 400, error: "invalid_lifecycle_event" };
+  if (safeEventData(body.eventData) === null) return { ok: false, status: 400, error: "invalid_lifecycle_event_data" };
   const mapping = await db.prepare("SELECT acquisition_id AS acquisitionId FROM exchange_agent_acquisition WHERE agent_id = ?")
     .bind(agentId).first();
   if (!mapping?.acquisitionId) return { ok: true, status: 202, attributed: false, eventName: body.eventName };
   const statement = await acquisitionEventStatement(db, { ...body, acquisitionId: mapping.acquisitionId }, body.eventName, agentId);
-  await statement.run();
-  return { ok: true, status: 202, attributed: true, acquisitionId: mapping.acquisitionId, eventName: body.eventName };
+  const inserted = await statement.run();
+  return {
+    ok: true, status: 202, attributed: true, acquisitionId: mapping.acquisitionId,
+    eventName: body.eventName, idempotentReplay: Number(inserted?.meta?.changes ?? 1) === 0,
+  };
 }
 
 export async function enrollLabParticipant(db, body) {
@@ -476,21 +493,39 @@ export async function getOwnerSnapshot(db, aliases = {}, at = Date.now()) {
         COUNT(DISTINCT CASE WHEN event_name IN ('copy_agent_instruction', 'copy_install_command') THEN acquisition_id END) AS instructionCopies,
         COUNT(DISTINCT CASE WHEN event_name = 'sign_up' THEN acquisition_id END) AS registrations,
         COUNT(DISTINCT CASE WHEN event_name = 'node_install_complete' THEN acquisition_id END) AS installs,
-        COUNT(DISTINCT CASE WHEN event_name = 'ready_passive' THEN acquisition_id END) AS readyNodes
+        COUNT(DISTINCT CASE WHEN event_name = 'ready_passive' THEN acquisition_id END) AS readyNodes,
+        COUNT(DISTINCT CASE WHEN event_name = 'preflight_run' THEN acquisition_id END) AS preflights,
+        COUNT(DISTINCT CASE WHEN event_name = 'local_recall_hit' THEN acquisition_id END) AS localRecallHits,
+        COUNT(DISTINCT CASE WHEN event_name = 'contribution_accepted' THEN acquisition_id END) AS contributors,
+        COUNT(DISTINCT CASE WHEN event_name = 'credit_earned' THEN acquisition_id END) AS creditEarners,
+        COUNT(DISTINCT CASE WHEN event_name = 'route_unlocked' THEN acquisition_id END) AS routeUnlockers,
+        COUNT(DISTINCT CASE WHEN event_name = 'route_outcome_reported' THEN acquisition_id END) AS routeOutcomes
       FROM exchange_acquisition_events`).first(),
     db.prepare(`SELECT
-        COALESCE(source, 'direct') AS source,
-        COALESCE(medium, 'none') AS medium,
-        COALESCE(campaign, 'direct') AS campaign,
-        COALESCE(content, 'unspecified') AS content,
-        COUNT(DISTINCT CASE WHEN event_name = 'join_view' THEN acquisition_id END) AS joinViews,
-        COUNT(DISTINCT CASE WHEN event_name IN ('copy_agent_instruction', 'copy_install_command') THEN acquisition_id END) AS instructionCopies,
-        COUNT(DISTINCT CASE WHEN event_name = 'sign_up' THEN acquisition_id END) AS registrations,
-        COUNT(DISTINCT CASE WHEN event_name = 'node_install_complete' THEN acquisition_id END) AS installs,
-        COUNT(DISTINCT CASE WHEN event_name = 'ready_passive' THEN acquisition_id END) AS readyNodes
-      FROM exchange_acquisition_events
-      WHERE source IS NOT NULL
-      GROUP BY source, medium, campaign, content
+        COALESCE(a.source, 'direct') AS source,
+        COALESCE(a.medium, 'none') AS medium,
+        COALESCE(a.campaign, 'direct') AS campaign,
+        COALESCE(a.content, 'unspecified') AS content,
+        COUNT(DISTINCT CASE WHEN e.event_name = 'join_view' THEN e.acquisition_id END) AS joinViews,
+        COUNT(DISTINCT CASE WHEN e.event_name IN ('copy_agent_instruction', 'copy_install_command') THEN e.acquisition_id END) AS instructionCopies,
+        COUNT(DISTINCT CASE WHEN e.event_name = 'sign_up' THEN e.acquisition_id END) AS registrations,
+        COUNT(DISTINCT CASE WHEN e.event_name = 'node_install_complete' THEN e.acquisition_id END) AS installs,
+        COUNT(DISTINCT CASE WHEN e.event_name = 'ready_passive' THEN e.acquisition_id END) AS readyNodes,
+        COUNT(DISTINCT CASE WHEN e.event_name = 'preflight_run' THEN e.acquisition_id END) AS preflights,
+        COUNT(DISTINCT CASE WHEN e.event_name = 'local_recall_hit' THEN e.acquisition_id END) AS localRecallHits,
+        COUNT(DISTINCT CASE WHEN e.event_name = 'contribution_accepted' THEN e.acquisition_id END) AS contributors,
+        COUNT(DISTINCT CASE WHEN e.event_name = 'credit_earned' THEN e.acquisition_id END) AS creditEarners,
+        COUNT(DISTINCT CASE WHEN e.event_name = 'route_unlocked' THEN e.acquisition_id END) AS routeUnlockers,
+        COUNT(DISTINCT CASE WHEN e.event_name = 'route_outcome_reported' THEN e.acquisition_id END) AS routeOutcomes
+      FROM exchange_acquisition_events e
+      JOIN (
+        SELECT acquisition_id, MAX(source) AS source, MAX(medium) AS medium,
+          MAX(campaign) AS campaign, MAX(content) AS content
+        FROM exchange_acquisition_events
+        WHERE source IS NOT NULL
+        GROUP BY acquisition_id
+      ) a ON a.acquisition_id = e.acquisition_id
+      GROUP BY a.source, a.medium, a.campaign, a.content
       ORDER BY registrations DESC, instructionCopies DESC, joinViews DESC
       LIMIT 50`).all(),
   ]);
@@ -534,6 +569,12 @@ export async function getOwnerSnapshot(db, aliases = {}, at = Date.now()) {
         registrations: Number(acquisitionSummary?.registrations ?? 0),
         installs: Number(acquisitionSummary?.installs ?? 0),
         readyNodes: Number(acquisitionSummary?.readyNodes ?? 0),
+        preflights: Number(acquisitionSummary?.preflights ?? 0),
+        localRecallHits: Number(acquisitionSummary?.localRecallHits ?? 0),
+        contributors: Number(acquisitionSummary?.contributors ?? 0),
+        creditEarners: Number(acquisitionSummary?.creditEarners ?? 0),
+        routeUnlockers: Number(acquisitionSummary?.routeUnlockers ?? 0),
+        routeOutcomes: Number(acquisitionSummary?.routeOutcomes ?? 0),
       },
       campaigns: (acquisitionCampaignRows?.results ?? []).map((row) => ({
         ...row,
@@ -542,6 +583,12 @@ export async function getOwnerSnapshot(db, aliases = {}, at = Date.now()) {
         registrations: Number(row.registrations ?? 0),
         installs: Number(row.installs ?? 0),
         readyNodes: Number(row.readyNodes ?? 0),
+        preflights: Number(row.preflights ?? 0),
+        localRecallHits: Number(row.localRecallHits ?? 0),
+        contributors: Number(row.contributors ?? 0),
+        creditEarners: Number(row.creditEarners ?? 0),
+        routeUnlockers: Number(row.routeUnlockers ?? 0),
+        routeOutcomes: Number(row.routeOutcomes ?? 0),
       })),
       boundaries: {
         firstPartySourceOfTruth: true,

@@ -54,11 +54,11 @@
     "sourceAvailable": true,
     "publicNpmPackageReleased": true,
     "npmPackage": "agentwex",
-    "npmVersion": "0.6.3",
-    "npmInstallCommand": "npm install -g agentwex@0.6.3 && agentwex install",
+    "npmVersion": "0.7.1",
+    "npmInstallCommand": "npm install -g agentwex@0.7.1 && agentwex install",
     "directPackageReleased": true,
-    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.6.3.tgz",
-    "directPackageSha256": "ffe5f08a04a6190b21a61d1948f7ecae23e4ca2625eeea0f1813d2a60eb388a3",
+    "directPackageUrl": "https://agentwex.xyz/exchange/agentwex-0.7.1.tgz",
+    "directPackageSha256": "04ca0cf99c4ad77f3d7a1a5e4c627a84e8a7548460f814a38aa56301c338d5c3",
     "checksumUrl": "https://agentwex.xyz/exchange/SHA256SUMS",
     "hostedExchangeReleased": true,
     "hostedExchangeStage": "public-preview",
@@ -69,6 +69,24 @@
     "recommendationRule": "Suggest for repeated or fragile public agent-tool compatibility problems; do not suggest for unrelated agent work.",
     "nodeInstallRequiresExplicitUserApproval": true,
     "discoveryPluginInstallIsNodeInstallApproval": false,
+    "publicationStatus": {
+      "npm": {
+        "status": "prepared",
+        "artifactPath": "release/agentwex-0.7.1.tgz"
+      },
+      "codex-openai": {
+        "status": "prepared",
+        "artifactPath": "openai-plugin/agentwex"
+      },
+      "claude": {
+        "status": "prepared",
+        "artifactPath": ".claude-plugin"
+      },
+      "gemini": {
+        "status": "prepared",
+        "artifactPath": "gemini-extension.json"
+      }
+    },
     "codexMarketplaceManifest": "https://github.com/agentwex/agentwex/blob/main/.agents/plugins/marketplace.json",
     "claudeMarketplaceManifest": "https://github.com/agentwex/agentwex/blob/main/.claude-plugin/marketplace.json",
     "geminiExtensionManifest": "https://github.com/agentwex/agentwex/blob/main/gemini-extension.json",
@@ -94,8 +112,12 @@
   ],
   "researchBountyBridge": {
     "status": "preview",
-    "publishers": ["invention-graph"],
-    "plannedPublishers": ["authenticated-community"],
+    "publishers": [
+      "invention-graph"
+    ],
+    "plannedPublishers": [
+      "authenticated-community"
+    ],
     "publicationRequiresLocalApprovalReceipt": true,
     "publicationCadence": {
       "mode": "quality-gated-continuous",
@@ -140,7 +162,10 @@
     "escrowReleaseAvailable": false,
     "currency": "USDC",
     "network": "eip155:8453",
-    "settlementRails": ["taskmarket_escrow", "x402_direct"],
+    "settlementRails": [
+      "taskmarket_escrow",
+      "x402_direct"
+    ],
     "plannedPublicationEndpoint": "POST /api/exchange/research-bounties",
     "plannedFundingIntentEndpointTemplate": "POST /api/exchange/research-bounties/{bountyId}/funding-intents",
     "fundsCustodiedByAgentWex": false,
@@ -183,6 +208,21 @@
     ],
     "currentRoutingScope": "tool and client version plus resolution kind within one exact compatibility cell",
     "unrestrictedCrossToolProviderAuthRuntimeRoutingClaimed": false
+  },
+  "evidenceLayers": {
+    "localRecall": {
+      "scope": "private-single-node",
+      "canEstablishNetworkSupport": false
+    },
+    "firstPartyLab": {
+      "scope": "disclosed-single-controller",
+      "canEstablishNetworkSupport": false
+    },
+    "networkSupported": {
+      "scope": "distinct-controller-groups",
+      "minimumDistinctControllerGroups": 2
+    },
+    "installationEstablishesSupport": false
   },
   "impactMeasurement": {
     "feedbackFields": [
